@@ -1,0 +1,8 @@
+{
+  "package_id": "YOUR_SDK_PACKAGE_ID",
+  "app_id": "YOUR_SDK_APPLICATION_ID",
+  "selection": {
+    "home": ["netflix", "youtube", "primevideo", "disneyplus", "appletv"],
+    "appRecords": []
+  }
+}

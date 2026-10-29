@@ -1,5 +1,7 @@
 # CleanFrame
 
+This fork also preserves an optional [Samsung UE49NU8079 / Tizen 4 adaptation](docs/nu8000.md), including an offline build overlay and the known TV-settings navigation issue. The upstream app and native Home guards remain unchanged.
+
 A quieter home screen for Samsung The Frame. Your apps, a photograph and the time, with an interface made for the TV remote.
 
 ![CleanFrame browser preview using the bundled Manrope font](docs/images/cleanframe-dock.jpg)
