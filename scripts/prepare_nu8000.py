@@ -63,6 +63,11 @@ def adapt(files, selection, sources=None):
     change('config.xml', 'required_version="6.5"', 'required_version="4.0"')
     for name in ('main.js', 'device.js'):
         change(name, 'org.tizen.primevideo', 'evKhCgZelL.AmazonIgnitionLauncher2')
+    # Keep catalogue/preference IDs stable; use the owner's working native entry
+    # at the launch boundary, including launches from a refreshed All apps list.
+    change('device.js', '  function launchApp(id, done) {',
+           "  function launchApp(id, done) {\n"
+           "    if (id === '9Ur5IzDKqV.TizenYouTube') id = 'com.samsung.tv.cobalt-yt';")
     device = files['device.js'].decode('utf-8')
     start_marker, end_marker = '  function art(done) {', '  function home(done) {'
     if device.count(start_marker) != 1 or device.count(end_marker) != 1:

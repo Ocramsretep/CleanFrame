@@ -68,6 +68,55 @@ vm.runInNewContext(input.source, {localStorage: {getItem: () => {throw Error('de
         with self.assertRaisesRegex(ValueError, 'Upstream source changed'):
             adapt({'config.xml': b'<different />'}, self.selection)
 
+    def test_youtube_launch_route_preserves_catalogue_and_error_handling(self):
+        code = r"""
+const vm = require('node:vm'), assert = require('node:assert/strict');
+const source = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
+const legacy = '9Ur5IzDKqV.TizenYouTube', native = 'com.samsung.tv.cobalt-yt';
+const launches = [], timers = new Map(); let next = 0;
+const window = {tizen: {application: {
+  getCurrentApplication: () => ({appInfo:{id:'Owner12345.Home'}}),
+  launch: (id, ok, fail) => launches.push({id, ok, fail}),
+  getAppsInfo: ok => ok([
+    {id:legacy, name:'YouTube', show:true},
+    {id:native, name:'Youtube', show:true}
+  ])
+}}};
+vm.runInNewContext(source, {window,
+  setTimeout: (fn, ms) => {timers.set(++next, {fn, ms}); return next;},
+  clearTimeout: id => timers.delete(id)
+});
+const device = window.FrameDevice;
+let catalogue;
+device.apps((err, apps) => {assert.equal(err, null); catalogue = apps;});
+assert.equal(catalogue.length, 1);
+assert.equal(catalogue[0].appId, legacy);
+assert.equal(catalogue[0].brand, 'youtube');
+for (const call of [done => device.launch('youtube', done),
+                   done => device.launchApp(legacy, done),
+                   done => device.launchApp(catalogue[0].appId, done),
+                   done => device.launchApp(native, done)]) {
+  let replies = 0;
+  call(err => {assert.equal(err, null); replies++;});
+  assert.equal(launches.at(-1).id, native);
+  launches.at(-1).ok(); assert.equal(replies, 1);
+}
+device.launchApp('org.tizen.netflix-app', err => assert.equal(err, null));
+assert.equal(launches.at(-1).id, 'org.tizen.netflix-app'); launches.at(-1).ok();
+let denied;
+device.launchApp(legacy, err => {denied = err;});
+launches.at(-1).fail({name:'SecurityError', message:'Denied'});
+assert.equal(denied.detail, 'Denied');
+assert.equal(launches.at(-1).id, native); // Never silently fall back to broken route.
+let timeoutReplies = 0;
+device.launchApp(legacy, err => {assert.match(err.message, /did not respond/); timeoutReplies++;});
+const pending = [...timers.values()]; assert.equal(pending.length, 1);
+assert.equal(pending[0].ms, 8000); pending[0].fn(); launches.at(-1).ok();
+assert.equal(timeoutReplies, 1);
+"""
+        subprocess.run(['node', '-e', code],
+                       input=json.dumps(self.files['device.js'].decode()), text=True, check=True)
+
     def test_source_seed_is_separate_and_never_overwrites_saved_choices(self):
         # Use the baseline; adapt deliberately rejects double application.
         baseline = Path(self.report['stage']).parent / 'baseline-unsigned.wgt'
