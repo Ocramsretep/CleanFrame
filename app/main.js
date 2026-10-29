@@ -47,7 +47,7 @@
   var LOOK_VALUES = { bg: ['dark', 'light', 'photo'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
   var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material' };
   var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
-  var UTIL = { art: ['Art Mode', 'art'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
+  var UTIL = { sources: ['Sources', 'hdmi'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
   var MSG = {
     leave: { title: 'Leave Home?', line: 'Open Samsung Home?', note: '', actions: [['stay', 'Stay'], ['samsung', 'Samsung Home']] }
   };
@@ -66,6 +66,9 @@
     down: '<path d="m5 8.5 7 7 7-7"/>',
     updown: '<path d="m7.5 9.5 4.5-4.5 4.5 4.5M7.5 14.5l4.5 4.5 4.5-4.5"/>',
     tv: '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7"/>',
+    hdmi: '<path d="M4 5h16v9l-4 5H8l-4-5Z M8 8v4m4-4v4m4-4v4"/>',
+    console: '<path d="M7 7h10c3 0 5 11 2 11l-4-3H9l-4 3C2 18 4 7 7 7Z M7 10v4m-2-2h4m6-1h.1m2 2h.1"/>',
+    soundbar: '<rect x="2" y="8" width="20" height="8" rx="2"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/><path d="M10 12h4"/>',
     warn: '<path d="M12 4 2.8 19.5h18.4Z"/><path d="M12 10v4.5M12 17.3v.1"/>'
   };
 
@@ -491,14 +494,14 @@
   }
 
   /* ---------- Navigation targets ---------- */
-  function utils() { return ['art', 'apps', 'settings']; }
+  function utils() { return ['sources', 'apps', 'settings']; }
   /* prev/next run along the apps; out goes to the controls, inn comes back (or to a per-app action). */
   function axes() {
     var v = S.c.layout === 'list';
     return { prev: v ? 'up' : 'left', next: v ? 'down' : 'right', out: v ? 'right' : 'up', inn: v ? 'left' : 'down' };
   }
   function utilAction(u) {
-    if (u === 'art') perform('Art Mode', FrameDevice.art);
+    if (u === 'sources') push({ id: 'sourceMenu', f: { i: 0 } });
     else if (u === 'apps') openApps();
     else openSettings();
   }
@@ -821,6 +824,7 @@
       { id: 'typography', label: 'Typography', value: FONTS[S.c.font].name },
       { id: 'focus', label: 'Focus', value: VALUE_NAMES[S.c.focus] + (materialApplies() ? ', ' + VALUE_NAMES[S.c.material] : '') },
       { id: 'editor', label: 'Apps on Home', value: n + (n === 1 ? ' app' : ' apps') },
+      { id: 'sources', label: 'Sources', value: 'TV, consoles and HDMI connections' },
       { id: 'samsung', label: 'Samsung', value: 'Home and TV settings' }];
   }
   function settingsIds() { return settingsRows().map(function (r) { return r.id; }); }
@@ -839,8 +843,114 @@
   };
   function settingsOk(id) {
     if (id === 'editor') openEditor('settings');
+    else if (id === 'sources') openSources();
     else openAppearance(id);
   }
+  /* Sources use their own storage, so app membership and appearance never change. */
+  var sourceScan = { text: 'Choose Check connections to read the TV.', loading: false, token: 0 };
+  function openSource(item) {
+    if (!item) return;
+    perform(item.name, function (done) { FrameDevice.setSource(item.type, item.number, done); });
+  }
+  function openSources() { push({ id: 'sources', f: { i: 0 } }); }
+  V.sourceMenu = {
+    norm: function (t) { t.f.i = clamp(t.f.i, 0, window.FrameSources.visible().length); },
+    key: function (t, k) {
+      var items = window.FrameSources.visible();
+      if (k === 'back' || k === 'left' || (k === 'up' && t.f.i === 0)) { pop(); return; }
+      if (k === 'up') t.f.i--;
+      else if (k === 'down') t.f.i = Math.min(items.length, t.f.i + 1);
+      else if (k === 'ok') {
+        pop();
+        if (t.f.i === items.length) { openSettings(); top().f.id = 'sources'; S.settingsFocus = 'sources'; openSources(); }
+        else openSource(items[t.f.i]);
+      }
+    },
+    point: function (t, z, i) { if (z !== 'source-menu') { pop(); return; } t.f.i = i; this.key(t, 'ok'); }
+  };
+  function sourceStatus(item) { return item.type === 'AUDIO' ? 'Audio switching unavailable' : (item.visible ? 'Shown' : 'Hidden') + ' · ' + (item.type === 'TV' ? 'TV tuner' : 'HDMI ' + item.number); }
+  function scanSources() {
+    if (sourceScan.loading) return;
+    sourceScan.loading = true; sourceScan.text = 'Checking TV connections…';
+    var token = ++sourceScan.token;
+    FrameDevice.videoSources(function (err, value) {
+      if (token !== sourceScan.token) return;
+      sourceScan.loading = false;
+      sourceScan.text = err ? err.message : value.sources.map(function (s) { return s.type + ' ' + s.number + ': ' + (s.connected ? 'connected' : 'disconnected') + (s.active ? ' (current)' : ''); }).join(' · ') || 'The TV reported no sources.';
+      if (!err) sourceScan.text += ' Device names are not supplied by this API.';
+      render();
+    });
+  }
+  function sourceEditRows(item) {
+    if (item.type === 'AUDIO') return [['unsupported', 'Audio output', 'Unavailable through the public TV APIs'], ['done', 'Back', '']];
+    return [['visible', 'Show in Sources menu', item.visible ? 'Yes' : 'No'], ['name', 'Name', item.name],
+      ['icon', 'Icon', item.icon], ['port', 'Connection', item.type === 'TV' ? 'TV tuner' : 'HDMI ' + item.number],
+      ['earlier', 'Move earlier', ''], ['later', 'Move later', ''], ['done', 'Done', '']];
+  }
+  function saveSources(items) {
+    if (window.FrameSources.save(items)) return true;
+    message('Sources', 'Could not save your changes.', 'Your previous choices are unchanged. Please try again.'); return false;
+  }
+  V.sources = {
+    sheet: true,
+    key: function (t, k) {
+      var items = window.FrameSources.all();
+      if (k === 'up') t.f.i = Math.max(0, t.f.i - 1);
+      else if (k === 'down') t.f.i = Math.min(items.length, t.f.i + 1);
+      else if (k === 'back') pop();
+      else if (k === 'ok') {
+        if (t.f.i === items.length) scanSources();
+        else push({ id: 'sourceEdit', sourceId: items[t.f.i].id, f: { i: 0 } });
+      }
+    },
+    point: function (t, z, i) { t.f.i = i; this.key(t, 'ok'); }
+  };
+  V.sourceEdit = {
+    sheet: true,
+    key: function (t, k) {
+      var items = window.FrameSources.all(), index = items.map(function (s) { return s.id; }).indexOf(t.sourceId), item = items[index];
+      var rows = sourceEditRows(item), action = rows[t.f.i][0], icons = window.FrameSources.icons, destination;
+      if (k === 'up') t.f.i = Math.max(0, t.f.i - 1);
+      else if (k === 'down') t.f.i = Math.min(rows.length - 1, t.f.i + 1);
+      else if (k === 'back') pop();
+      else if (k === 'ok') {
+        if (action === 'done') { pop(); return; }
+        if (action === 'unsupported') return;
+        if (action === 'name') { push({ id: 'sourceName', sourceId: item.id, value: item.name, f: { i: 0 } }); return; }
+        if (action === 'visible') item.visible = !item.visible;
+        if (action === 'icon') item.icon = icons[(icons.indexOf(item.icon) + 1) % icons.length];
+        if (action === 'port' && item.type === 'HDMI') item.number = item.number % 4 + 1;
+        if (action === 'earlier' || action === 'later') {
+          destination = clamp(index + (action === 'earlier' ? -1 : 1), 0, items.length - 1);
+          items.splice(index, 1); items.splice(destination, 0, item);
+        }
+        if (saveSources(items)) {
+          S.stack[S.stack.length - 2].f.i = items.map(function (s) { return s.id; }).indexOf(item.id);
+        }
+      }
+    },
+    point: function (t, z, i) { t.f.i = i; this.key(t, 'ok'); }
+  };
+  function saveSourceName(t) {
+    var value = $('sourceNameInput').value.replace(/^\s+|\s+$/g, ''), items = window.FrameSources.all();
+    if (!value) return;
+    items.forEach(function (item) { if (item.id === t.sourceId) item.name = value; });
+    if (saveSources(items)) { pop(); focusStage(); }
+  }
+  V.sourceName = {
+    sheet: true,
+    key: function (t, k) {
+      if (k === 'back') { pop(); focusStage(); }
+      else if (k === 'up' || k === 'left') t.f.i = Math.max(0, t.f.i - 1);
+      else if (k === 'down' || k === 'right') t.f.i = Math.min(2, t.f.i + 1);
+      else if (k === 'ok') {
+        if (t.f.i === 0) $('sourceNameInput').focus();
+        else if (t.f.i === 1) saveSourceName(t);
+        else { pop(); focusStage(); }
+      }
+    },
+    point: function (t, z, i) { t.f.i = i; this.key(t, 'ok'); }
+  };
   var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', samsung: 'Samsung' };
   function choice(axis, value, disabled) {
     return { action: axis === 'mode' ? 'rotation.' + value : 'choice.' + axis + '.' + value, axis: axis, value: value, disabled: !!disabled,
@@ -1026,6 +1136,7 @@
     applyHomeFont();
     if (!sheet) renderHome(t);
     renderSheet(t, sheet);
+    renderSources(t);
     renderAppearance(t);
     renderFocusStatus(t);
   }
@@ -1053,6 +1164,34 @@
     if (S.c.layout === 'list') renderList(hs);
     else { photoMode = null; renderDock(hs); }
     renderAppFocusName(hs);
+  }
+  function sourceIcon(item) { return item.icon === 'xbox' ? markHtml('xbox', 42, 42, 42) : icon(item.icon); }
+  function sourceRowsHtml(rows, focused) {
+    return rows.map(function (row, i) {
+      return '<button type="button" tabindex="-1" class="source-setting' + (i === focused ? ' is-focus' : '') + '" data-z="source-setting" data-i="' + i + '" data-action="sources.' + row[0] + '">' + (row[3] || '') + '<span class="source-setting-label">' + esc(row[1]) + '</span><span class="source-setting-value">' + esc(row[2]) + '</span></button>';
+    }).join('');
+  }
+  function renderSources(t) {
+    var menu = $('sourceMenu'), im = $('sourceMenuImage'), anchor = utilsEl.querySelector('[data-action="util.sources"]'), items = window.FrameSources.visible(), html, r, sr, scale, x, y, src;
+    menu.hidden = t.id !== 'sourceMenu';
+    if (anchor) { anchor.setAttribute('aria-haspopup', 'menu'); anchor.setAttribute('aria-expanded', String(!menu.hidden)); }
+    if (menu.hidden) return;
+    html = '<p class="source-menu-title">Sources</p>' + (!items.length ? '<p class="source-menu-empty">Choose sources in Settings.</p>' : '');
+    html += items.map(function (item, i) {
+      return '<button type="button" tabindex="-1" role="menuitem" class="source-button' + (t.f.i === i ? ' is-focus' : '') + '" data-z="source-menu" data-i="' + i + '" data-action="source.' + item.id + '" aria-label="' + esc(item.name) + '">' + sourceIcon(item) + '<span>' + esc(item.name) + '</span></button>';
+    }).join('');
+    html += '<button type="button" tabindex="-1" role="menuitem" class="source-button source-configure' + (t.f.i === items.length ? ' is-focus' : '') + '" data-z="source-menu" data-i="' + items.length + '" data-action="source.configure">' + icon('settings') + '<span>Configure sources</span></button>';
+    setHTML($('sourceMenuContent'), html);
+    r = anchor.getBoundingClientRect(); sr = stage.getBoundingClientRect(); scale = sr.width / 1920;
+    x = clamp((r.left - sr.left) / scale, 80, 1400);
+    y = clamp(S.c.layout === 'list' ? (r.top - sr.top) / scale - menu.offsetHeight - 18 : (r.bottom - sr.top) / scale + 18, 80, 1000 - menu.offsetHeight);
+    menu.style.left = px(x); menu.style.top = px(y);
+    im.hidden = S.c.bg !== 'photo';
+    if (!im.hidden) {
+      src = fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material);
+      if (im.getAttribute('src') !== src) im.src = src;
+      im.style.left = px(-x); im.style.top = px(-y);
+    }
   }
 
   function clockText() {
@@ -1501,6 +1640,9 @@
     }).join('');
   }
   var FRAMES = {
+    sources: function () { return '<h2 class="s-title">Sources</h2><p class="s-sub">Choose which inputs appear in the Sources menu.</p><div class="source-settings-list" data-slot="list"></div><p class="source-status" data-slot="status"></p>'; },
+    sourceEdit: function () { return '<h2 class="s-title" data-slot="title"></h2><p class="s-sub">OK changes the selected value. Back keeps completed changes.</p><div class="source-settings-list" data-slot="list"></div><p class="source-status" data-slot="status"></p>'; },
+    sourceName: function (t) { return '<h2 class="s-title">Shortcut name</h2><p class="s-sub">Select the name to open the keyboard, then choose Save.</p><div class="source-name"><input id="sourceNameInput" type="text" maxlength="24" aria-label="Shortcut name" value="' + esc(t.value) + '"><div data-slot="buttons"></div></div>'; },
     apps: function () {
       return '<h2 class="s-title" data-slot="title"></h2><p class="s-sub" data-slot="sub"></p><div class="s-head" data-slot="head"></div>'
         + '<div class="grid-view" data-slot="view"><div class="grid-in" data-slot="grid"></div></div>'
@@ -1523,6 +1665,25 @@
     return '<span class="panel-content">' + appMark(a, 120, 72, 58) + '<span class="label">' + esc(a.name) + '</span></span><span class="state">' + state + '</span>';
   }
   var FILLS = {
+    sources: function (t, el) {
+      var rows = window.FrameSources.all().map(function (item) { return [item.id, item.name, sourceStatus(item), sourceIcon(item)]; });
+      rows.push(['scan', 'Check connections', sourceScan.loading ? 'Checking…' : 'Read connected HDMI inputs']);
+      setHTML(el.list, sourceRowsHtml(rows, t.f.i)); setHTML(el.status, esc(sourceScan.text));
+    },
+    sourceEdit: function (t, el) {
+      var item = window.FrameSources.all().filter(function (entry) { return entry.id === t.sourceId; })[0];
+      setHTML(el.title, esc(item.name)); setHTML(el.list, sourceRowsHtml(sourceEditRows(item), t.f.i));
+      setHTML(el.status, item.type === 'AUDIO' ? 'This shortcut cannot select the soundbar yet. HDMI source switching changes the picture, not the audio output.' : 'The icon and name are yours to choose; Connection determines which input opens.');
+    },
+    sourceName: function (t, el) {
+      var input = $('sourceNameInput');
+      input.className = t.f.i === 0 ? 'is-focus' : '';
+      input.setAttribute('data-action', 'source.name.input');
+      input.setAttribute('data-z', 'name'); input.setAttribute('data-i', '0');
+      setHTML(el.buttons, [['save', 'Save'], ['cancel', 'Cancel']].map(function (entry, i) {
+        return '<button class="btn' + (t.f.i === i + 1 ? ' is-focus' : '') + '" data-z="name" data-i="' + (i + 1) + '" data-action="source.name.' + entry[0] + '">' + entry[1] + '</button>';
+      }).join(''));
+    },
     apps: function (t, el) {
       var f = t.f, items = appsItems(), n = items.length, rows = Math.ceil(n / COLS), vis = 3, row = Math.floor(f.i / COLS);
       setHTML(el.title, 'All apps');
@@ -1835,6 +1996,14 @@
   var heldKeys = {};
   document.addEventListener('keydown', function (ev) {
     var code = ev.keyCode, k = KEYS[code];
+    if (ev.target.id === 'sourceNameInput') {
+      // Keep letters, cursor keys and Backspace with the TV keyboard/text input.
+      if (code === 13 || code === 65376 || code === 27 || code === 10009) {
+        ev.preventDefault(); heldKeys[code] = true;
+        if (top().id === 'sourceName') { top().f.i = code === 13 || code === 65376 ? 1 : 0; focusStage(); render(); }
+      }
+      return;
+    }
     if (code === 9) { ev.preventDefault(); return; }
     if (!k || ev.metaKey || ev.ctrlKey || ev.altKey) return;
     ev.preventDefault();
@@ -1860,6 +2029,7 @@
   QA.state = function () {
     var out = serialise(S.c), t = top(), item = t.id === 'appearance' ? detailLocation(t).item : null;
     out.committed = S.c; out.shown = S.shown; out.pending = S.pending; out.view = t.id; out.selected = S.sel;
+    out.sources = window.FrameSources.all();
     out.focusAction = focusedAction(); out.writes = S.writes; out.failedWrites = S.failed; out.error = S.err;
     out.catalog = { loading: catalog.loading, loaded: catalog.loaded, error: catalog.error, ids: ALPHA.slice() };
     out.fonts = { available: LOOK_VALUES.font.slice(), loaded: Object.keys(fontMetrics).filter(function (id) { return !fontMetrics[id].fallback; }), baselineFallback: !!(fontMetrics.manrope && fontMetrics.manrope.fallback), error: S.lookError && S.lookError.type === 'font' ? S.lookError : null };

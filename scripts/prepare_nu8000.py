@@ -12,8 +12,8 @@ from private_files import check_widget
 
 def load_config(path):
     config = json.loads(Path(path).read_text(encoding='utf-8-sig'))
-    if not isinstance(config, dict) or set(config) - {'package_id', 'app_id', 'selection'}:
-        raise ValueError('Use only package_id, app_id and optional selection in the local config.')
+    if not isinstance(config, dict) or set(config) - {'package_id', 'app_id', 'selection', 'sources'}:
+        raise ValueError('Use only package_id, app_id and optional selection/sources in the local config.')
     identity = {key: config.get(key) for key in ('package_id', 'app_id')}
     validate_identity(identity)
     selection = config.get('selection', {
@@ -33,10 +33,25 @@ def load_config(path):
             or not all(isinstance(record.get(key), str) and record[key] for key in ('id', 'appId', 'name'))
             for record in records):
         raise ValueError('App records need only id, appId and name strings.')
-    return identity, {'home': home, 'appRecords': records}
+    sources = config.get('sources')
+    if sources is not None:
+        if not isinstance(sources, list) or len(sources) > 6:
+            raise ValueError('Sources must be a list of up to six shortcuts.')
+        seen = set()
+        for item in sources:
+            if (not isinstance(item, dict) or set(item) - {'id', 'name', 'icon', 'number', 'visible'}
+                    or item.get('id') not in {'tv', 'hdmi1', 'hdmi2', 'hdmi3', 'hdmi4', 'audio'}
+                    or item['id'] in seen or not isinstance(item.get('name'), str)
+                    or not 1 <= len(item['name']) <= 24
+                    or item.get('icon') not in {'tv', 'hdmi', 'xbox', 'console', 'soundbar'}
+                    or type(item.get('number')) is not int or not 0 <= item['number'] <= 4
+                    or type(item.get('visible')) is not bool):
+                raise ValueError('Invalid source shortcut.')
+            seen.add(item['id'])
+    return identity, {'home': home, 'appRecords': records}, sources
 
 
-def adapt(files, selection):
+def adapt(files, selection, sources=None):
     files = dict(files)
 
     def change(name, old, new):
@@ -48,8 +63,6 @@ def adapt(files, selection):
     change('config.xml', 'required_version="6.5"', 'required_version="4.0"')
     for name in ('main.js', 'device.js'):
         change(name, 'org.tizen.primevideo', 'evKhCgZelL.AmazonIgnitionLauncher2')
-    change('main.js', "art: ['Art Mode', 'art']", "art: ['Live TV', 'art']")
-    change('main.js', "perform('Art Mode', FrameDevice.art)", "perform('Live TV', FrameDevice.art)")
     device = files['device.js'].decode('utf-8')
     start_marker, end_marker = '  function art(done) {', '  function home(done) {'
     if device.count(start_marker) != 1 or device.count(end_marker) != 1:
@@ -70,11 +83,17 @@ def adapt(files, selection):
                              + seed + ")); } catch (error) {} }());\n").encode('utf-8')
     change('index.html', '<script src="main.js"></script>',
            '<script src="first-run.js"></script>\n<script src="main.js"></script>')
+    if sources is not None:
+        source_seed = json.dumps(sources, ensure_ascii=True).replace('<', '\\u003c')
+        files['source-first-run.js'] = ("(function () { 'use strict'; try { if (!localStorage.getItem('cleanframe.sources.v1')) localStorage.setItem('cleanframe.sources.v1', JSON.stringify("
+                                        + source_seed + ")); } catch (error) {} }());\n").encode('utf-8')
+        change('index.html', '<script src="sources.js"></script>',
+               '<script src="source-first-run.js"></script>\n<script src="sources.js"></script>')
     return files
 
 
 def build(config_path, root=ROOT):
-    identity, selection = load_config(config_path)
+    identity, selection, sources = load_config(config_path)
     local = root / '.local'
     local.mkdir(exist_ok=True)
     # A fresh folder avoids stale signatures and preserves every earlier build.
@@ -82,7 +101,7 @@ def build(config_path, root=ROOT):
     baseline = output / 'baseline-unsigned.wgt'
     write_widget_archive(baseline, root=root, include_private=False, identity=identity)
     with zipfile.ZipFile(baseline) as archive:
-        files = adapt({name: archive.read(name) for name in archive.namelist()}, selection)
+        files = adapt({name: archive.read(name) for name in archive.namelist()}, selection, sources)
     for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):
         files[name] = (root / name).read_bytes()
     stage, target = output / 'stage', output / 'CleanFrame-NU8000-unsigned.wgt'

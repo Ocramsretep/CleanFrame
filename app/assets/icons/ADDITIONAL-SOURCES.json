@@ -1,5 +1,11 @@
 [
   {
+    "icon": "xbox",
+    "source": "https://github.com/FortAwesome/Font-Awesome/blob/6.7.2/svgs/brands/xbox.svg",
+    "licence": "CC-BY-4.0",
+    "note": "Font Awesome Free 6.7.2, Copyright 2024 Fonticons, Inc. Shape unchanged; white fill. Licence in FONT-AWESOME-LICENSE.txt."
+  },
+  {
     "icon": "spotify",
     "source": "https://github.com/simple-icons/simple-icons/blob/develop/icons/spotify.svg",
     "licence": "CC0-1.0",

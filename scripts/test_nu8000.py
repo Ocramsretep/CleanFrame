@@ -42,7 +42,7 @@ class NU8000Tests(unittest.TestCase):
         self.assertIn(b'org.tizen.tv-viewer', self.files['device.js'])
         self.assertIn(b'evKhCgZelL.AmazonIgnitionLauncher2', self.files['main.js'])
         self.assertIn(b'org.tizen.menu', self.files['device.js'])
-        self.assertIn(b'Live TV', self.files['main.js'])
+        self.assertIn(b'Live TV', self.files['sources.js'])
 
     def test_seed_preserves_current_and_legacy_preferences(self):
         code = r"""
@@ -67,6 +67,27 @@ vm.runInNewContext(input.source, {localStorage: {getItem: () => {throw Error('de
     def test_upstream_drift_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'Upstream source changed'):
             adapt({'config.xml': b'<different />'}, self.selection)
+
+    def test_source_seed_is_separate_and_never_overwrites_saved_choices(self):
+        # Use the baseline; adapt deliberately rejects double application.
+        baseline = Path(self.report['stage']).parent / 'baseline-unsigned.wgt'
+        sources = [{'id': 'hdmi1', 'name': 'Console', 'icon': 'console', 'number': 1, 'visible': True}]
+        with zipfile.ZipFile(baseline) as archive:
+            files = adapt({name: archive.read(name) for name in archive.namelist()}, self.selection, sources)
+        self.assertLess(files['index.html'].index(b'source-first-run.js'), files['index.html'].index(b'src="sources.js"'))
+        code = r"""
+const vm = require('node:vm'), assert = require('node:assert/strict');
+const source = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
+for (const existing of [false, true]) {
+  const saved = {'cleanframe.home.v1':'unchanged apps'};
+  if (existing) saved['cleanframe.sources.v1']='saved sources';
+  vm.runInNewContext(source,{localStorage:{getItem:k=>saved[k],setItem:(k,v)=>{saved[k]=v;}}});
+  assert.equal(saved['cleanframe.home.v1'],'unchanged apps');
+  if (existing) assert.equal(saved['cleanframe.sources.v1'],'saved sources');
+  else assert.equal(JSON.parse(saved['cleanframe.sources.v1'])[0].name,'Console');
+}
+"""
+        subprocess.run(['node', '-e', code], input=json.dumps(files['source-first-run.js'].decode()), text=True, check=True)
 
     def test_local_config_rejects_secrets_and_invalid_identity(self):
         invalid = self.folder / 'invalid.json'

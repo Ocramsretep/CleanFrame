@@ -300,7 +300,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 
 /* Settings overview: each group carries one short, committed summary. */
 .settings-overview{position:absolute;left:112px;top:212px;width:1056px}
-.settings-group{width:100%;height:112px;padding:12px 32px 12px 28px;border-radius:20px;display:flex;align-items:center;justify-content:space-between;color:var(--ink);transition:background-color 140ms linear,color 140ms linear}
+.settings-group{width:100%;height:96px;padding:8px 32px 8px 28px;border-radius:20px;display:flex;align-items:center;justify-content:space-between;color:var(--ink);transition:background-color 140ms linear,color 140ms linear}
 .settings-group+.settings-group{margin-top:8px}
 .settings-group-copy{min-width:0;display:flex;flex-direction:column}
 .settings-group-name{font-size:40px;line-height:48px;font-weight:500;letter-spacing:-.6px}
@@ -633,3 +633,41 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .l-list .quiet-utils.is-text .u-content>*+*{margin-left:0;margin-right:0}
 .quiet-utils.is-text .u-content>*+*{margin-left:0}
 .l-list .quiet-utils.is-text .u .u-content>*+*{margin-right:0}
+/* Sources popup follows its Home control; no runtime blur. */
+.source-menu{position:absolute;width:440px;padding:16px;border-radius:32px;background:#18272d;color:var(--ink);z-index:10;font-family:var(--font-ui-family),sans-serif;font-weight:var(--font-ui-weight)}
+.source-menu-material{position:absolute;top:0;right:0;bottom:0;left:0;overflow:hidden;border-radius:inherit;pointer-events:none}
+.source-menu-material::after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.24)}
+.source-menu-material>img{position:absolute;width:1920px;height:1080px;max-width:none;opacity:.92}
+.source-menu-veil{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(8,14,18,.38)}
+.m-frost .source-menu-veil{background:rgba(12,10,8,.38)}
+.m-tint .source-menu-veil{background:rgba(8,14,18,.46)}
+.source-menu-content{position:relative}
+.bg-light .source-menu,.bg-dark .source-menu{background:var(--ground,#0d0d0d)}
+.bg-light .source-menu-material,.bg-dark .source-menu-material{display:none}
+.bg-light .source-menu,.bg-dark .source-menu{box-shadow:0 0 0 1px var(--line)}
+.source-menu[hidden]{display:none}
+.source-menu-title{margin:4px 18px 12px;font-size:22px;line-height:30px;opacity:.65}
+.source-menu-empty{margin:16px 18px;font-size:24px;line-height:32px}
+.source-button{width:100%;height:76px;padding:12px 18px;border-radius:20px;color:inherit;display:flex;align-items:center;text-align:left;font-size:28px;line-height:36px}
+.source-button+.source-button{margin-top:4px}
+.source-button>.ico,.source-button>.mark{width:42px;height:42px;flex-shrink:0;margin-right:20px}
+.source-button>span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.source-button.is-focus{background:var(--plate);box-shadow:var(--plate-edge)}
+.m-frost .source-button.is-focus{background:linear-gradient(170deg,rgba(255,255,255,.26),rgba(255,255,255,.08) 58%,rgba(255,255,255,.10))}
+.f-type .source-button{opacity:.62}
+.f-type .source-button.is-focus{background:none;box-shadow:none;opacity:1;transform:scale(1.04)}
+.bg-photo.f-type .source-button{opacity:.84}
+.bg-photo.f-type .source-button.is-focus{opacity:1}
+.source-configure{margin-top:14px!important;border-top:1px solid rgba(255,255,255,.22);font-size:24px}
+.source-settings-list{position:absolute;left:112px;right:112px;top:242px}
+.source-setting{display:flex;align-items:center;width:100%;height:86px;padding:12px 28px;border-radius:16px;color:var(--ink);font-size:30px;text-align:left}
+.source-setting+.source-setting{margin-top:6px}
+.source-setting.is-focus{background:var(--solid);color:var(--solid-ink)}
+.source-setting>.ico,.source-setting>.mark{width:42px;height:42px;flex-shrink:0;margin-right:24px}
+.source-setting-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:24px}
+.source-setting-value{font-size:26px;opacity:.75}
+.source-status{position:absolute;left:140px;right:140px;top:920px;font-size:24px;line-height:32px;color:var(--mute)}
+.source-name{position:absolute;left:140px;top:300px;width:1000px}
+.source-name input{width:100%;padding:22px 24px;border:2px solid var(--mute);border-radius:16px;font:40px Manrope;color:var(--ink);background:transparent}
+.source-name input.is-focus,.source-name input:focus{border-color:var(--ink);outline:none}
+.source-name .btn{margin:40px 20px 0 0;position:relative}

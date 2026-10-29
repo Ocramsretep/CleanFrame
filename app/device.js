@@ -35,6 +35,7 @@
   function bounded(done, timeout) {
     var finished = false, timer = setTimeout(function () { finish({ message: 'The TV did not respond. Please try again.' }); }, timeout || 8000);
     function finish(err, value) { if (finished) return; finished = true; clearTimeout(timer); done(err, value); }
+    finish.pending = function () { return !finished; };
     return finish;
   }
   function launchApp(id, done) {
@@ -58,6 +59,52 @@
   }
   function home(done) { launchApp('com.samsung.tv.csfs', done); }
   function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }
+  // Source discovery/viewer flow informed by scottheinrich91's CleanFrame PR #14.
+  // Use reported source objects, synchronous getSource, and propagate failures.
+  function videoSources(done) {
+    var tv = window.tizen, finish = bounded(done);
+    if (!tv || !tv.systeminfo || !tv.tvwindow) { unavailable(finish); return; }
+    try {
+      tv.systeminfo.getPropertyValue('VIDEOSOURCE', function (video) {
+        if (!finish.pending()) return;
+        var current = null, currentError = null, result = [];
+        try { current = tv.tvwindow.getSource(); } catch (err) { currentError = failure(err); }
+        ['connected', 'disconnected'].forEach(function (group) {
+          (video[group] || []).forEach(function (item) {
+            if (item.type !== 'HDMI' && item.type !== 'TV') return;
+            result.push({ type: item.type, number: item.number, connected: group === 'connected',
+              active: !!current && current.type === item.type && current.number === item.number });
+          });
+        });
+        finish(null, { sources: result, currentError: currentError });
+      }, function (err) { finish(failure(err)); });
+    } catch (err) { finish(failure(err)); }
+  }
+  function setSource(type, number, done) {
+    var tv = window.tizen, finish = bounded(done);
+    if (!tv || !tv.systeminfo || !tv.tvwindow || !api()) { unavailable(finish); return; }
+    if ((type !== 'HDMI' && type !== 'TV') || typeof number !== 'number' || number < 0 || number % 1) {
+      finish({ message: 'Choose a TV connection in Settings > Sources first.' }); return;
+    }
+    try {
+      tv.systeminfo.getPropertyValue('VIDEOSOURCE', function (video) {
+        if (!finish.pending()) return;
+        var target = null;
+        (video.connected || []).concat(video.disconnected || []).forEach(function (item) {
+          if (item.type === type && (type === 'TV' || item.number === number)) target = item;
+        });
+        if (!target) { finish({ message: 'This connection was not reported by the TV.', detail: 'Check Settings > Sources and the cable connection.' }); return; }
+        try {
+          tv.tvwindow.setSource(target, function () {
+            if (!finish.pending()) return;
+            try {
+              api().launch('org.tizen.tv-viewer', function () { finish(null); }, function (err) { finish(failure(err)); });
+            } catch (err) { finish(failure(err)); }
+          }, function (err) { finish(failure(err)); });
+        } catch (err) { finish(failure(err)); }
+      }, function (err) { finish(failure(err)); });
+    } catch (err) { finish(failure(err)); }
+  }
   function apps(done) {
     if (!api()) { unavailable(done); return; }
     // Large installed catalogues can take longer than a launch response.
@@ -80,5 +127,5 @@
       }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
-  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, apps: apps };
+  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, apps: apps, videoSources: videoSources, setSource: setSource };
 }());
