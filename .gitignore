@@ -23,6 +23,15 @@ certificate-password.txt
 /device.json
 /certificates/
 
+# Personal TV selections stay local even when copied out of .local/.
+/nu8000.json
+/home-selection.json
+/source-selection.json
+
+# Local IntelliJ IDEA workspace metadata.
+/.idea/
+*.iml
+
 # Native helper builds can contain local paths and must stay private.
 /scripts/native-home/bin/
 /scripts/native-home/obj/
