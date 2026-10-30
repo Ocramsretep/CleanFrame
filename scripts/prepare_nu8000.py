@@ -79,9 +79,19 @@ def adapt(files, selection, sources=None):
     files['device.js'] = (device[:start]
                          + "  function art(done) { launchApp('org.tizen.tv-viewer', done); }\n"
                          + device[end:]).encode('utf-8')
-    # Preserve the installed adaptation, including its documented unresolved defect.
-    # Presence in the app catalogue does NOT establish a supported settings route.
-    change('device.js', 'com.samsung.tv.coba.setting', 'org.tizen.menu')
+    # On this TV, a plain launch of org.tizen.menu steals focus without showing
+    # its UI. The explicit Settings app control was visually verified on device.
+    change('device.js',
+           "  function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }",
+           "  function settings(done) {\n"
+           "    if (!api()) { unavailable(done); return; }\n"
+           "    var finish = bounded(done);\n"
+           "    try {\n"
+           "      var control = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/setting');\n"
+           "      api().launchAppControl(control, 'org.tizen.menu', function () { finish(null); },\n"
+           "        function (err) { finish(failure(err)); });\n"
+           "    } catch (err) { finish(failure(err)); }\n"
+           "  }")
     change('device.js', 'press the remote’s Home button to return to CleanFrame.',
            'press the remote’s Home button to return to Samsung Home.')
     seed = json.dumps(selection, ensure_ascii=True).replace('<', '\\u003c')
@@ -122,7 +132,7 @@ def build(config_path, root=ROOT, include_online_keys=False):
     check_widget(target)
     report = dict(identity, stage=str(stage), widget=str(target), minimum_tizen='4.0',
                   signed=False, installed=False, native_home_changed=False,
-                  known_issue='TV settings can block directional input until Back; see docs/nu8000.md.')
+                  settings_route='Explicit Tizen settings app control to org.tizen.menu; see docs/nu8000.md.')
     (output / 'build.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     return report
 

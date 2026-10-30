@@ -43,6 +43,8 @@ class NU8000Tests(unittest.TestCase):
         self.assertIn(b'org.tizen.tv-viewer', self.files['device.js'])
         self.assertIn(b'evKhCgZelL.AmazonIgnitionLauncher2', self.files['main.js'])
         self.assertIn(b'org.tizen.menu', self.files['device.js'])
+        self.assertIn(b"http://tizen.org/appcontrol/operation/setting", self.files['device.js'])
+        self.assertIn(b"launchAppControl(control, 'org.tizen.menu'", self.files['device.js'])
         self.assertIn(b'Live TV', self.files['sources.js'])
 
     def test_seed_preserves_current_and_legacy_preferences(self):
@@ -138,6 +140,38 @@ for (const existing of [false, true]) {
 }
 """
         subprocess.run(['node', '-e', code], input=json.dumps(files['source-first-run.js'].decode()), text=True, check=True)
+
+    def test_tv_settings_uses_explicit_app_control_and_reports_failures(self):
+        code = r"""
+const vm = require('node:vm'), assert = require('node:assert/strict');
+const source = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
+const calls = [], timers = new Map(); let next = 0;
+function ApplicationControl(operation) { this.operation = operation; }
+const application = { launchAppControl: (control, id, ok, fail) => calls.push({control, id, ok, fail}) };
+const window = {tizen: {application}};
+vm.runInNewContext(source, {window, tizen: {ApplicationControl},
+  setTimeout: (fn, ms) => {timers.set(++next, {fn, ms}); return next;},
+  clearTimeout: id => timers.delete(id)
+});
+const settings = window.FrameDevice.settings;
+let replies = [];
+settings(err => replies.push(err));
+assert.equal(calls.length, 1);
+assert.equal(calls[0].id, 'org.tizen.menu');
+assert.equal(calls[0].control.operation, 'http://tizen.org/appcontrol/operation/setting');
+calls[0].ok(); calls[0].fail({name:'LateError'});
+assert.deepEqual(replies, [null]);
+settings(err => replies.push(err));
+calls[1].fail({name:'SecurityError', message:'Denied'});
+assert.equal(replies[1].detail, 'Denied');
+settings(err => replies.push(err));
+assert.equal([...timers.values()].at(-1).ms, 8000);
+[...timers.values()].at(-1).fn(); calls[2].ok();
+assert.match(replies[2].message, /did not respond/);
+assert.equal(replies.length, 3);
+"""
+        subprocess.run(['node', '-e', code],
+                       input=json.dumps(self.files['device.js'].decode()), text=True, check=True)
 
     def test_local_config_rejects_secrets_and_invalid_identity(self):
         invalid = self.folder / 'invalid.json'
