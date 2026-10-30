@@ -155,6 +155,10 @@
       "name": "SmartThings"
     },
     {
+      "id": "twitch-framed",
+      "name": "SmartTV Twitch"
+    },
+    {
       "id": "sportworld",
       "name": "Sportworld"
     },
@@ -235,6 +239,7 @@
     "UCJa2s9hhC.TED": "ted",
     "9FhM0cODbY.TikTokTV": "tiktok",
     "Jz7aUrV2Q4.Twitch": "twitch",
+    "2ulZzjRf8f.SmartTV": "twitch-framed",
     "Mo5FtpAjGy.Skyonline": "wow",
     "9Ur5IzDKqV.TizenYouTube": "youtube",
     "com.samsung.tv.cobalt-yt": "youtube",

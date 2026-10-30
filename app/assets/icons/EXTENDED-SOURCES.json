@@ -338,5 +338,17 @@
     "file": "tvplus.svg",
     "checked": "2026-10-30",
     "sha256": "865cdc17a169cf73f03cb64159d259f45f79746d21ee21655b0e22dd1c818f65"
+  },
+  {
+    "id": "twitch-framed",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/twitch.svg",
+    "adaptation": "White Twitch mark, uniformly scaled inside an original square outline to distinguish SmartTV Twitch in CleanFrame; not an official client logo.",
+    "file": "twitch-framed.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://brand.twitch.tv",
+    "brand_guidelines": "https://brand.twitch.tv",
+    "sha256": "8dcf691da8da39024b8e13d44342125c2ae9e0479aad05e0b1d3a724072eb4fb"
   }
 ]

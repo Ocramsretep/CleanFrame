@@ -8,7 +8,7 @@ Prime uses the two smile subpaths, not clipped wordmark text. Apple Music uses t
 
 ## Extended icon assets
 
-`EXTENDED-SOURCES.json` records the 34 additional SVG assets, their provenance,
+`EXTENDED-SOURCES.json` records the 35 additional SVG assets, their provenance,
 adaptations and SHA-256 hashes. `app/app-icons.js` maps public native application
 IDs to bundled marks and supplies the Settings > App icons picker. Choices are
 stored by native app ID; Automatic restores the catalogue assignment. Unknown
@@ -26,6 +26,11 @@ retains the letters and plus, with the coloured background rectangles removed.
 alternatives under the project MIT licence, not official service logos.
 `cleanframe` traces the F from `app/icon.png` in white and adds a plain square
 frame; the original package icon is retained.
+
+Twitch uses the plain mark; SmartTV Twitch uses `twitch-framed`, the same mark
+inside an original square outline. They are assigned by native app ID, and each
+app's icon can be changed independently in Settings > App icons. The framed
+variant is a CleanFrame distinction, not an official SmartTV Twitch logo.
 
 Brand names and marks identify their respective services. Collection licences,
 public-domain source labels and the project's MIT licence do not waive brand
