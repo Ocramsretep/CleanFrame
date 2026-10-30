@@ -738,3 +738,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .detail-daily .setting-label{font-size:23px;line-height:28px;margin-bottom:8px}
 .detail-daily .setting-reason{font-size:22px;line-height:28px}
 .detail-daily .setting-tick{margin-left:auto}
+
+.detail-background .background-gear{flex:none;width:76px;min-width:76px;justify-content:center;padding:16px}
+.detail-background .background-gear .ico{width:32px;height:32px}
+.detail-background .setting-choice{font-size:32px}

@@ -17,7 +17,7 @@ Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps o
 
 | Group | Choices |
 | --- | --- |
-| Background | Photo, Daily pictures, Light, Dark; Wallpaper and Rotation for Photo; Online picture settings for Daily pictures |
+| Background | Local pictures and Online pictures; Right reaches each row’s settings gear, OK opens its submenu |
 | Layout | List or Dock; independent Text, Icons or Both choices for apps and Home controls; Dock background opacity |
 | Typography | Manrope, Neue Montreal, Mori, Pangram Sans, Geist and Newsreader, when available |
 | Focus | Type or Glass; Soft, Frost or Clear tint material; Standard, Glow, Underline or Light tile app highlight |
@@ -34,7 +34,7 @@ App highlight is shared by Dock and List, including Text, Icons and Both. Standa
 
 Layout's Dock background opacity slider ranges from 0% to 100% in 5% steps; 100% preserves the original material. It changes only the Dock background, leaving app marks, captions and focus indicators readable. It is available with Photo and Dock; List and flat backgrounds retain the value but disable the slider. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. Saved values survive layout changes and restart.
 
-A font or photo change applies only after its resources are ready and storage succeeds. A load or storage failure keeps the previous appearance and checkmark, with a Try again action. Back cancels a pending change, leaves the group and keeps completed changes. Late load callbacks cannot apply a cancelled choice. There is no Save button. Returning to a group restores its last choice focus; returning to Settings restores its category focus. Rotation is nested within Background, and Back returns to its Rotation row.
+A font or photo change applies only after its resources are ready and storage succeeds. A load or storage failure keeps the previous appearance and checkmark, with a Try again action. Back cancels a pending change, leaves the group and keeps completed changes. Late load callbacks cannot apply a cancelled choice. There is no Save button. Returning to a group restores its last choice focus; returning to Settings restores its category focus. Local pictures settings contains Wallpaper and Rotation. Online pictures settings contains source and sizing controls. Back returns to the originating gear; leaving Rotation returns to Local pictures.
 
 The selected font applies to Home app names, the clock and Home controls, including Newsreader. Settings, All apps, the Home editor and status text retain Manrope. The preview shows the committed Home appearance and its clock continues to update. Pangram faces are available in Nathan's private build when the local files are present; their binaries are not included in the public source. An unavailable optional face is omitted. If the baseline font is slow or missing, Home remains usable with a local fallback and can recover when the font loads.
 

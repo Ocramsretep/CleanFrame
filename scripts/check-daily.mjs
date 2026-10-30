@@ -42,6 +42,25 @@ try {
   assert.equal(requests.length, 0, 'Bundled backgrounds make no provider requests');
   assert.equal(await page.locator('#dailySkip').isVisible(), false);
   assert.equal((await state()).options.sources.bing, false);
+  await page.evaluate(() => ShoreQA.scene('settings'));
+  await act('settings.group.background');
+  assert.equal(await page.locator('[data-action="choice.bg.light"]').count(), 0);
+  assert.equal(await page.locator('[data-action="choice.bg.dark"]').count(), 0);
+  assert.match(await page.locator('[data-action="choice.bg.photo"]').innerText(), /Local pictures/);
+  await page.evaluate(() => ShoreQA.nav('right'));
+  assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'background.local');
+  await page.evaluate(() => ShoreQA.nav('ok'));
+  assert.equal(await page.locator('[data-action="background.wallpaper"]').isVisible(), true);
+  await page.evaluate(() => ShoreQA.nav('back'));
+  assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'background.local');
+  await page.evaluate(() => ShoreQA.nav('down'));
+  assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'background.daily');
+  await page.evaluate(() => ShoreQA.nav('ok', 'back'));
+  assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'background.daily');
+  mkdirSync(root + '.local/qa', { recursive: true });
+  await page.screenshot({path:root + '.local/qa/background-types.png'});
+  await page.evaluate(() => ShoreQA.scene('home'));
+
   await page.evaluate(() => ShoreQA.look({ bg: 'daily' })); await ready();
   await page.waitForFunction(() => CleanFrameDaily.view().current && CleanFrameDaily.view().count >= 5);
   assert.equal(await page.locator('#dailySkip').isVisible(), true);

@@ -1,8 +1,8 @@
 # Daily online pictures
 
-Background > Daily pictures adds a calendar-day rotation alongside Photo, Light
-and Dark. Online picture settings selects sources and picture sizing. The old
-bundled wallpaper and its rotation preferences remain available under Photo.
+Background offers Local pictures and Online pictures. Right reaches each entry’s
+settings gear; OK opens its submenu. Online pictures settings selects sources and
+picture sizing. Local pictures settings contains Wallpaper and Rotation.
 
 The first ready picture appears on Home. Thereafter the local calendar date
 selects one new picture per day, including after standby or an offline restart.

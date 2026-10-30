@@ -125,7 +125,7 @@ const stored = () => current.evaluate(key => JSON.parse(localStorage.getItem(key
 const call = (method, ...args) => current.evaluate(([m, a]) => ShoreQA[m](...a), [method, args]);
 const ready = () => current.waitForFunction(() => window.ShoreQA && typeof ShoreQA.ready === 'function' && ShoreQA.ready(), null, { timeout: 15000 });
 const nav = (...keys) => call('nav', keys);
-async function act(action) { const result = await call('activate', action); if (result === null || result === false) throw Error('Action unavailable: ' + action); return result; }
+async function act(action) { if (['background.wallpaper', 'background.rotation'].includes(action) && (await state()).settingsGroup === 'background') await call('activate', 'background.local'); const result = await call('activate', action); if (result === null || result === false) throw Error('Action unavailable: ' + action); return result; }
 async function scene(name) { await call('scene', name); await current.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); }
 async function look(patch) { await call('look', patch); await ready(); }
 async function group(name) {
@@ -597,7 +597,7 @@ try {
     const expected = ['settings.group.background', 'settings.group.layout', 'settings.group.typography', 'settings.group.focus', 'settings.editor', 'settings.group.icons', 'settings.group.sources', 'settings.group.samsung'];
     check('Overview has all eight settings groups', same((await call('actions')).sort(), expected.slice().sort()));
     const specs = {
-      background: { bg: ['dark', 'light', 'photo', 'daily'] },
+      background: { bg: ['photo', 'daily'] },
       layout: { layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], controls: ['icons', 'both', 'text'] },
       typography: { font: (await state()).fonts.available },
       focus: { focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] }
@@ -616,12 +616,12 @@ try {
     }
     await group('background');
     const backgroundActions = await call('actions');
-    check('Photo tools are reachable from Background', backgroundActions.includes('background.wallpaper') && backgroundActions.includes('background.rotation'), backgroundActions);
+    check('Photo tools are reachable from Background', backgroundActions.includes('background.local') && backgroundActions.includes('background.daily'), backgroundActions);
     await act('background.rotation');
     const rotationRows = await radios();
     check('All five rotation modes are visible together', same(rotationRows.map(r => r.action).sort(), ['fixed', 'open', '5', '15', '60'].map(v => 'rotation.' + v).sort()), rotationRows);
     await nav('back');
-    check('Rotation Back restores its Background row', (await state()).settingsGroup === 'background' && (await state()).focusAction === 'background.rotation', await call('where'));
+    check('Rotation Back restores its Background row', (await state()).settingsGroup === 'local' && (await state()).focusAction === 'background.rotation', await call('where'));
     await group('samsung');
     const samsungActions = await call('actions');
     check('Samsung group shows both native actions', samsungActions.includes('samsung.home') && samsungActions.includes('samsung.settings'));
@@ -803,7 +803,7 @@ try {
     await group('background'); await act('background.rotation'); const before = await settingsSnapshot();
     await nav('down', 'down', 'up', 'right', 'left');
     check('Rotation arrows do not save a mode', same(await settingsSnapshot(), before));
-    await nav('back'); check('Unconfirmed Rotation choice is cancelled', same(await settingsSnapshot(), before) && (await state()).settingsGroup === 'background');
+    await nav('back'); check('Unconfirmed Rotation choice is cancelled', same(await settingsSnapshot(), before) && (await state()).settingsGroup === 'local');
   });
   await run('Settings on-screen Back preserves choice focus', async () => {
     await page(); await group('layout'); const before = await settingsSnapshot();
@@ -819,7 +819,7 @@ try {
   await run('Settings OK applies explicit choices atomically', async () => {
     await page();
     const specs = [
-      ['background', 'bg', ['dark', 'light', 'photo']],
+      ['background', 'bg', ['daily', 'photo']],
       ['layout', 'layout', ['list', 'dock']],
       ['layout', 'apps', ['icons', 'text', 'both']],
       ['layout', 'controls', ['text', 'both', 'icons']],
@@ -838,7 +838,7 @@ try {
         const untouched = { ...after.committed, [axis]: before.committed[axis] };
         const prefix = { bg: 'bg', layout: 'l', apps: 'a', controls: 'u', focus: 'f', material: 'm', font: 'font' }[axis];
         const shown = !Object.hasOwn(after.shown, axis) || after.shown[axis] === value;
-        check(axis + ' OK applies ' + value + ' once', after.committed[axis] === value && shown && after.rendered.includes(prefix + '-' + value) && same(untouched, before.committed) && expectedWrites === after.writes && after.storageAttempts - before.storageAttempts === expectedWrites - before.writes && rows.some(r => r.action === 'choice.' + axis + '.' + value && r.checked === 'true'), { before, after, rows });
+        check(axis + ' OK applies ' + value + ' once', after.committed[axis] === value && shown && after.rendered.includes(prefix + '-' + (axis === 'bg' && value === 'daily' ? 'photo' : value)) && same(untouched, before.committed) && expectedWrites === after.writes && after.storageAttempts - before.storageAttempts === expectedWrites - before.writes && rows.some(r => r.action === 'choice.' + axis + '.' + value && r.checked === 'true'), { before, after, rows });
       }
       const applied = await settingsSnapshot(); await nav('back');
       check(axis + ' applied choice survives Back', same(await settingsSnapshot(), applied) && (await state()).focusAction === 'settings.group.' + name);
@@ -880,22 +880,22 @@ try {
   await run('Settings inactive photo tools retain wallpaper preferences', async () => {
     await page();
     for (const bg of ['dark', 'light']) {
-      await look({ bg }); await group('background'); const before = await settingsSnapshot();
+      await look({ bg }); await group('background'); await act('background.local'); const before = await settingsSnapshot();
       for (const action of ['background.wallpaper', 'background.rotation']) {
         check(bg + ' marks ' + action + ' inactive', await current.locator('[data-action="' + action + '"]').getAttribute('aria-disabled') === 'true');
         const focusBefore = (await state()).focusAction;
         await current.locator('[data-action="' + action + '"]').click({ force: true });
-        check('Inactive ' + action + ' ignores pointer focus and keeps preferences', same(await settingsSnapshot(), before) && (await state()).settingsGroup === 'background' && (await state()).focusAction === focusBefore);
+        check('Inactive ' + action + ' ignores pointer focus and keeps preferences', same(await settingsSnapshot(), before) && (await state()).settingsGroup === 'local' && (await state()).focusAction === focusBefore);
       }
       await walkEnabledChoices();
       check(bg + ' remote navigation skips inactive photo tools', same(await settingsSnapshot(), before));
       const reason = await current.locator('.setting-reason:visible').allTextContents();
-      check(bg + ' explains how to enable photo tools', reason.some(text => /photo/i.test(text) && /wallpaper|rotation/i.test(text)), reason);
+      check(bg + ' explains how to enable photo tools', reason.some(text => /Local pictures/i.test(text)), reason);
     }
   });
   await run('Settings normalises remembered inactive focus', async () => {
     await page(); await group('focus'); await choice('material', 'tint'); await ready();
-    await nav('back'); await act('settings.group.background'); await choice('bg', 'dark'); await ready();
+    await nav('back'); await act('settings.group.background'); await look({ bg: 'dark' }); await ready();
     await nav('back'); await act('settings.group.focus');
     const focus = await focusedChoice();
     check('Inactive remembered Material returns to an enabled focus choice', focus && !focus.disabled && focus.action.startsWith('choice.focus.'), focus);
@@ -908,8 +908,8 @@ try {
     await current.locator('[data-action="rotation.5"]').click({ force: true });
     check('Inactive Rotation ignores pointer clicks', (await state()).focusAction === 'settings.back' && same(await settingsSnapshot(), before));
     await nav('back');
-    const returned = await focusedChoice();
-    check('Rotation Back skips its now-inactive Background row', (await state()).settingsGroup === 'background' && returned && !returned.disabled && returned.action.startsWith('choice.bg.'), returned);
+    const returned = await state();
+    check('Rotation Back skips its now-inactive Local pictures row', returned.settingsGroup === 'local' && returned.focusAction === 'settings.back', returned.focusAction);
   });
   await run('Settings Back cancels pending assets and late callbacks', async () => {
     await page(); await group('focus'); const before = await settingsSnapshot();
@@ -954,12 +954,12 @@ try {
     await current.unroute('**/*-field-frost.jpg'); await act('settings.retry'); await ready();
     check('Retry applies the same failed choice', (await state()).look.material === 'frost' && (await state()).shown.material === 'frost' && (await state()).writes === original.writes + 1);
     await group('background'); const before = await settingsSnapshot();
-    await current.evaluate(() => { __failWrites = true; }); await choice('bg', 'light');
+    await current.evaluate(() => { __failWrites = true; }); await choice('bg', 'daily');
     await current.waitForFunction(() => !ShoreQA.state().pending);
     const failed = await settingsSnapshot();
     check('Failed choice write keeps the committed radio and preview', same(failed.committed, before.committed) && same(failed.shown, before.shown) && failed.stored === before.stored && failed.writes === before.writes && (await radios()).some(r => r.action === 'choice.bg.photo' && r.checked === 'true'));
     await current.evaluate(() => { __failWrites = false; }); await act('settings.retry'); await ready();
-    check('Storage Retry applies once through the explicit choice', (await state()).look.bg === 'light' && (await state()).shown.bg === 'light' && (await state()).writes === before.writes + 1);
+    check('Storage Retry applies once through the explicit choice', (await state()).look.bg === 'daily' && (await state()).shown.bg === 'daily' && (await state()).writes === before.writes + 1);
   });
   await run('Settings choices fit both target viewports', async () => {
     await page();
@@ -996,7 +996,7 @@ try {
     await nav('down'); await wallpaperSettled(walls[1].id);
     check('Preview leaves saved photo unchanged', (await stored()).wallpaper === original);
     await nav('back'); await ready(); check('Back restores committed photo', (await state()).shown.wall === original);
-    check('Wallpaper Back returns to its Background row', (await state()).settingsGroup === 'background' && (await state()).focusAction === 'background.wallpaper');
+    check('Wallpaper Back returns to its Background row', (await state()).settingsGroup === 'local' && (await state()).focusAction === 'background.wallpaper');
     await scene('home'); const target = walls.find(w => w.id !== original && w.id !== walls[1].id).id;
     current.__expectedFailures.push('/' + target + '-');
     await current.route('**/*' + target + '-*.jpg', route => route.abort('failed'));
@@ -1026,7 +1026,7 @@ try {
       check('Applied tick stays separate from preview focus ' + layout + '/' + width, same(await wallpaperApplied(), ['wallpaper.choose.' + before.committed.wall]) && (await state()).focusAction === 'wallpaper.choose.' + walls[2].id && (await state()).shown.wall === walls[2].id && (await call('where')).focusCount === 1);
       await current.screenshot({ path: out + 'wallpaper-' + layout + '-' + width + '.jpg', quality: 90 });
       await nav('back'); await ready();
-      check('Wallpaper Back restores its Background row ' + layout + '/' + width, (await state()).settingsGroup === 'background' && (await state()).focusAction === 'background.wallpaper' && (await state()).shown.wall === before.committed.wall && same(await previewFrame(), frame));
+      check('Wallpaper Back restores its Background row ' + layout + '/' + width, (await state()).settingsGroup === 'local' && (await state()).focusAction === 'background.wallpaper' && (await state()).shown.wall === before.committed.wall && same(await previewFrame(), frame));
     }
   });
   await run('Wallpaper applies in place and Back keeps the latest applied photo', async () => {
@@ -1051,7 +1051,7 @@ try {
     await current.locator('[data-action="wallpaper.choose.' + walls[3].id + '"]').click(); await ready();
     check('A pointer row click applies that photo once', (await state()).committed.wall === walls[3].id && (await state()).writes === applied.writes + 1 && (await state()).view === 'wallpaper');
     await act('wallpaper.back'); await ready();
-    check('On-screen Wallpaper Back restores Background focus', (await state()).settingsGroup === 'background' && (await state()).focusAction === 'background.wallpaper' && (await state()).shown.wall === walls[3].id);
+    check('On-screen Wallpaper Back restores Background focus', (await state()).settingsGroup === 'local' && (await state()).focusAction === 'background.wallpaper' && (await state()).shown.wall === walls[3].id);
   });
   await run('Wallpaper navigation is bounded and scrolls the catalogue', async () => {
     await page(); await wallpaper(); const before = await wallpaperSaved();

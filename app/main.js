@@ -48,7 +48,8 @@
   LOOK_VALUES.highlight = ['standard', 'glow', 'underline', 'tile'];
   var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material', highlight: 'App highlight', dockOpacity: 'Dock opacity' };
   var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
-  VALUE_NAMES.daily = 'Daily pictures';
+  VALUE_NAMES.daily = 'Online pictures';
+  VALUE_NAMES.photo = 'Local pictures';
   VALUE_NAMES.standard = 'Standard'; VALUE_NAMES.glow = 'Glow'; VALUE_NAMES.underline = 'Underline'; VALUE_NAMES.tile = 'Light tile';
   var UTIL = { sources: ['Sources', 'hdmi'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
   var MSG = {
@@ -1042,7 +1043,7 @@
     },
     point: function (t, z, i) { t.f.i = i; this.key(t, 'ok'); }
   };
-  var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', daily: 'Online pictures', samsung: 'Samsung' };
+  var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', daily: 'Online pictures', local: 'Local pictures', samsung: 'Samsung' };
   function choice(axis, value, disabled) {
     if (axis === 'dockOpacity') return { action: 'dock.opacity', label: 'Dock opacity', slider: true, disabled: !!disabled };
     return { action: axis === 'mode' ? 'rotation.' + value : 'choice.' + axis + '.' + value, axis: axis, value: value, disabled: !!disabled,
@@ -1061,11 +1062,13 @@
       }) }, { id: 'download', title: '', items: [{ action: 'daily.retry', label: 'Download / retry' }],
         reason: daily.status || (daily.loading ? 'Downloading pictures… ' : '') + daily.count + ' pictures ready. Themes alternate each day.' }];
     }
-    if (t.group === 'background') return [
-      { id: 'bg', title: 'Background type', items: options('bg', ['photo', 'daily', 'light', 'dark']) },
+    if (t.group === 'background') return ['photo', 'daily'].map(function (value) {
+      return { id: 'background-' + value, title: '', horizontal: true, items: [choice('bg', value),
+        { action: value === 'photo' ? 'background.local' : 'background.daily', label: VALUE_NAMES[value] + ' settings', gear: true }] };
+    });
+    if (t.group === 'local') return [
       { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true, disabled: flat }] },
-      { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name, disabled: flat }], reason: flat ? (S.c.bg === 'daily' ? 'Daily pictures change by calendar day.' : 'Choose Photo to use wallpaper and rotation.') : '' },
-      { id: 'online', title: '', items: [{ action: 'background.daily', label: 'Online picture settings', disabled: S.c.bg !== 'daily' }] }
+      { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name, disabled: flat }], reason: flat ? 'Choose Local pictures in Background to use these settings.' : '' }
     ];
     if (t.group === 'layout') return [
       { id: 'layout', title: 'Layout', horizontal: true, items: options('layout', ['list', 'dock']) },
@@ -1089,7 +1092,7 @@
     ] }];
   }
   function detailRows(t) {
-    var rows = [[{ action: 'settings.back', label: (t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings' }]];
+    var rows = [[{ action: 'settings.back', label: t.group === 'rotation' ? 'Local pictures' : (t.group === 'local' || t.group === 'daily') ? 'Background' : 'Settings' }]];
     detailSections(t).forEach(function (section) {
       var enabled = section.items.filter(function (item) { return !item.disabled; });
       if (section.columns) { for (var i = 0; i < enabled.length; i += section.columns) rows.push(enabled.slice(i, i + section.columns)); }
@@ -1119,7 +1122,7 @@
     c = next(S.c.home.slice(), S.c.recent.slice()); c.mode = value;
     if (!write(c, 'Wallpaper rotation')) S.lookError = { type: 'save', patch: { mode: value }, row: 'mode', transient: false };
   }
-  function detailBack() { var daily = top().group === 'daily'; cancelLook(); S.err = null; pop(); if (daily && top().id === 'appearance') top().f.action = 'background.daily'; }
+  function detailBack() { var group = top().group; cancelLook(); S.err = null; pop(); if ((group === 'daily' || group === 'local') && top().id === 'appearance') top().f.action = 'background.' + group; }
   function detailOk(t, item) {
     var patch = {}, error = S.lookError;
     if (item.action === 'settings.back') { detailBack(); return; }
@@ -1134,6 +1137,7 @@
       window.CleanFrameDaily.configure(sourceId, !dailyView.options.sources[sourceId]);
     } else if (item.action.indexOf('daily.fit.') === 0) window.CleanFrameDaily.configure('fit', item.action.slice(10));
     else if (item.action === 'daily.retry') window.CleanFrameDaily.retry();
+    else if (item.action === 'background.local') openAppearance('local');
     else if (item.action === 'background.daily') openAppearance('daily');
     else if (item.axis === 'mode') applyRotation(item.value);
     else if (item.axis) { patch[item.axis] = item.value; setLook(patch, { row: item.axis }); }
@@ -1683,7 +1687,7 @@
         + ' data-z="detail" data-i="0" data-id="' + item.action + '" data-action="' + item.action + '">' + inner
         + (item.axis || item.toggle !== undefined ? '<span class="setting-tick" aria-hidden="true">' + (applied ? icon('check') : '') + '</span>' : '') + '</button>';
     }
-    setHTML(appearanceBack, command({ action: 'settings.back', label: (t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings' }, icon('left') + '<span>' + ((t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings') + '</span>', 'setting-back'));
+    setHTML(appearanceBack, command({ action: 'settings.back', label: t.group === 'rotation' ? 'Local pictures' : (t.group === 'local' || t.group === 'daily') ? 'Background' : 'Settings' }, icon('left') + '<span>' + (t.group === 'rotation' ? 'Local pictures' : (t.group === 'local' || t.group === 'daily') ? 'Background' : 'Settings') + '</span>', 'setting-back'));
     setHTML(appearanceRows, detailSections(t).map(function (section) {
       return '<section class="setting-section' + (section.horizontal ? ' is-horizontal' : '') + (section.columns ? ' is-grid' : '') + ' section-' + section.id + '">'
         + (section.title ? '<h3 class="setting-label" id="setting-' + section.id + '">' + section.title + '</h3>' : '')
@@ -1702,6 +1706,7 @@
           body += '<span class="setting-copy"><span class="setting-name">' + esc(item.label) + '</span>'
             + (item.description ? '<span class="setting-description">' + esc(item.description) + '</span>' : '') + '</span>';
           if (!item.axis && item.toggle === undefined) body += icon('right', 'setting-forward');
+          if (item.gear) return command(item, icon('settings'), 'background-gear');
           return command(item, body, item.description ? 'has-description' : '');
         }).join('') + '</div>'
         + (section.reason ? '<p class="setting-reason">' + esc(section.reason) + '</p>' : '') + '</section>';
@@ -1712,8 +1717,9 @@
         + command({ action: 'settings.retry', label: 'Try again' }, '<span>Try again</span>', 'setting-retry');
     }
     setHTML(appearanceStatus, status);
-    hint = selected.disabled ? '' : selected.action === 'settings.back' ? 'Return to ' + ((t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings') : selected.action === 'settings.retry' ? 'Retry this change' : selected.axis ? 'Apply selected setting' : selected.action === 'background.wallpaper' ? 'Choose a wallpaper' : selected.action === 'background.rotation' ? 'Choose a rotation interval' : 'Open on the TV';
+    hint = selected.disabled ? '' : selected.action === 'settings.back' ? 'Return to ' + (t.group === 'rotation' ? 'Local pictures' : (t.group === 'local' || t.group === 'daily') ? 'Background' : 'Settings') : selected.action === 'settings.retry' ? 'Retry this change' : selected.axis ? 'Apply selected setting' : selected.action === 'background.wallpaper' ? 'Choose a wallpaper' : selected.action === 'background.rotation' ? 'Choose a rotation interval' : 'Open on the TV';
     if (t.group === 'daily') hint = selected.action === 'settings.back' ? 'Return to Background' : selected.action === 'daily.retry' ? 'Retry downloads' : 'Apply setting';
+    if (selected.gear) hint = 'Open picture settings';
     if (selected.slider) hint = 'Apply selected opacity';
     setHTML(appearanceDesc, hint ? '<span class="remote-key">OK</span><span>' + esc(hint) + '</span>' : '');
   }
