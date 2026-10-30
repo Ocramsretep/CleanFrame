@@ -38,6 +38,10 @@ test('all selectable icons are bundled and measured; extended provenance matches
     assert.doesNotMatch(svg, /(?:xlink:)?href\s*=\s*["'](?!#)/i);
     const m = window.FrameIconMetrics[item.id];
     assert.ok(m && m.w > 0 && m.h > 0 && m.fill > 0, item.id);
+    const glow = readFileSync(new URL('app/assets/icons/glow/' + item.id + '.png', root));
+    assert.equal(glow.subarray(1, 4).toString(), 'PNG', item.id + ' has a baked halo');
+    assert.equal(glow.readUInt32BE(16), 192, item.id + ' halo width matches padded icon');
+    assert.equal(glow.readUInt32BE(20), 192, item.id + ' halo height matches padded icon');
   }
   for (const entry of JSON.parse(readFileSync(new URL('app/assets/icons/EXTENDED-SOURCES.json', root), 'utf8'))) {
     const bytes = readFileSync(new URL('app/assets/icons/' + entry.file, root));

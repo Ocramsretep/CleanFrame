@@ -75,6 +75,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 
 /* ---------- Glass Dock ---------- */
 .dock{position:absolute;left:208px;top:676px;width:1504px;height:232px}
+.dock>.mat{opacity:var(--dock-opacity,1)}
 .mat{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:48px;overflow:hidden;transform:translateZ(0)}
 .mat-img{position:absolute;left:0;top:0;width:1920px;height:1080px;max-width:none;object-fit:cover;object-position:50% 50%}
 .mat-scrim{position:absolute;left:0;top:0;width:1920px;height:520px;background:linear-gradient(to bottom,rgba(4,10,12,0),rgba(4,10,12,.42) 70%,rgba(4,10,12,.52))}
@@ -589,6 +590,37 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .font-newsreader .home .clock{font-variation-settings:"opsz" 48;font-optical-sizing:none}
 .font-newsreader .home .tile .label,.font-newsreader .home .app-focus-name,.font-newsreader .home .full-name{font-variation-settings:"opsz" 36;font-optical-sizing:none}
 .font-newsreader .home .cap-title,.font-newsreader .home .header-utils,.font-newsreader .home .dock-action,.font-newsreader .home .ph-action,.font-newsreader .home .btn,.font-newsreader .home .dock-empty p,.font-newsreader .home .ph-empty p{font-variation-settings:"opsz" 36}
+
+/* App highlights are independent of the existing Type/Glass control focus.
+   Icon halos are bundled PNGs: navigation changes opacity, never a live blur. */
+.mark-glow{position:absolute;display:none;pointer-events:none;opacity:0;transition:opacity 160ms linear}
+.h-glow .home .mark-glow{display:block}
+.mark-glow::before{content:"";position:absolute;left:-25%;top:-25%;width:150%;height:150%;background-image:var(--glow-image);background-size:100% 100%;background-repeat:no-repeat}
+.h-glow .has-highlight .mark-glow{opacity:1}
+.h-glow .has-highlight .label,.h-glow .has-highlight .ph-name{ text-shadow:0 0 8px rgba(255,250,236,.65),0 0 20px rgba(255,250,236,.45)}
+.bg-light.h-glow .has-highlight .label,.bg-light.h-glow .has-highlight .ph-name{text-shadow:0 0 8px rgba(29,26,22,.3),0 0 20px rgba(29,26,22,.18)}
+.h-underline .has-highlight .label-ink,.h-underline .has-highlight .ph-name,.h-underline .app-focus-name.is-on{text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:8px}
+.h-tile .tile::before,.h-tile .ph-row::after{content:"";position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:32px;background:#f6f1e7;box-shadow:0 0 0 1px rgba(29,26,22,.15),0 4px 18px rgba(0,0,0,.12);opacity:0;pointer-events:none;transition:opacity 160ms linear}
+.h-tile .ph-row::after{width:var(--highlight-width);z-index:-1;border-radius:38px}
+.h-tile .tile.has-highlight::before,.h-tile .ph-row.has-highlight::after{opacity:.95}
+.h-tile .has-highlight .mark,.h-tile .has-highlight .label,.h-tile .has-highlight .ph-name{color:#202a2d;text-shadow:none!important}
+.h-tile .has-highlight .tile-content,.h-tile .has-highlight .ph-group,.h-glow .has-highlight .tile-content,.h-glow .has-highlight .ph-group,.h-underline .has-highlight .tile-content,.h-underline .has-highlight .ph-group{opacity:1}
+.h-glow .dock .plate,.h-underline .dock .plate,.h-tile .dock .plate,.h-glow .ph-scene .ph-plate,.h-underline .ph-scene .ph-plate,.h-tile .ph-scene .ph-plate{opacity:0}
+.no-icon-masks.h-tile .tile::before,.no-icon-masks.h-tile .ph-row::after{background:#202a2d}
+.no-icon-masks.h-tile .has-highlight .mark,.no-icon-masks.h-tile .has-highlight .label,.no-icon-masks.h-tile .has-highlight .ph-name{color:#f6f1e7}
+.detail-layout .setting-section+.setting-section,.detail-focus .setting-section+.setting-section{margin-top:28px}
+.detail-layout .is-horizontal .setting-choice{min-height:78px}
+.is-grid .setting-options{flex-direction:row;flex-wrap:wrap}
+.is-grid .setting-choice{width:50%;min-height:76px;font-size:32px;line-height:40px;padding:12px 18px}
+.opacity-setting{display:flex;align-items:center;min-height:92px;padding:14px 24px;border-radius:18px;color:var(--ink)}
+.opacity-setting.is-focus{background:var(--solid);color:var(--solid-ink)}
+.opacity-setting.is-disabled{opacity:.45}
+.opacity-value{width:112px;margin-left:24px;text-align:right;font-size:32px;line-height:40px}
+.opacity-setting input{display:block;flex:1;min-width:0;height:44px;margin:0;background:transparent;color:inherit;-webkit-appearance:none;appearance:none}
+.opacity-setting input::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:currentColor}
+.opacity-setting input::-webkit-slider-thumb{width:28px;height:28px;margin-top:-11px;border:3px solid currentColor;border-radius:50%;background:currentColor;-webkit-appearance:none}
+.opacity-setting input::-moz-range-track{height:6px;border-radius:3px;background:currentColor}
+.opacity-setting input::-moz-range-thumb{width:22px;height:22px;border:3px solid currentColor;border-radius:50%;background:currentColor}
 .font-newsreader .home .wall-keep{font-family:var(--font-ui-family),serif;font-weight:400;font-variation-settings:"opsz" 36;letter-spacing:0}
 .font-newsreader .home .header-utils .u-label,.font-newsreader .home .wall-keep{position:relative;top:var(--font-action-shift)}
 .clock-digit{display:inline-block;width:var(--font-clock-digit);text-align:center;letter-spacing:0}

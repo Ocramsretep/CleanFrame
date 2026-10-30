@@ -18,9 +18,9 @@ Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps o
 | Group | Choices |
 | --- | --- |
 | Background | Photo, Light, Dark; Wallpaper and Rotation when Photo is active |
-| Layout | List or Dock; independent Text, Icons or Both choices for apps and Home controls |
+| Layout | List or Dock; independent Text, Icons or Both choices for apps and Home controls; Dock background opacity |
 | Typography | Manrope, Neue Montreal, Mori, Pangram Sans, Geist and Newsreader, when available |
-| Focus | Type or Glass; Soft, Frost or Clear tint material |
+| Focus | Type or Glass; Soft, Frost or Clear tint material; Standard, Glow, Underline or Light tile app highlight |
 | Apps on Home | Membership and arrangement editor |
 | App icons | Per-app white icon selection, with Home apps first |
 | Sources | Visibility, names, icons, order, HDMI assignment and connection query |
@@ -29,6 +29,10 @@ Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps o
 Up/Down moves between rows. Left/Right moves between choices in a horizontal row. Focus alone changes neither the preview nor saved preferences in these appearance groups. Wallpaper has its own temporary photo preview, described below. OK applies the focused value. A checkmark identifies the applied value; the filled plate identifies remote focus. Applying the current value does not write again.
 
 Material applies to a photographic Dock, or Glass focus on a photographic List. Inactive material choices remain visible with an explanation and are skipped during navigation. Their stored value is retained. Wallpaper and rotation are also inactive on flat backgrounds.
+
+App highlight is shared by Dock and List, including Text, Icons and Both. Standard preserves the existing Type/Glass appearance. Glow adds a bundled icon halo (or a text glow for Text); Underline marks the app name, including the focused caption in Icons mode; Light tile uses a contrasting filled plate. These options affect app focus, independently of the Type/Glass choice for Home controls. The committed highlight is visible in the Settings preview. Existing preferences default to Standard.
+
+Layout's Dock background opacity slider ranges from 0% to 100% in 5% steps; 100% preserves the original material. It changes only the Dock background, leaving app marks, captions and focus indicators readable. It is available with Photo and Dock; List and flat backgrounds retain the value but disable the slider. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. Saved values survive layout changes and restart.
 
 A font or photo change applies only after its resources are ready and storage succeeds. A load or storage failure keeps the previous appearance and checkmark, with a Try again action. Back cancels a pending change, leaves the group and keeps completed changes. Late load callbacks cannot apply a cancelled choice. There is no Save button. Returning to a group restores its last choice focus; returning to Settings restores its category focus. Rotation is nested within Background, and Back returns to its Rotation row.
 

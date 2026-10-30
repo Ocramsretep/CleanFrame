@@ -23,6 +23,8 @@ All fields use the centred 1920 x 1080 crop. The small panel backdrop comes from
 
 ## Icon metrics
 
+`node scripts/build-icon-glows.mjs` renders the icon catalogue's warm halos offline to ignored `.local/materials/icon-glows/`. Review these transparent 192px PNGs before copying them into `app/assets/icons/glow/`. Each image contains the existing SVG at 128px with 32px padding and two baked blur layers. Runtime placement follows the same optical metrics as its icon; navigation fades the texture without CSS filters, backdrop blur or pixel sampling. Regenerate the matching halo when adding or changing an icon. These derived assets retain the original icons' notices.
+
 `node scripts/build-icon-metrics.mjs` measures the SVGs in an aspect-preserved 240px viewport, matching the CSS mask renderer. Output is ignored `.local/materials/metrics.js`; review before copying it into `app/assets/icons/metrics.js`. The TV reads these bounds and does not scan icon pixels.
 
 ## New or replacement photographs

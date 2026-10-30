@@ -135,7 +135,7 @@ async function group(name) {
 const settingsSnapshot = () => current.evaluate(() => {
   const s = ShoreQA.state();
   const rendered = [...document.getElementById('stage').classList].filter(c => /^(bg|l|a|u|f|m|font)-/.test(c)).sort();
-  return { stored: localStorage.getItem('cleanframe.home.v1'), committed: s.committed, shown: s.shown, rendered, writes: s.writes, storageAttempts: window.__storageAttempts };
+  return { stored: localStorage.getItem('cleanframe.home.v1'), committed: s.committed, shown: s.shown, rendered, dockOpacity: getComputedStyle(document.querySelector('.dock>.mat')).opacity, writes: s.writes, storageAttempts: window.__storageAttempts };
 });
 const choice = (axis, value) => act('choice.' + axis + '.' + value);
 const radios = () => current.evaluate(() => [...document.querySelectorAll('#stage [role="radio"]')].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').map(e => ({ action: e.getAttribute('data-action'), checked: e.getAttribute('aria-checked'), disabled: e.getAttribute('aria-disabled') === 'true', focused: e.classList.contains('is-focus'), text: e.textContent.trim() })));
@@ -286,7 +286,8 @@ try {
       await p.route('**/assets/materials/*', route => failImages ? route.abort('failed') : route.continue());
     });
     // Hidden documents allow 20 seconds for suspended image callbacks in whenReady.
-    await current.waitForFunction(() => window.ShoreQA && !ShoreQA.state().pending && !ShoreQA.ready(), null, { timeout: 25000 });
+    // The harness deliberately suspends requestAnimationFrame while hidden.
+    await current.waitForFunction(() => window.ShoreQA && !ShoreQA.state().pending && !ShoreQA.ready(), null, { timeout: 25000, polling: 100 });
     const before = await stored();
     failImages = false;
     await current.evaluate(() => window.__setHidden(false)); await ready();
@@ -624,6 +625,75 @@ try {
     await group('samsung');
     const samsungActions = await call('actions');
     check('Samsung group shows both native actions', samsungActions.includes('samsung.home') && samsungActions.includes('samsung.settings'));
+  });
+  await run('App highlights and dock opacity', async () => {
+    await page();
+    check('Existing preferences retain standard highlight and full material opacity', (await state()).look.highlight === 'standard' && (await state()).look.dockOpacity === 100);
+    await group('focus');
+    const options = (await radios()).filter(row => row.action.startsWith('choice.highlight.'));
+    check('All four app highlights are visible', same(options.map(row => row.action), ['standard', 'glow', 'underline', 'tile'].map(value => 'choice.highlight.' + value)));
+    const before = await settingsSnapshot();
+    await nav('down', 'down', 'right');
+    check('Browsing highlight choices does not save or preview', same(await settingsSnapshot(), before));
+    await choice('highlight', 'glow');
+    check('Glow is applied with one checked option', (await state()).look.highlight === 'glow' && (await radios()).filter(row => row.action.startsWith('choice.highlight.') && row.checked === 'true').length === 1);
+    for (const width of [1920, 1280]) {
+      await current.setViewportSize({ width, height: width * 9 / 16 });
+      for (const layout of ['dock', 'list']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'glow', 'underline', 'tile']) {
+        await look({ layout, apps, highlight }); await scene('home');
+        check('One highlighted app ' + [width, layout, apps, highlight].join('/'), await current.locator((layout === 'dock' ? '.dock' : '.ph-scene') + ' .has-highlight').count() === 1 && (await call('where')).focusCount === 1);
+        check('No runtime blur for ' + highlight, await current.locator('.home .has-highlight, .home .has-highlight *').evaluateAll(elements => elements.every(el => getComputedStyle(el).filter === 'none' && (!getComputedStyle(el).backdropFilter || getComputedStyle(el).backdropFilter === 'none'))));
+        if (apps === 'icons' && width === 1920) {
+          await current.waitForTimeout(220);
+          await current.screenshot({ path: out + 'highlight-' + layout + '-' + highlight + '.png' });
+        }
+      }
+      await look({ layout: 'dock', bg: 'photo', apps: 'icons', highlight: 'glow' });
+      await group('focus');
+      check('Focus options fit on screen at ' + width, await current.locator('.section-highlight').evaluate(el => el.getBoundingClientRect().bottom < innerHeight * .9));
+      await current.screenshot({ path: out + 'highlight-settings-' + width + '.png' });
+      await group('layout');
+      check('Opacity setting fits on screen at ' + width, await current.locator('.section-dockOpacity').evaluate(el => el.getBoundingClientRect().bottom < innerHeight * .9));
+      await current.screenshot({ path: out + 'opacity-settings-' + width + '.png' });
+    }
+    await act('dock.opacity');
+    let snapshot = await settingsSnapshot();
+    await nav('left');
+    check('Opacity draft moves by five without changing Home', await current.locator('#dockOpacityInput').inputValue() === '95' && same(await settingsSnapshot(), snapshot));
+    await nav('ok');
+    check('OK commits opacity only to the dock background', (await state()).look.dockOpacity === 95 && await current.locator('.dock>.mat').evaluate(el => getComputedStyle(el).opacity) === '0.95' && await current.locator('.dock').evaluate(el => getComputedStyle(el).opacity) === '1');
+    snapshot = await settingsSnapshot(); await nav('ok');
+    check('Repeated OK does not write', same(await settingsSnapshot(), snapshot));
+    await nav(...Array(30).fill('left')); await nav('ok');
+    check('Opacity clamps at zero', (await state()).look.dockOpacity === 0);
+    await nav(...Array(30).fill('right')); await nav('ok');
+    check('Opacity clamps at one hundred', (await state()).look.dockOpacity === 100);
+    await nav('left', 'back'); await group('layout'); await act('dock.opacity');
+    check('Back discards unsaved opacity', await current.locator('#dockOpacityInput').inputValue() === '100');
+    await nav('up', 'up', 'up', 'up');
+    check('Back button owns focus before dragging', (await state()).focusAction === 'settings.back');
+    const range = await current.locator('#dockOpacityInput').boundingBox();
+    await current.mouse.move(range.x + range.width - 8, range.y + range.height / 2);
+    await current.mouse.down();
+    await current.mouse.move(range.x + range.width * .55, range.y + range.height / 2, { steps: 5 });
+    check('Dragging transfers focus from Back to slider', (await call('where')).focusCount === 1 && (await state()).focusAction === 'dock.opacity');
+    await current.mouse.up();
+    await current.locator('#dockOpacityInput').evaluate(el => { el.value = '55'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    check('Native slider leaves a five-percent draft', await current.locator('.opacity-value').textContent() === '55%' && (await state()).look.dockOpacity === 100);
+    await current.evaluate(() => { __failWrites = true; }); await nav('ok');
+    check('Failed opacity save retains committed value and offers retry', (await state()).look.dockOpacity === 100 && (await call('actions')).includes('settings.retry'));
+    await current.evaluate(() => { __failWrites = false; }); await act('settings.retry');
+    check('Retry saves the requested opacity', (await state()).look.dockOpacity === 55);
+    await look({ layout: 'list' });
+    check('List keeps opacity preference and disables slider', (await state()).look.dockOpacity === 55 && await current.locator('#dockOpacityInput').isDisabled());
+    await look({ layout: 'dock', bg: 'light' });
+    check('Flat background disables the material slider', await current.locator('#dockOpacityInput').isDisabled());
+    await look({ bg: 'photo' }); await current.reload(); await ready();
+    check('Highlight and opacity survive reload', (await state()).look.highlight === 'glow' && (await state()).look.dockOpacity === 55);
+    for (const [value, expected] of [[53, 55], [-9, 0], [110, 100], ['45', 100], [null, 100]]) {
+      await closePage(); await page({ seed: baseline({ look: { dockOpacity: value, highlight: 'unknown' } }) });
+      check('Malformed preferences normalize safely ' + JSON.stringify(value), (await state()).look.dockOpacity === expected && (await state()).look.highlight === 'standard');
+    }
   });
   await run('Settings focus never changes the applied Home', async () => {
     await page();

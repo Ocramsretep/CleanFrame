@@ -45,8 +45,10 @@
   };
   var PRIVATE_FONTS = window.CleanFramePrivateFontIDs || [], fontMetrics = {}, unavailableFonts = {}, widthCache = {}, fontRevision = 0, fontsReady = false;
   var LOOK_VALUES = { bg: ['dark', 'light', 'photo'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
-  var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material' };
+  LOOK_VALUES.highlight = ['standard', 'glow', 'underline', 'tile'];
+  var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material', highlight: 'App highlight', dockOpacity: 'Dock opacity' };
   var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
+  VALUE_NAMES.standard = 'Standard'; VALUE_NAMES.glow = 'Glow'; VALUE_NAMES.underline = 'Underline'; VALUE_NAMES.tile = 'Light tile';
   var UTIL = { sources: ['Sources', 'hdmi'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
   var MSG = {
     leave: { title: 'Leave Home?', line: 'Open Samsung Home?', note: '', actions: [['stay', 'Stay'], ['samsung', 'Samsung Home']] }
@@ -88,7 +90,9 @@
     for (var i = 0; i < list.length; i++) if (list[i].toLowerCase() === v) return list[i];
     return fallback;
   }
-  function lookOf(c) { return { bg: c.bg, wall: c.wall, layout: c.layout, apps: c.apps, font: c.font, controls: c.controls, focus: c.focus, material: c.material }; }
+  function lookOf(c) { return { bg: c.bg, wall: c.wall, layout: c.layout, apps: c.apps, font: c.font, controls: c.controls, focus: c.focus, material: c.material, highlight: c.highlight, dockOpacity: c.dockOpacity }; }
+  function cleanOpacity(value) { return typeof value === 'number' && isFinite(value) ? clamp(Math.round(value / 5) * 5, 0, 100) : 100; }
+  function dockOpacityApplies() { return S.c.layout === 'dock' && S.c.bg === 'photo'; }
   function materialApplies(c) { c = c || S.c; return c.bg === 'photo' && (c.layout === 'dock' || c.focus === 'glass'); }
 
   /* ---------- Helpers ---------- */
@@ -138,6 +142,7 @@
     } else st = 'width:' + w + 'px;height:' + h + 'px;left:0;top:0;object-fit:contain';
     probeMark(id);
     return '<span class="mark' + (markProbes[id] === 'bad' ? ' is-bad' : '') + '" data-mark="' + id + '" style="width:' + w + 'px;height:' + h + 'px">'
+      + '<span class="mark-glow" aria-hidden="true" style="' + st + ';--glow-image:url(' + ICONS + 'glow/' + id + '.png)"></span>'
       + (maskSupport ? '<span class="mk" style="' + st + ';-webkit-mask-image:url(' + ICONS + id + '.svg);mask-image:url(' + ICONS + id + '.svg)"></span>' : '<img alt="" src="' + ICONS + id + '.svg" style="' + st + '">') + '</span>';
   }
   function appMark(a, w, h, size) {
@@ -344,6 +349,7 @@
       bg: pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'photo'), layout: pick(modern.layout, LOOK_VALUES.layout, legacyList ? 'list' : 'dock'),
       apps: pick(modern.apps, LOOK_VALUES.apps, legacyList ? 'text' : 'both'), controls: pick(modern.controls, LOOK_VALUES.controls, 'both'),
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
+      highlight: pick(modern.highlight, LOOK_VALUES.highlight, 'standard'), dockOpacity: cleanOpacity(modern.dockOpacity),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
       home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
       appIcons: window.FrameAppIcons.clean(s.appIcons),
@@ -1022,6 +1028,7 @@
   };
   var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', samsung: 'Samsung' };
   function choice(axis, value, disabled) {
+    if (axis === 'dockOpacity') return { action: 'dock.opacity', label: 'Dock opacity', slider: true, disabled: !!disabled };
     return { action: axis === 'mode' ? 'rotation.' + value : 'choice.' + axis + '.' + value, axis: axis, value: value, disabled: !!disabled,
       label: axis === 'font' ? FONTS[value].name : axis === 'mode' ? MODES.filter(function (m) { return m.id === value; })[0].name : value === 'both' ? 'Both' : VALUE_NAMES[value] };
   }
@@ -1036,13 +1043,16 @@
     if (t.group === 'layout') return [
       { id: 'layout', title: 'Layout', horizontal: true, items: options('layout', ['list', 'dock']) },
       { id: 'apps', title: 'App display', horizontal: true, items: options('apps', ['text', 'icons', 'both']) },
-      { id: 'controls', title: 'Home controls', horizontal: true, items: options('controls', ['text', 'icons', 'both']) }
+      { id: 'controls', title: 'Home controls', horizontal: true, items: options('controls', ['text', 'icons', 'both']) },
+      { id: 'dockOpacity', title: 'Dock background opacity', items: [choice('dockOpacity', S.c.dockOpacity, !dockOpacityApplies())],
+        reason: dockOpacityApplies() ? 'Left / Right: 5% steps. OK applies.' : 'Choose Dock and a Photo background to adjust opacity.' }
     ];
     if (t.group === 'typography') return [{ id: 'font', title: '', items: options('font', LOOK_VALUES.font) }];
     if (t.group === 'focus') return [
       { id: 'focus', title: 'Focus style', horizontal: true, items: options('focus', ['type', 'glass']) },
       { id: 'material', title: 'Material', horizontal: true, items: options('material', ['soft', 'frost', 'tint'], inactive),
-        reason: inactive ? flat ? 'Materials are available with a Photo background.' : 'Choose Glass focus or the Dock layout to use materials.' : '' }
+        reason: inactive ? flat ? 'Materials are available with a Photo background.' : 'Choose Glass focus or the Dock layout to use materials.' : '' },
+      { id: 'highlight', title: 'App highlight · Dock and List', columns: 2, items: options('highlight', LOOK_VALUES.highlight) }
     ];
     if (t.group === 'rotation') return [{ id: 'mode', title: '', items: options('mode', MODES.map(function (m) { return m.id; }), flat),
       reason: flat ? 'Choose Photo in Background to use rotation.' : 'Timed changes pause while Settings or another panel is open.' }];
@@ -1055,7 +1065,8 @@
     var rows = [[{ action: 'settings.back', label: t.group === 'rotation' ? 'Background' : 'Settings' }]];
     detailSections(t).forEach(function (section) {
       var enabled = section.items.filter(function (item) { return !item.disabled; });
-      if (section.horizontal && enabled.length) rows.push(enabled);
+      if (section.columns) { for (var i = 0; i < enabled.length; i += section.columns) rows.push(enabled.slice(i, i + section.columns)); }
+      else if (section.horizontal && enabled.length) rows.push(enabled);
       else enabled.forEach(function (item) { rows.push([item]); });
     });
     if (S.lookError) rows.push([{ action: 'settings.retry', label: 'Try again' }]);
@@ -1067,6 +1078,7 @@
     return { rows: rows, row: row, column: column, item: rows[row][column] };
   }
   function detailFocus(t, item, column) {
+    if (t.f.action === 'dock.opacity' && item.action !== t.f.action) delete t.f.opacity;
     t.f.action = item.action;
     if (item.action !== 'settings.back') S.detailFocus[t.group] = item.action;
     if (column !== undefined) t.f.column = column;
@@ -1085,6 +1097,7 @@
     var patch = {}, error = S.lookError;
     if (item.action === 'settings.back') { detailBack(); return; }
     if (item.disabled || S.pending) return;
+    if (item.slider) { setLook({ dockOpacity: t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity }, { row: 'dockOpacity' }); return; }
     if (item.action === 'settings.retry') {
       if (error && error.patch[error.row] !== undefined) detailFocus(t, choice(error.row, error.patch[error.row]), 0);
       if (error && error.row === 'mode') applyRotation(error.patch.mode);
@@ -1116,6 +1129,7 @@
         column = Math.min(t.f.column || 0, at.rows[row].length - 1);
         detailFocus(t, at.rows[row][column]);
       } else if (k === 'left' || k === 'right') {
+        if (at.item.slider) { t.f.opacity = clamp((t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity) + (k === 'left' ? -5 : 5), 0, 100); return; }
         column = clamp(column + (k === 'left' ? -1 : 1), 0, at.rows[row].length - 1);
         detailFocus(t, at.rows[row][column], column);
       }
@@ -1124,7 +1138,7 @@
       if (z !== 'detail') return;
       detailRows(t).some(function (items) { return items.some(function (item, column) {
         if (item.action !== action) return false;
-        detailFocus(t, item, column); detailOk(t, item); return true;
+        detailFocus(t, item, column); if (!item.slider) detailOk(t, item); return true;
       }); });
     }
   };
@@ -1198,6 +1212,8 @@
     var t = top(), sheet = !!V[t.id].sheet, shown = wall(S.shown ? S.shown.wall : S.c.wall), palette = ADAPTIVE_INK[shown.id];
     var adaptive = applyAdaptiveInk(palette), tr = adaptive && palette.tr ? palette.tr.pol : shown.ut.tr, br = adaptive && palette.br ? palette.br.pol : shown.ut.br;
     stage.className = 'stage bg-' + S.c.bg + ' l-' + S.c.layout + ' v-' + S.variant + ' m-' + (materialApplies() ? S.c.material : 'none') + ' f-' + S.c.focus + ' a-' + S.c.apps + ' u-' + S.c.controls + ' g-' + S.geom + ' tone-' + shown.tone + ' tr-' + tr + ' br-' + br + wallClasses(shown) + inkRungClasses(palette, adaptive) + ' at-' + t.id + ' font-' + homeFont() + (homeFont() !== 'manrope' ? ' font-custom' : '') + (S.fontSwitch ? ' is-font-switch' : '') + (adaptive ? ' has-adaptive-ink adaptive-tl-' + palette.tl.pol : '') + (!adaptive && shown.clockInk ? ' has-clock-ink' : '') + (!adaptive && shown.dockClockInk ? ' has-dock-clock-ink' : '') + (registeredMaterial(shown.id) ? ' registered-material' : '') + (sheet ? ' is-sheet' : '') + (S.reflow ? ' is-reflow' : '');
+    stage.className += ' h-' + S.c.highlight + (maskSupport ? '' : ' no-icon-masks');
+    stage.style.setProperty('--dock-opacity', String(S.c.dockOpacity / 100));
     if (!adaptive && shown.clockInk) stage.style.setProperty('--clock-ink', shown.clockInk);
     else stage.style.removeProperty('--clock-ink');
     if (!adaptive && shown.dockClockInk) stage.style.setProperty('--dock-clock-ink', shown.dockClockInk);
@@ -1344,7 +1360,7 @@
   }
   function renderAppFocusName(hs) {
     var it = hs.items[hs.i], width, x, y, placement;
-    if (S.c.apps !== 'icons' || hs.mode !== 'browse' || hs.zone !== 'apps' || !it) { appFocusName.className = 'app-focus-name'; return; }
+    if (S.c.apps !== 'icons' || hs.mode !== 'browse' || hs.zone !== 'apps' && hs.zone !== 'preview' || !it) { appFocusName.className = 'app-focus-name'; return; }
     appFocusName.textContent = app(it.id).name;
     width = Math.min(S.c.layout === 'list' ? 1056 : 1640, Math.ceil(textWidth(app(it.id).name, S.c.layout === 'list' ? 40 : 36, 500, -.6, 'primary') + 8));
     appFocusName.style.width = width + 'px';
@@ -1435,6 +1451,7 @@
       el.className = 'tile k-' + it.kind + (focus ? ' is-focus' : '') + (sel ? ' is-sel' : '') + (lifted ? ' is-lifted' : '') + (partial ? ' is-partial' : '')
         + (a && !a.mark ? ' is-text' : '') + (it.kind === 'add' && full ? ' is-full' : '') + (it.kind === 'app' && S.press === it.id ? ' is-press' : '')
         + (lifted && i === 0 ? ' no-l' : '') + (lifted && i >= ns - 1 ? ' no-r' : '');
+      if ((focus || hs.zone === 'preview' && i === anchor) && it.kind === 'app') el.className += ' has-highlight';
       el.style.transform = 'translate3d(' + left + 'px,0,0)';
       el.setAttribute('role', 'button');
       if (a) el.setAttribute('aria-label', a.name);
@@ -1546,6 +1563,8 @@
       row.className = 'ph-row k-' + it.kind + (focus ? ' is-focus' : '') + (remembered && i === anchor ? ' is-sel' : '') + (lifted ? ' is-lifted' : '')
         + (lifted && i === 0 ? ' no-up' : '') + (lifted && i === n - 1 ? ' no-down' : '')
         + (it.kind === 'app' && S.press === it.id ? ' is-press' : '');
+      if (focus || hs.zone === 'preview' && i === anchor) row.className += ' has-highlight';
+      row.style.setProperty('--highlight-width', listPlateWidth(it.id, compact) + 'px');
       row.style.width = (compact ? listPlateWidth(it.id, compact) : 1200) + 'px'; row.style.height = pitch + 'px';
       row.style.transform = 'translate3d(0,' + (i * pitch) + 'px,0)';
       row.setAttribute('role', 'button'); row.setAttribute('aria-label', app(it.id).name);
@@ -1605,11 +1624,17 @@
     }
     setHTML(appearanceBack, command({ action: 'settings.back', label: t.group === 'rotation' ? 'Background' : 'Settings' }, icon('left') + '<span>' + (t.group === 'rotation' ? 'Background' : 'Settings') + '</span>', 'setting-back'));
     setHTML(appearanceRows, detailSections(t).map(function (section) {
-      return '<section class="setting-section' + (section.horizontal ? ' is-horizontal' : '') + ' section-' + section.id + '">'
+      return '<section class="setting-section' + (section.horizontal ? ' is-horizontal' : '') + (section.columns ? ' is-grid' : '') + ' section-' + section.id + '">'
         + (section.title ? '<h3 class="setting-label" id="setting-' + section.id + '">' + section.title + '</h3>' : '')
         + '<div class="setting-options"' + (section.items[0].axis ? ' role="radiogroup" aria-label="' + esc(section.title || LOOK_NAMES[section.id] || DETAIL_NAMES[t.group]) + '"' : '') + '>'
         + section.items.map(function (item) {
           var swatch = item.axis === 'bg', body = '';
+          if (item.slider) {
+            var value = t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity;
+            return '<div class="opacity-setting' + (t.f.action === item.action ? ' is-focus' : '') + (item.disabled ? ' is-disabled' : '') + '" aria-disabled="' + !!item.disabled + '" data-z="detail" data-i="0" data-id="dock.opacity" data-action="dock.opacity">'
+              + '<input id="dockOpacityInput" type="range" min="0" max="100" step="5" value="' + value + '" aria-label="Dock background opacity" aria-valuetext="' + value + ' percent" tabindex="-1"' + (item.disabled ? ' disabled' : '') + '>'
+              + '<span class="opacity-value">' + value + '%</span><span class="setting-tick" aria-hidden="true">' + (value === S.c.dockOpacity ? icon('check') : '') + '</span></div>';
+          }
           if (swatch || item.thumbnail) body += item.value === 'light' || item.value === 'dark'
             ? '<span class="setting-swatch swatch-' + item.value + '" aria-hidden="true"></span>'
             : '<img class="setting-swatch" src="' + WP + S.c.wall + '-thumb.jpg" alt="">';
@@ -1627,6 +1652,7 @@
     }
     setHTML(appearanceStatus, status);
     hint = selected.disabled ? '' : selected.action === 'settings.back' ? 'Return to ' + (t.group === 'rotation' ? 'Background' : 'Settings') : selected.action === 'settings.retry' ? 'Retry this change' : selected.axis ? 'Apply selected setting' : selected.action === 'background.wallpaper' ? 'Choose a wallpaper' : selected.action === 'background.rotation' ? 'Choose a rotation interval' : 'Open on the TV';
+    if (selected.slider) hint = 'Apply selected opacity';
     setHTML(appearanceDesc, hint ? '<span class="remote-key">OK</span><span>' + esc(hint) + '</span>' : '');
   }
   function renderWallpaper(t) {
@@ -1932,6 +1958,7 @@
     for (k in patch) if (patch.hasOwnProperty(k)) {
       if (k === 'wall') { if (!wall(patch[k])) throw new Error('Unknown wallpaper: ' + patch[k]); }
       else if (k === 'font') { if (!FONTS[patch[k]] || patch[k] !== 'manrope' && PRIVATE_FONTS.indexOf(patch[k]) < 0) throw new Error('Unavailable font: ' + patch[k]); }
+      else if (k === 'dockOpacity') { if (typeof patch[k] !== 'number' || !isFinite(patch[k]) || patch[k] !== cleanOpacity(patch[k])) throw new Error('Invalid dock opacity'); }
       else if (!LOOK_VALUES[k] || LOOK_VALUES[k].indexOf(patch[k]) < 0) throw new Error('Invalid appearance value: ' + k);
       out[k] = patch[k];
     }
@@ -2091,6 +2118,20 @@
     t.f.zone = z; t.f.u = i;
     if (z === 'util') S.lastUtil = i;
     render();
+  });
+  appearanceRows.addEventListener('input', function (ev) {
+    var input = ev.target, t = top(), container;
+    if (input.id !== 'dockOpacityInput' || t.id !== 'appearance' || !dockOpacityApplies()) return;
+    detailFocus(t, choice('dockOpacity'), 0);
+    t.f.opacity = cleanOpacity(Number(input.value));
+    // Keep the native thumb alive while dragging; only OK commits the draft.
+    container = input.parentNode;
+    Array.prototype.forEach.call(appearanceEl.querySelectorAll('.is-focus'), function (el) { el.classList.remove('is-focus'); });
+    container.classList.add('is-focus');
+    input.setAttribute('aria-valuetext', t.f.opacity + ' percent');
+    container.querySelector('.opacity-value').textContent = t.f.opacity + '%';
+    setHTML(container.querySelector('.setting-tick'), t.f.opacity === S.c.dockOpacity ? icon('check') : '');
+    setHTML(appearanceDesc, '<span class="remote-key">OK</span><span>Apply selected opacity</span>');
   });
   stage.addEventListener('click', function (ev) {
     var el = ev.target;
