@@ -56,19 +56,15 @@ picture uses `contain` with dark borders. Neither stretches aspect ratio. Online
 pictures use fixed dark gradients and neutral translucent materials for
 legibility, with no live blur or pixel analysis on the TV.
 
-The Home footer shows the supplied title, complete credit, provider and rights
-label, linking to the image page. Cropping is identified. Picture info beside
-Next picture shows the source and licence URLs when supplied. Titles may be
-filenames or tags; locations are not invented. Overlong credits are rejected
-rather than truncated.
-
-Both buttons appear only in Daily pictures on Home. In Dock, Up from utility
-controls reaches Next picture. In List, Up from the first app or first utility
-control does so. Right reaches Picture info, OK toggles details, Up/Down scrolls
-long details, and Back closes them before returning to apps. With details closed,
-Down returns to utility controls. Next picture
-selects a cached replacement, updates today's selection and queues a refill.
-It does not submit a rating to the provider.
+Picture info shows the supplied title, full credit, provider and rights label,
+with source and licence links. No permanent credit strip is shown on Home.
+The five icon buttons share one horizontal row: Sources, All apps, Settings,
+Next picture and Picture info. The last two appear only in Online pictures.
+Left/Right moves along the row; OK activates a button. Back closes picture info;
+Up/Down scrolls long details. Next picture uses the offline queue.
+Local picture and rotation settings can be edited regardless of the active
+background. The Online pictures thumbnail uses the cached online image, or an
+image symbol until the first download is ready.
 
 ## Storage and networking
 

@@ -877,39 +877,18 @@ try {
     const materials = (await radios()).filter(r => r.action.startsWith('choice.material.'));
     check('Applicable Material restores the remembered selection', materials.every(r => !r.disabled) && materials.some(r => r.action === 'choice.material.tint' && r.checked === 'true'));
   });
-  await run('Settings inactive photo tools retain wallpaper preferences', async () => {
+  await run('Settings local pictures remain editable independently', async () => {
     await page();
-    for (const bg of ['dark', 'light']) {
-      await look({ bg }); await group('background'); await act('background.local'); const before = await settingsSnapshot();
+    for (const bg of ['dark', 'light', 'daily']) {
+      await look({ bg }); await group('background'); await act('background.local');
       for (const action of ['background.wallpaper', 'background.rotation']) {
-        check(bg + ' marks ' + action + ' inactive', await current.locator('[data-action="' + action + '"]').getAttribute('aria-disabled') === 'true');
-        const focusBefore = (await state()).focusAction;
-        await current.locator('[data-action="' + action + '"]').click({ force: true });
-        check('Inactive ' + action + ' ignores pointer focus and keeps preferences', same(await settingsSnapshot(), before) && (await state()).settingsGroup === 'local' && (await state()).focusAction === focusBefore);
+        check(bg + ' enables ' + action, await current.locator('[data-action="' + action + '"]').getAttribute('aria-disabled') === 'false');
       }
-      await walkEnabledChoices();
-      check(bg + ' remote navigation skips inactive photo tools', same(await settingsSnapshot(), before));
-      const reason = await current.locator('.setting-reason:visible').allTextContents();
-      check(bg + ' explains how to enable photo tools', reason.some(text => /Local pictures/i.test(text)), reason);
+      await act('background.rotation'); await act('rotation.15');
+      check('Rotation edits retain background ' + bg, (await state()).look.bg === bg && (await state()).mode === '15');
+      await nav('back');
+      check('Rotation returns to Local pictures', (await state()).settingsGroup === 'local');
     }
-  });
-  await run('Settings normalises remembered inactive focus', async () => {
-    await page(); await group('focus'); await choice('material', 'tint'); await ready();
-    await nav('back'); await act('settings.group.background'); await look({ bg: 'dark' }); await ready();
-    await nav('back'); await act('settings.group.focus');
-    const focus = await focusedChoice();
-    check('Inactive remembered Material returns to an enabled focus choice', focus && !focus.disabled && focus.action.startsWith('choice.focus.'), focus);
-    check('Changing Background preserves remembered Material', (await state()).look.material === 'tint');
-    await look({ bg: 'photo' }); await group('background'); await act('background.rotation'); await act('rotation.fixed');
-    await look({ bg: 'dark' }); const before = await settingsSnapshot();
-    check('All-inactive Rotation restores its enabled Back action', (await state()).focusAction === 'settings.back');
-    const visited = await walkEnabledChoices();
-    check('All-inactive Rotation traps focus on its enabled Back action', visited.every(a => a === 'settings.back') && same(await settingsSnapshot(), before), visited);
-    await current.locator('[data-action="rotation.5"]').click({ force: true });
-    check('Inactive Rotation ignores pointer clicks', (await state()).focusAction === 'settings.back' && same(await settingsSnapshot(), before));
-    await nav('back');
-    const returned = await state();
-    check('Rotation Back skips its now-inactive Local pictures row', returned.settingsGroup === 'local' && returned.focusAction === 'settings.back', returned.focusAction);
   });
   await run('Settings Back cancels pending assets and late callbacks', async () => {
     await page(); await group('focus'); const before = await settingsSnapshot();

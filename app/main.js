@@ -508,13 +508,18 @@
   }
 
   /* ---------- Navigation targets ---------- */
-  function utils() { return ['sources', 'apps', 'settings']; }
+  function utils() { return S.c.bg === 'daily' ? ['sources', 'apps', 'settings', 'skip', 'info'] : ['sources', 'apps', 'settings']; }
   /* prev/next run along the apps; out goes to the controls, inn comes back (or to a per-app action). */
   function axes() {
     var v = S.c.layout === 'list';
     return { prev: v ? 'up' : 'left', next: v ? 'down' : 'right', out: v ? 'right' : 'up', inn: v ? 'left' : 'down' };
   }
+  UTIL.skip = ['Next picture', 'nextPicture']; UTIL.info = ['Picture info', 'pictureInfo'];
+  SVG.nextPicture = '<path d="M5 16a8 8 0 1 1 13-9M18 2v5h-5"/>';
+  SVG.pictureInfo = '<path d="M13 20H3V4h18v7M3 15l5-5 5 5"/><circle cx="8" cy="8" r="1"/><circle cx="17.5" cy="17.5" r="5"/><path d="M17.5 17v3m0-6v1"/>';
   function utilAction(u) {
+    if (u === 'skip') { window.CleanFrameDaily.skip(); return; }
+    if (u === 'info') { top().f.info = !top().f.info; return; }
     if (u === 'sources') push({ id: 'sourceMenu', f: { i: 0 } });
     else if (u === 'apps') openApps();
     else openSettings();
@@ -551,17 +556,17 @@
   V.home = {
     key: function (t, k) {
       var f = t.f, h = S.c.home, U = utils(), x = axes(), i = ensureSel();
-      if (S.c.bg === 'daily') {
-        if (f.zone === 'daily') {
-          if (f.info && (k === 'up' || k === 'down')) { $('dailyDetails').scrollTop += k === 'down' ? 100 : -100; return; }
-          if (k === 'ok') { if (f.d === 1) f.info = !f.info; else window.CleanFrameDaily.skip(); }
-          else if (k === 'right') f.d = 1;
-          else if (k === 'left' && f.d === 1) { f.d = 0; f.info = false; }
-          else if (k === 'down' || k === 'left') { f.zone = 'util'; f.u = S.lastUtil; f.info = false; }
-          else if (k === 'back') { if (f.info) f.info = false; else f.zone = 'apps'; }
-          return;
-        }
-        if (k === 'up' && (f.zone === 'util' && (S.c.layout === 'dock' || f.u === 0) || S.c.layout === 'list' && f.zone === 'apps' && i === 0)) { f.zone = 'daily'; f.d = 0; return; }
+      if (f.info) {
+        if (k === 'back' || k === 'ok') { f.info = false; return; }
+        if (k === 'up' || k === 'down') { $('dailyDetails').scrollTop += k === 'down' ? 100 : -100; return; }
+        f.info = false;
+      }
+      if (S.c.bg === 'daily' && S.c.layout === 'list' && f.zone === 'util') {
+        if (k === 'left') f.u = Math.max(0, f.u - 1);
+        else if (k === 'right') f.u = Math.min(U.length - 1, f.u + 1);
+        else if (k === 'back' || k === 'down' || k === 'up') f.zone = 'apps';
+        else if (k === 'ok') utilAction(U[f.u]);
+        S.lastUtil = f.u; return;
       }
       if (S.c.layout === 'list') { listHomeKey(t, k, i, U); return; }
       if (f.zone === 'util') {
@@ -582,7 +587,6 @@
       else if (k === 'ok') launch(S.sel);
     },
     point: function (t, z, i) {
-      if (z === 'daily' && S.c.bg === 'daily') { t.f.zone = 'daily'; t.f.d = i; this.key(t, 'ok'); return; }
       if (z === 'util') { t.f.zone = 'util'; t.f.u = i; S.lastUtil = i; }
       else if (z === 'app') { t.f.zone = 'apps'; setSel(S.c.home[i]); }
       else if (z === 'empty') t.f.zone = 'apps';
@@ -1067,8 +1071,8 @@
         { action: value === 'photo' ? 'background.local' : 'background.daily', label: VALUE_NAMES[value] + ' settings', gear: true }] };
     });
     if (t.group === 'local') return [
-      { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true, disabled: flat }] },
-      { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name, disabled: flat }], reason: flat ? 'Choose Local pictures in Background to use these settings.' : '' }
+      { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true }] },
+      { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name }]  }
     ];
     if (t.group === 'layout') return [
       { id: 'layout', title: 'Layout', horizontal: true, items: options('layout', ['list', 'dock']) },
@@ -1084,8 +1088,8 @@
         reason: inactive ? flat ? 'Materials are available with a Photo background.' : 'Choose Glass focus or the Dock layout to use materials.' : '' },
       { id: 'highlight', title: 'App highlight · Dock and List', columns: 2, items: options('highlight', LOOK_VALUES.highlight) }
     ];
-    if (t.group === 'rotation') return [{ id: 'mode', title: '', items: options('mode', MODES.map(function (m) { return m.id; }), flat),
-      reason: flat ? 'Choose Photo in Background to use rotation.' : 'Timed changes pause while Settings or another panel is open.' }];
+    if (t.group === 'rotation') return [{ id: 'mode', title: '', items: options('mode', MODES.map(function (m) { return m.id; })),
+      reason: 'Timed changes pause while Settings or another panel is open.' }];
     return [{ id: 'samsung', title: '', items: [
       { action: 'samsung.home', label: 'Samsung Home', description: 'Open Samsung’s Home screen' },
       { action: 'samsung.settings', label: 'TV settings', description: 'Picture, sound and network settings' }
@@ -1116,7 +1120,6 @@
   }
   function applyRotation(value) {
     var c;
-    if (S.c.bg !== 'photo') return;
     S.err = null; S.lookError = null;
     if (value === S.c.mode) return;
     c = next(S.c.home.slice(), S.c.recent.slice()); c.mode = value;
@@ -1265,21 +1268,13 @@
   }
 
   function renderDaily(t) {
-    var daily = window.CleanFrameDaily.view(), enabled = S.c.bg === 'daily', image = $('dailyPhoto'), skip = $('dailySkip'), credit = $('dailyCredit');
-    var info = $('dailyInfo'), details = $('dailyDetails'), expanded = enabled && t.id === 'home' && t.f.zone === 'daily' && !!t.f.info;
+    var daily = window.CleanFrameDaily.view(), enabled = S.c.bg === 'daily' && t.id !== 'wallpaper', image = $('dailyPhoto'), credit = $('dailyCredit');
+    var details = $('dailyDetails'), expanded = enabled && t.id === 'home' && !!t.f.info;
     window.CleanFrameDaily.setActive(enabled && !document.hidden, t.id === 'home' && !S.pending && !expanded);
     image.hidden = !enabled || !daily.url;
     if (enabled && daily.url && image.getAttribute('src') !== daily.url) image.src = daily.url;
     image.style.objectFit = daily.options.fit;
-    skip.hidden = !enabled || t.id !== 'home';
-    skip.className = 'daily-skip' + (t.id === 'home' && t.f.zone === 'daily' && t.f.d !== 1 ? ' is-focus' : '');
-    skip.setAttribute('aria-busy', String(daily.loading)); skip.title = daily.status || 'Next picture';
-    var skipLabel = daily.count ? 'Next picture' : daily.loading ? 'Loading…' : 'No next picture';
-    skip.querySelector('span').textContent = skipLabel; skip.setAttribute('aria-label', skipLabel);
-    info.hidden = skip.hidden;
-    info.className = 'daily-info-button' + (t.id === 'home' && t.f.zone === 'daily' && t.f.d === 1 ? ' is-focus' : '');
-    info.setAttribute('aria-expanded', String(expanded)); details.hidden = !expanded;
-    credit.hidden = !enabled;
+    details.hidden = !expanded; credit.hidden = true;
     if (enabled && daily.current && daily.url) {
       stage.className += ' daily-ready';
       var c = daily.current;
@@ -1287,7 +1282,7 @@
       var licenseURL = /^https:\/\/(creativecommons\.org|www\.nasa\.gov|pixabay\.com)\//.test(c.licenseURL || '') ? c.licenseURL : '';
       var attribution = esc(c.credit) + ' · ' + esc(provider ? provider.name : c.source) + ' · ' + esc(c.license);
       setHTML(credit, '<a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(c.page) + '">' + esc(c.title) + '</a> · ' + attribution + (daily.options.fit === 'cover' ? ' · Cropped to screen' : ''));
-      setHTML(details, '<h2>' + esc(c.title) + '</h2><p>' + attribution + '</p><p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(c.page) + '">' + esc(c.page) + '</a></p>' + (licenseURL ? '<p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(licenseURL) + '">' + esc(licenseURL) + '</a></p>' : '') + '<p>' + (daily.options.fit === 'cover' ? 'Scaled and cropped to fill the screen.' : 'Whole picture, with borders when needed.') + '</p><p>' + esc(daily.status || daily.count + ' pictures ready.') + '</p><p>Up / Down scrolls. Back closes picture info.</p>');
+      setHTML(details, '<h2>' + esc(c.title) + '</h2><p>' + attribution + '</p><p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(c.page) + '">' + esc(c.page) + '</a></p>' + (licenseURL ? '<p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(licenseURL) + '">' + esc(licenseURL) + '</a></p>' : ''));
     } else { credit.textContent = daily.status || 'Preparing daily pictures… Your saved photo stays visible until a picture is ready.'; details.textContent = credit.textContent; }
   }
 
@@ -1334,7 +1329,7 @@
     setHTML($('sourceMenuContent'), html);
     r = anchor.getBoundingClientRect(); sr = stage.getBoundingClientRect(); scale = sr.width / 1920;
     x = clamp((r.left - sr.left) / scale, 80, 1400);
-    y = clamp(S.c.layout === 'list' ? (r.top - sr.top) / scale - menu.offsetHeight - 18 : (r.bottom - sr.top) / scale + 18, 80, 1000 - menu.offsetHeight);
+    y = clamp(S.c.layout === 'list' && S.c.bg !== 'daily' ? (r.top - sr.top) / scale - menu.offsetHeight - 18 : (r.bottom - sr.top) / scale + 18, 80, 1000 - menu.offsetHeight);
     menu.style.left = px(x); menu.style.top = px(y);
     im.hidden = S.c.bg !== 'photo';
     if (!im.hidden) {
@@ -1360,20 +1355,20 @@
   }
 
   function utilBtn(z, i, action, inner, extra, name) {
-    return '<button type="button" tabindex="-1" class="u' + (extra || '') + '" data-z="' + z + '" data-i="' + i + '" data-action="' + action + '" aria-label="' + esc(name) + '"><span class="u-content">' + inner + '</span></button>';
+    return '<button type="button"' + (action === 'daily.skip' ? ' id="dailySkip"' : action === 'daily.info' ? ' id="dailyInfo"' : '') + ' tabindex="-1" class="u' + (extra || '') + '" data-z="' + z + '" data-i="' + i + '" data-action="' + action + '" aria-label="' + esc(name) + '"><span class="u-content">' + inner + '</span></button>';
   }
   function renderUtils(hs) {
-    var html = '', style = hs.mode === 'arrange' && S.c.controls !== 'text' ? 'both' : S.c.controls;
+    var html = '', style = S.c.bg === 'daily' ? 'icons' : hs.mode === 'arrange' && S.c.controls !== 'text' ? 'both' : S.c.controls;
     var iconsOnly = style === 'icons', U = utils(), focused = null;
     utilsEl.className = 'utils quiet-utils is-' + style + (hs.zone === 'util' || hs.zone === 'ctl' ? ' is-awake' : '');
-    U.forEach(function (u, i) { html += utilBtn('util', i, 'util.' + u, icon(UTIL[u][1], '', true) + '<span class="u-label">' + UTIL[u][0] + '</span>', '', UTIL[u][0]); });
+    U.forEach(function (u, i) { html += utilBtn('util', i, u === 'skip' ? 'daily.skip' : u === 'info' ? 'daily.info' : 'util.' + u, icon(UTIL[u][1], '', true) + '<span class="u-label">' + UTIL[u][0] + '</span>', '', UTIL[u][0]); });
     setHTML(utilsEl, html);
     Array.prototype.forEach.call(utilsEl.querySelectorAll('.u'), function (b) {
       var z = b.getAttribute('data-z'), focus = hs.zone === z && hs.u === Number(b.getAttribute('data-i'));
       b.className = b.className.replace(/\s+is-focus/g, '') + (focus ? ' is-focus' : '');
       if (focus) focused = b;
     });
-    renderUtilFocusLabel(iconsOnly ? focused : null);
+    renderUtilFocusLabel(iconsOnly && !top().f.info ? focused : null);
     renderUtilityLens(focused, iconsOnly);
   }
   function renderUtilFocusLabel(button) {
@@ -1388,9 +1383,10 @@
     }
     r = button.getBoundingClientRect(); sr = sceneEl.getBoundingClientRect(); scale = sr.width / 1920 || 1;
     width = Math.ceil(textWidth(text, 28, 500, -.2) + 8); x = (r.left + r.width / 2 - sr.left) / scale - width / 2;
-    if (S.c.layout === 'list') x = 1730 - width;
+    if (S.c.layout === 'list' && S.c.bg !== 'daily') x = 1730 - width;
     utilFocusLabel.style.width = width + 'px'; utilFocusLabel.style.left = clamp(x, 112, 1808 - width) + 'px';
-    utilFocusLabel.style.top = ((S.c.layout === 'list' ? (r.top + r.height / 2 - sr.top) / scale - 19 : 140) + fontShift('ui', 28)) + 'px';
+    utilFocusLabel.style.top = ((S.c.layout === 'list' && S.c.bg !== 'daily' ? (r.top + r.height / 2 - sr.top) / scale - 19 : 140) + fontShift('ui', 28)) + 'px';
+    if (S.c.bg === 'daily' && S.c.layout === 'list') utilFocusLabel.style.top = px((r.bottom - sr.top) / scale + 10);
     utilFocusLabel.className = 'util-focus-label is-on';
   }
   function renderUtilityLens(button, iconsOnly) {
@@ -1402,7 +1398,7 @@
     }
     r = button.getBoundingClientRect(); sr = sceneEl.getBoundingClientRect(); scale = sr.width / 1920 || 1;
     y = (r.top - sr.top) / scale + 2;
-    if (S.c.layout === 'list') {
+    if (S.c.layout === 'list' && S.c.bg !== 'daily') {
       label = iconsOnly ? utilFocusLabel : button.querySelector('.u-label');
       x = (label.getBoundingClientRect().left - sr.left) / scale - 24;
       width = 1800 - x;
@@ -1700,7 +1696,8 @@
               + '<input id="dockOpacityInput" type="range" min="0" max="100" step="5" value="' + value + '" aria-label="Dock background opacity" aria-valuetext="' + value + ' percent" tabindex="-1"' + (item.disabled ? ' disabled' : '') + '>'
               + '<span class="opacity-value">' + value + '%</span><span class="setting-tick" aria-hidden="true">' + (value === S.c.dockOpacity ? icon('check') : '') + '</span></div>';
           }
-          if (swatch || item.thumbnail) body += item.value === 'light' || item.value === 'dark'
+          if (item.value === 'daily') { var online = window.CleanFrameDaily.view(); body += online.url ? '<img class="setting-swatch" src="' + esc(online.url) + '" alt="">' : '<span class="setting-swatch" aria-hidden="true">' + icon('pictureInfo') + '</span>'; }
+          else if (swatch || item.thumbnail) body += item.value === 'light' || item.value === 'dark'
             ? '<span class="setting-swatch swatch-' + item.value + '" aria-hidden="true"></span>'
             : '<img class="setting-swatch" src="' + WP + S.c.wall + '-thumb.jpg" alt="">';
           body += '<span class="setting-copy"><span class="setting-name">' + esc(item.label) + '</span>'

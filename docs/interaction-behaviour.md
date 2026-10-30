@@ -38,13 +38,13 @@ A font or photo change applies only after its resources are ready and storage su
 
 The selected font applies to Home app names, the clock and Home controls, including Newsreader. Settings, All apps, the Home editor and status text retain Manrope. The preview shows the committed Home appearance and its clock continues to update. Pangram faces are available in Nathan's private build when the local files are present; their binaries are not included in the public source. An unavailable optional face is omitted. If the baseline font is slow or missing, Home remains usable with a local fallback and can recover when the font loads.
 
-Daily pictures has its own [calendar rotation, source switches, sizing, credits
-and Home buttons](daily-pictures.md). Next picture and Picture info appear only
-on Home with this background active. Up above utility controls (or the first
-List app) reaches Next picture; Right reaches Picture info. Back closes its
-details first. Daily changes wait while panels or details are open. Online
-pictures use neutral translucent materials instead of pre-rendered glass.
-Dock opacity also applies to this mode.
+Online pictures adds Next picture and Picture info to the existing Home controls,
+forming one row of five icons in both layouts. Left/Right moves between them.
+Picture info contains image credits and source/licence links; Back closes it and
+Up/Down scrolls long text. Credits are not displayed separately at the bottom.
+Local pictures settings remain editable when another background is active;
+changing a wallpaper or its rotation does not activate Local pictures.
+The online thumbnail shows the current cached image instead of the local photo.
 
 ## Streaming apps
 

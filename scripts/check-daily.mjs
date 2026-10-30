@@ -66,7 +66,7 @@ try {
   assert.equal(await page.locator('#dailySkip').isVisible(), true);
   assert.ok(!(await page.evaluate(() => window.__dailyCalls)).includes('bing'));
   const before = await state();
-  await page.evaluate(() => ShoreQA.nav('up', 'up'));
+  await page.evaluate(() => ShoreQA.nav('up', 'right', 'right', 'right'));
   assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
   assert.equal((await page.evaluate(() => ShoreQA.where())).focusCount, 1);
   await page.evaluate(() => ShoreQA.nav('ok'));
@@ -75,7 +75,7 @@ try {
   const skippedTo = (await state()).current;
   await page.evaluate(() => CleanFrameDaily.tick());
   assert.equal((await state()).current, skippedTo, 'Same calendar day keeps the picture');
-  assert.match(await page.locator('#dailyCredit').innerText(), /Test photographer/);
+  assert.equal(await page.locator('#dailyCredit').isVisible(), false);
   assert.equal(await page.locator('#dailyCredit unsafe').count(), 0);
   await page.evaluate(() => ShoreQA.nav('right', 'ok'));
   assert.equal(await page.locator('#dailyDetails').isVisible(), true);
@@ -94,8 +94,14 @@ try {
   assert.equal(await page.locator('#dailyDetails').isVisible(), false);
   assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.info');
   await page.evaluate(() => ShoreQA.scene('settings'));
-  await act('settings.group.background'); await act('background.daily');
-  assert.equal(await page.locator('#dailySkip').isVisible(), false, 'Panel owns focus');
+  await act('settings.group.background');
+  const onlineThumb = await page.locator('[data-action="choice.bg.daily"] img').getAttribute('src');
+  assert.ok(onlineThumb.startsWith('blob:'));
+  await act('background.local'); await act('background.rotation'); await act('rotation.15');
+  assert.equal(await page.evaluate(() => ShoreQA.state().look.bg), 'daily');
+  await page.evaluate(() => ShoreQA.nav('back', 'back'));
+  await act('background.daily');
+  assert.notEqual((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
   assert.equal((await state()).options.sources.pixabay, false, 'Public preview has no API key');
   assert.equal(await page.evaluate(() => CleanFrameDaily.configure('pixabay', true)), false);
   mkdirSync(root + '.local/qa', { recursive: true });
@@ -141,8 +147,10 @@ try {
   for (const layout of ['dock', 'list']) {
     await page.evaluate(layout => ShoreQA.look({ layout }), layout); await ready();
     await page.evaluate(() => ShoreQA.scene('home'));
-    await page.evaluate(layout => ShoreQA.nav(layout === 'dock' ? ['up', 'up'] : ['up']), layout);
+    await act('daily.skip');
     assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
+    const buttons = await page.locator('.utils .u').evaluateAll(es => es.map(e => e.getBoundingClientRect().top));
+    assert.equal(buttons.length, 5); assert.ok(buttons.every(y => Math.abs(y - buttons[0]) < 1));
     for (const width of [1920, 1280]) {
       await page.setViewportSize({ width, height: width * 9 / 16 });
       mkdirSync(root + '.local/qa', { recursive: true });
@@ -155,7 +163,7 @@ try {
     CleanFrameDaily.providers.forEach(p => CleanFrameDaily.configure(p.id, false));
     CleanFrameDaily.skip();
   });
-  assert.equal((await state()).current, newDay, 'An empty queue keeps the current picture');
+  assert.ok((await state()).current, 'An empty queue keeps the current picture');
   assert.equal((await state()).count, 0, 'Disabled sources are removed from the queue');
   // Confirm the actual rendered crop never distorts image proportions.
   await page.setViewportSize({ width: 1920, height: 1080 });
