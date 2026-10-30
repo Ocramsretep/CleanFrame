@@ -26,8 +26,6 @@ The public app uses Manrope, Geist and Newsreader. A personal widget containing 
 
 Brand marks identify services. Their owners retain trademark rights; this project claims no endorsement or affiliation. The older Australian TV icon archive's GPL text is retained for historical provenance only; no current icon uses that archive.
 
-The PNG halos in `app/assets/icons/glow/` are padded, warm-coloured, blurred derivatives of the corresponding SVG icons. They retain those icons' credits and licence terms, including the Font Awesome Xbox attribution above.
-
 Collection licences do not replace individual brand terms. In particular, Simple
 Icons explicitly warns that its CC0 distribution does not mean every included
 logo is CC0. No claim of individual brand-owner permission is made for the white

@@ -117,8 +117,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .tile .mark{position:absolute;left:84px;top:34px;opacity:.84;transition:opacity 160ms linear,transform var(--t) var(--ease)}
 .tile .label{position:absolute;left:4px;right:4px;top:128px;text-align:center;font-size:36px;line-height:44px;letter-spacing:-.8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.84;transition:opacity 160ms linear}
 .tile .t-name{position:absolute;left:12px;right:12px;top:72px;text-align:center;font-size:40px;line-height:56px;letter-spacing:-1px;font-weight:600;white-space:nowrap;overflow:hidden;opacity:.84;transition:opacity 160ms linear}
-.tile.is-focus .mark,.tile.is-focus .label,.tile.is-focus .t-name,.tile.is-lifted .mark,.tile.is-lifted .label,.tile.is-lifted .t-name{opacity:1}
-.tile.is-focus .mark,.tile.is-lifted .mark{transform:translateY(-3px) scale(1.04)}
+.tile.has-highlight .mark,.tile.has-highlight .label,.tile.has-highlight .t-name,.tile.is-lifted .mark,.tile.is-lifted .label,.tile.is-lifted .t-name{opacity:1}
+.tile.has-highlight .mark,.tile.is-lifted .mark{transform:translateY(-3px) scale(1.04)}
 .tile.is-sel .mark,.tile.is-sel .label,.tile.is-sel .t-name{opacity:.94}
 .tile.k-ph .mark,.tile.k-ph .label,.tile.k-ph.is-focus .mark,.tile.k-ph.is-focus .label{opacity:.5;transform:none}
 .tile .add{position:absolute;left:116px;top:40px;width:56px;height:56px;opacity:.84}
@@ -172,17 +172,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .ph-group{position:absolute;left:0;top:0;width:100%;height:100%;opacity:.8;transform-origin:28px 64px;transition:opacity 160ms linear,transform var(--t) var(--ease)}
 .ph-group .mark{position:absolute;left:28px;top:32px}
 .ph-name{position:absolute;left:128px;top:10px;max-width:992px;font-size:88px;line-height:104px;font-weight:600;letter-spacing:-1.8px;color:var(--ph-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(14,10,6,.32),0 3px 14px rgba(14,10,6,.24)}
-.f-glass .ph-row.is-focus .ph-group,.f-glass .ph-row.is-sel .ph-group{opacity:1}
-.f-glass .ph-row.is-focus .ph-name,.ph-row.is-lifted .ph-name{text-shadow:0 1px 2px rgba(14,10,6,.22)}
+.f-glass .ph-row.has-highlight .ph-group,.f-glass .ph-row.is-sel .ph-group{opacity:1}
+.f-glass .ph-row.has-highlight .ph-name,.ph-row.is-lifted .ph-name{text-shadow:0 1px 2px rgba(14,10,6,.22)}
 .f-type .ph-group{opacity:.62}
-.f-type .ph-row.is-focus .ph-group{opacity:1;transform:scale(1.05)}
-.f-type .ph-row.is-focus .ph-name{text-shadow:0 1px 2px rgba(14,10,6,.36),0 4px 18px rgba(14,10,6,.3)}
+.f-type .ph-row.has-highlight .ph-group{opacity:1;transform:scale(1.05)}
+.f-type .ph-row.has-highlight .ph-name{text-shadow:0 1px 2px rgba(14,10,6,.36),0 4px 18px rgba(14,10,6,.3)}
 .f-type .ph-row.is-sel .ph-group{opacity:.78;transform:none}
 .f-glass .ph-row.k-ph .ph-group,.f-type .ph-row.k-ph .ph-group{opacity:.5}
 .f-glass .ph-row.is-lifted .ph-group,.f-type .ph-row.is-lifted .ph-group{opacity:1;transform:none}
 .bg-photo .ph-group,.bg-photo.f-type .ph-group{opacity:.84}
 .bg-photo.f-type .ph-row.is-sel .ph-group{opacity:.92}
-.bg-photo.f-type .ph-row.is-focus .ph-group,.bg-photo.f-type .ph-row.is-lifted .ph-group{opacity:1}
+.bg-photo.f-type .ph-row.has-highlight .ph-group,.bg-photo.f-type .ph-row.is-lifted .ph-group{opacity:1}
 .bg-photo.f-type .ph-row.k-ph .ph-group{opacity:.5}
 .ph-plate{position:absolute;z-index:1;left:112px;top:0;width:360px;height:134px;border-radius:38px;overflow:hidden;opacity:0;transition:opacity 160ms linear;transform:translateZ(0)}
 .ph-plate.on-focus,.ph-plate.on-lift{opacity:1}
@@ -424,7 +424,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .tile-content{position:absolute;top:0;right:0;bottom:0;left:0;border-radius:inherit;transform-origin:50% 50%;transition:opacity 160ms linear,transform var(--t) var(--ease)}
 .f-type .plate{opacity:0}
 .f-type .tile-content{opacity:.62}
-.f-type .tile.is-focus .tile-content{opacity:1;transform:scale(1.06)}
+.f-type .tile.has-highlight .tile-content{opacity:1;transform:scale(1.06)}
 .f-type .tile.is-sel .tile-content{opacity:.78}
 .f-type .tile.k-ph .tile-content{opacity:.5}
 .f-type .tile.is-lifted .tile-content{opacity:1;transform:none}
@@ -432,7 +432,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .f-type .tile.is-press .mark{animation:none}
 .bg-photo.f-type .tile-content{opacity:.84}
 .bg-photo.f-type .tile.is-sel .tile-content{opacity:.92}
-.bg-photo.f-type .tile.is-focus .tile-content,.bg-photo.f-type .tile.is-lifted .tile-content{opacity:1}
+.bg-photo.f-type .tile.has-highlight .tile-content,.bg-photo.f-type .tile.is-lifted .tile-content{opacity:1}
 .bg-photo.f-type .tile.k-ph .tile-content{opacity:.5}
 /* Region classes are an offline classification, never runtime pixel sampling. */
 .bg-photo{--tr-rest:.66;--br-rest:.66;--tr-peer:.46;--br-peer:.46}
@@ -540,7 +540,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 @media(prefers-reduced-motion:reduce){.wallpaper-rows{transition:none}}
 @media(prefers-reduced-motion:reduce){.panel-content,.ph-group,.tile-content,.u-content,.util-focus-label,.quiet-utils .u .ico{transform:none!important}.tile-content{transition:opacity 120ms linear!important}}
 
-.at-appearance .plate.on-sel,.at-wallpaper .plate.on-sel{opacity:.5;background:var(--plate);box-shadow:var(--plate-edge)}
+/* The Home preview uses the same visual highlight as Home; .is-focus remains
+   reserved for the interactive Settings control. */
 
 /* Header utilities share Type/Glass focus; commands keep their solid focus. */
 .s-head .btn,.header-utils .u{position:relative;background:none;color:var(--mute);box-shadow:none;transition:transform 140ms var(--ease),color 140ms linear}
@@ -592,22 +593,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .font-newsreader .home .cap-title,.font-newsreader .home .header-utils,.font-newsreader .home .dock-action,.font-newsreader .home .ph-action,.font-newsreader .home .btn,.font-newsreader .home .dock-empty p,.font-newsreader .home .ph-empty p{font-variation-settings:"opsz" 36}
 
 /* App highlights are independent of the existing Type/Glass control focus.
-   Icon halos are bundled PNGs: navigation changes opacity, never a live blur. */
-.mark-glow{position:absolute;display:none;pointer-events:none;opacity:0;transition:opacity 160ms linear}
-.h-glow .home .mark-glow{display:block}
-.mark-glow::before{content:"";position:absolute;left:-25%;top:-25%;width:150%;height:150%;background-image:var(--glow-image);background-size:100% 100%;background-repeat:no-repeat}
-.h-glow .has-highlight .mark-glow{opacity:1}
-.h-glow .has-highlight .label,.h-glow .has-highlight .ph-name{ text-shadow:0 0 8px rgba(255,250,236,.65),0 0 20px rgba(255,250,236,.45)}
-.bg-light.h-glow .has-highlight .label,.bg-light.h-glow .has-highlight .ph-name{text-shadow:0 0 8px rgba(29,26,22,.3),0 0 20px rgba(29,26,22,.18)}
+   Focus line adds a small, sharp marker below the icon, or below text-only apps. */
+.h-indicator .tile .mark::after,.h-indicator .ph-row .mark::after,.h-indicator.a-text .tile::after,.h-indicator.a-text .ph-row::after{content:"";position:absolute;left:50%;bottom:-12px;width:28px;height:4px;margin-left:-14px;border-radius:2px;background:currentColor;opacity:0;pointer-events:none;transition:opacity 160ms linear}
+.h-indicator .ph-list.is-compact .mark::after{bottom:-8px}
+.h-indicator.a-text .tile::after{bottom:12px}
+.h-indicator.a-text .ph-row::after{left:28px;bottom:8px;margin-left:0;color:var(--ph-ink)}
+.h-indicator .has-highlight .mark::after,.h-indicator.a-text .tile.has-highlight::after,.h-indicator.a-text .ph-row.has-highlight::after{opacity:1}
 .h-underline .has-highlight .label-ink,.h-underline .has-highlight .ph-name,.h-underline .app-focus-name.is-on{text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:8px}
-.h-tile .tile::before,.h-tile .ph-row::after{content:"";position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:32px;background:#f6f1e7;box-shadow:0 0 0 1px rgba(29,26,22,.15),0 4px 18px rgba(0,0,0,.12);opacity:0;pointer-events:none;transition:opacity 160ms linear}
-.h-tile .ph-row::after{width:var(--highlight-width);z-index:-1;border-radius:38px}
-.h-tile .tile.has-highlight::before,.h-tile .ph-row.has-highlight::after{opacity:.95}
-.h-tile .has-highlight .mark,.h-tile .has-highlight .label,.h-tile .has-highlight .ph-name{color:#202a2d;text-shadow:none!important}
-.h-tile .has-highlight .tile-content,.h-tile .has-highlight .ph-group,.h-glow .has-highlight .tile-content,.h-glow .has-highlight .ph-group,.h-underline .has-highlight .tile-content,.h-underline .has-highlight .ph-group{opacity:1}
-.h-glow .dock .plate,.h-underline .dock .plate,.h-tile .dock .plate,.h-glow .ph-scene .ph-plate,.h-underline .ph-scene .ph-plate,.h-tile .ph-scene .ph-plate{opacity:0}
-.no-icon-masks.h-tile .tile::before,.no-icon-masks.h-tile .ph-row::after{background:#202a2d}
-.no-icon-masks.h-tile .has-highlight .mark,.no-icon-masks.h-tile .has-highlight .label,.no-icon-masks.h-tile .has-highlight .ph-name{color:#f6f1e7}
+.h-indicator .has-highlight .tile-content,.h-indicator .has-highlight .ph-group,.h-underline .has-highlight .tile-content,.h-underline .has-highlight .ph-group{opacity:1}
+.h-indicator .dock .plate,.h-underline .dock .plate,.h-indicator .ph-scene .ph-plate,.h-underline .ph-scene .ph-plate{opacity:0}
 .detail-layout .setting-section+.setting-section,.detail-focus .setting-section+.setting-section{margin-top:28px}
 .detail-layout .is-horizontal .setting-choice{min-height:78px}
 .is-grid .setting-options{flex-direction:row;flex-wrap:wrap}
