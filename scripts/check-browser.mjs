@@ -634,18 +634,18 @@ try {
       const plate = document.querySelector(layout === 'dock' ? '.dock .plate' : '.ph-scene .ph-plate.is-current');
       const properties = ['opacity', 'transform', 'color', 'backgroundColor', 'backgroundImage', 'boxShadow', 'textShadow', 'textDecorationLine', 'textDecorationThickness', 'textUnderlineOffset'];
       const style = (element, pseudo) => element ? Object.fromEntries(properties.map(name => [name, getComputedStyle(element, pseudo)[name]])) : null;
-      const parts = ['.tile-content', '.ph-group', '.mark', '.mk', '.label', '.label-ink', '.ph-name'];
+      const parts = ['.tile-content', '.ph-group', '.mark', '.mk', '.mark-glow', '.label', '.label-ink', '.ph-name'];
       return {
         selected: selected.getAttribute('aria-label'), plate: style(plate), tile: style(selected),
         before: style(selected, '::before'), after: style(selected, '::after'),
         parts: parts.map(selector => style(selected.querySelector(selector))),
-        marker: style(selected.querySelector('.mark'), '::after'),
+        halo: style(selected.querySelector('.mark-glow')),
         caption: style(document.getElementById('appFocusName'))
       };
     });
     for (const width of [1920, 1280]) {
       await current.setViewportSize({ width, height: width * 9 / 16 });
-      for (const layout of ['dock', 'list']) for (const focus of ['type', 'glass']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'indicator', 'underline']) {
+      for (const layout of ['dock', 'list']) for (const focus of ['type', 'glass']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'glow', 'underline']) {
         await look({ layout, focus, apps, highlight, wall: 'summit', material: 'tint' }); await scene('home');
         await current.waitForTimeout(230);
         const home = await appearance();
@@ -653,7 +653,7 @@ try {
         const preview = await appearance(), label = [width, layout, focus, apps, highlight].join('/');
         check('Home and preview render identical app focus ' + label, same(home, preview), { home, preview });
         check('Preview retains one interactive Settings focus ' + label, (await call('where')).focusCount === 1 && await current.locator('.home .is-focus[data-action]').count() === 0);
-        if (width === 1920 && layout === 'dock' && focus === 'type' && apps === 'both' && ['standard', 'indicator'].includes(highlight)) {
+        if (width === 1920 && layout === 'dock' && focus === 'type' && apps === 'both' && ['standard', 'glow'].includes(highlight)) {
           await current.screenshot({ path: out + 'matched-preview-' + highlight + '.png' });
           await scene('home'); await current.waitForTimeout(230);
           await current.screenshot({ path: out + 'matched-home-' + highlight + '.png' });
@@ -662,42 +662,44 @@ try {
         }
       }
     }
-    await look({ layout: 'dock', apps: 'icons', highlight: 'indicator' }); await scene('home');
+    await look({ layout: 'dock', apps: 'icons', highlight: 'glow' }); await scene('home');
     await current.waitForTimeout(180);
-    const marker = await current.locator('.dock .has-highlight .mark').evaluate(mark => {
-      const style = getComputedStyle(mark, '::after');
-      return { width: parseFloat(style.width), height: parseFloat(style.height), opacity: style.opacity, shadow: style.boxShadow, filter: style.filter };
+    const halo = await current.locator('.dock .has-highlight .mark-glow').evaluate(async el => {
+      const style = getComputedStyle(el), image = new Image();
+      image.src = style.backgroundImage.slice(5, -2); await image.decode();
+      return { width: el.offsetWidth, height: el.offsetHeight, opacity: style.opacity, filter: style.filter, atlas: [image.naturalWidth, image.naturalHeight], size: style.backgroundSize };
     });
-    check('Focus line stays compact and sharp', marker.width === 28 && marker.height === 4 && marker.opacity === '1' && marker.shadow === 'none' && marker.filter === 'none', marker);
-    await nav('up'); await current.waitForTimeout(180);
-    check('Focus line leaves the app when focus moves to controls', await current.locator('.dock .has-highlight').count() === 0 && await current.locator('.dock .mark').evaluateAll(marks => marks.every(mark => getComputedStyle(mark, '::after').opacity === '0')));
+    check('Glow loads the fixed-size atlas without scaling or a live filter', halo.width === 264 && halo.height === 216 && halo.opacity === '1' && halo.filter === 'none' && halo.size === 'auto' && same(halo.atlas, [528, 1296]), halo);
+    await nav('up');
+    await current.waitForFunction(() => !document.querySelector('.dock .has-highlight') && Array.from(document.querySelectorAll('.dock .mark-glow')).every(mark => getComputedStyle(mark).opacity === '0'), null, { timeout: 1500 });
+    check('Glow leaves the app when focus moves to controls', await current.locator('.dock .has-highlight').count() === 0 && await current.locator('.dock .mark-glow').evaluateAll(marks => marks.every(mark => getComputedStyle(mark).opacity === '0')));
   });
   await run('App highlights and dock opacity', async () => {
     await page();
     check('Existing preferences retain standard highlight and full material opacity', (await state()).look.highlight === 'standard' && (await state()).look.dockOpacity === 100);
     await group('focus');
     const options = (await radios()).filter(row => row.action.startsWith('choice.highlight.'));
-    check('Only the three supported app highlights are visible', same(options.map(row => row.action), ['standard', 'indicator', 'underline'].map(value => 'choice.highlight.' + value)));
+    check('Only the three supported app highlights are visible', same(options.map(row => row.action), ['standard', 'glow', 'underline'].map(value => 'choice.highlight.' + value)));
     const before = await settingsSnapshot();
     await nav('down', 'down', 'right');
     check('Browsing highlight choices does not save or preview', same(await settingsSnapshot(), before));
-    await choice('highlight', 'indicator');
-    check('Focus line is applied with one checked option', (await state()).look.highlight === 'indicator' && (await radios()).filter(row => row.action.startsWith('choice.highlight.') && row.checked === 'true').length === 1);
+    await choice('highlight', 'glow');
+    check('Glow is applied with one checked option', (await state()).look.highlight === 'glow' && (await radios()).filter(row => row.action.startsWith('choice.highlight.') && row.checked === 'true').length === 1);
     for (const width of [1920, 1280]) {
       await current.setViewportSize({ width, height: width * 9 / 16 });
-      for (const layout of ['dock', 'list']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'indicator', 'underline']) {
+      for (const layout of ['dock', 'list']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'glow', 'underline']) {
         await look({ layout, apps, highlight }); await scene('home');
         check('One highlighted app ' + [width, layout, apps, highlight].join('/'), await current.locator((layout === 'dock' ? '.dock' : '.ph-scene') + ' .has-highlight').count() === 1 && (await call('where')).focusCount === 1);
         check('No runtime blur for ' + highlight, await current.locator('.home .has-highlight, .home .has-highlight *').evaluateAll(elements => elements.every(el => getComputedStyle(el).filter === 'none' && (!getComputedStyle(el).backdropFilter || getComputedStyle(el).backdropFilter === 'none'))));
-        if (highlight === 'indicator') {
+        if (highlight === 'glow') {
           await current.waitForTimeout(180);
           const markerCount = () => current.locator(layout === 'dock' ? '.dock .tile' : '.ph-scene .ph-row').evaluateAll(rows => rows.filter(row => {
-            const style = getComputedStyle(row.querySelector('.mark') || row, '::after');
-            return style.content !== 'none' && style.opacity === '1';
+            const halo = row.querySelector('.mark-glow');
+            return halo ? getComputedStyle(halo).display !== 'none' && getComputedStyle(halo).opacity === '1' : row.classList.contains('has-highlight');
           }).length);
-          check('One visible focus line ' + [width, layout, apps].join('/'), await markerCount() === 1);
+          check('One visible glow ' + [width, layout, apps].join('/'), await markerCount() === 1);
           await nav(layout === 'dock' ? 'up' : 'right'); await current.waitForTimeout(180);
-          check('No app focus line on controls ' + [width, layout, apps].join('/'), await markerCount() === 0);
+          check('No app glow on controls ' + [width, layout, apps].join('/'), await markerCount() === 0);
           await nav('back'); await current.waitForTimeout(180);
         }
         if (apps === 'icons' && width === 1920) {
@@ -705,7 +707,7 @@ try {
           await current.screenshot({ path: out + 'highlight-' + layout + '-' + highlight + '.png' });
         }
       }
-      await look({ layout: 'dock', bg: 'photo', apps: 'icons', highlight: 'indicator' });
+      await look({ layout: 'dock', bg: 'photo', apps: 'icons', highlight: 'glow' });
       await group('focus');
       check('Focus options fit on screen at ' + width, await current.locator('.section-highlight').evaluate(el => el.getBoundingClientRect().bottom < innerHeight * .9));
       await current.screenshot({ path: out + 'highlight-settings-' + width + '.png' });
@@ -746,8 +748,8 @@ try {
     await look({ layout: 'dock', bg: 'light' });
     check('Flat background disables the material slider', await current.locator('#dockOpacityInput').isDisabled());
     await look({ bg: 'photo' }); await current.reload(); await ready();
-    check('Highlight and opacity survive reload', (await state()).look.highlight === 'indicator' && (await state()).look.dockOpacity === 55);
-    for (const [saved, expected] of [['glow', 'indicator'], ['tile', 'standard']]) {
+    check('Highlight and opacity survive reload', (await state()).look.highlight === 'glow' && (await state()).look.dockOpacity === 55);
+    for (const [saved, expected] of [['indicator', 'glow'], ['glow', 'glow'], ['tile', 'standard']]) {
       await closePage(); await page({ seed: baseline({ look: { layout: 'list', highlight: saved, dockOpacity: 45 } }) });
       check('Retired highlight migrates safely: ' + saved, (await state()).look.highlight === expected && (await state()).look.layout === 'list' && (await state()).look.dockOpacity === 45);
       await group('focus');

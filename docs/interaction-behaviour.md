@@ -20,7 +20,7 @@ Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps o
 | Background | Photo, Light, Dark; Wallpaper and Rotation when Photo is active |
 | Layout | List or Dock; independent Text, Icons or Both choices for apps and Home controls; Dock background opacity |
 | Typography | Manrope, Neue Montreal, Mori, Pangram Sans, Geist and Newsreader, when available |
-| Focus | Type or Glass; Soft, Frost or Clear tint material; Standard, Focus line or Underline app highlight |
+| Focus | Type or Glass; Soft, Frost or Clear tint material; Standard, Glow or Underline app highlight |
 | Apps on Home | Membership and arrangement editor |
 | App icons | Per-app white icon selection, with Home apps first |
 | Sources | Visibility, names, icons, order, HDMI assignment and connection query |
@@ -30,7 +30,7 @@ Up/Down moves between rows. Left/Right moves between choices in a horizontal row
 
 Material applies to a photographic Dock, or Glass focus on a photographic List. Inactive material choices remain visible with an explanation and are skipped during navigation. Their stored value is retained. Wallpaper and rotation are also inactive on flat backgrounds.
 
-App highlight is shared by Dock and List, including Text, Icons and Both. Standard preserves the existing Type/Glass appearance. Focus line adds a short, rounded marker below the icon (below the app name in Text mode), without a halo. Underline marks the app name, including the focused caption in Icons mode. These options affect app focus, independently of the Type/Glass choice for Home controls. The Settings and Wallpaper previews show the same focused-app scaling, opacity and plate as Home, while interactive focus remains in Settings. In particular, Standard with Type has no app plate in either view; Standard with Glass shows the same glass plate in both. Existing preferences default to Standard. Saved Glow preferences migrate to Focus line; saved Light tile preferences migrate to Standard.
+App highlight is shared by Dock and List, including Text, Icons and Both. Standard preserves the existing Type/Glass appearance. Glow adds a bounded, soft light behind the icon using pre-rendered shadows at the actual display size. App names remain sharp in Both mode; Text mode uses a text glow. Underline marks the app name, including the focused caption in Icons mode. These options affect app focus, independently of the Type/Glass choice for Home controls. The Settings and Wallpaper previews show the same focused-app scaling, opacity and plate as Home, while interactive focus remains in Settings. In particular, Standard with Type has no app plate in either view; Standard with Glass shows the same glass plate in both. Existing preferences default to Standard. Saved Focus line preferences migrate to Glow; saved Light tile preferences migrate to Standard.
 
 Layout's Dock background opacity slider ranges from 0% to 100% in 5% steps; 100% preserves the original material. It changes only the Dock background, leaving app marks, captions and focus indicators readable. It is available with Photo and Dock; List and flat backgrounds retain the value but disable the slider. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. Saved values survive layout changes and restart.
 

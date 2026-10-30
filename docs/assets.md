@@ -21,6 +21,10 @@ All fields use the centred 1920 x 1080 crop. The small panel backdrop comes from
 
 `app/assets/wallpapers/catalog.js` stores names and surface parameters; `app/assets/adaptive-ink.js` stores offline colour choices. New photographs need a rendered review of their List, Dock, clock, controls and all three materials before their metadata is accepted. An average image colour alone does not establish readable text.
 
+## Icon glows
+
+`node scripts/build-icon-glows.mjs` writes offline glow atlases to `.local/materials/icon-glows/`; review before copying to `app/assets/icons/glow/`. Each 528 × 1296 PNG has two columns (light/dark ink) and six rows (Dock Icons/Both, List Icons/Both, compact List Icons/Both). Cells are 264 × 216 with 64px padding. The icon uses the same optical metrics as runtime, then two chained shadows at fixed 8px/.6 and 18px/.533 radii/opacity, matching the original preview, plus its bounded .24 base light. Unlike the earlier SVG-sized textures, these shadows are never rescaled to the SVG's square viewport. Regenerate when SVGs, optical metrics or mark geometry change. Runtime selects a cell and fades its opacity; no live filter, blur or pixel sampling runs on the TV. These derivatives retain their source icons' licences.
+
 ## Icon metrics
 
 `node scripts/build-icon-metrics.mjs` measures the SVGs in an aspect-preserved 240px viewport, matching the CSS mask renderer. Output is ignored `.local/materials/metrics.js`; review before copying it into `app/assets/icons/metrics.js`. The TV reads these bounds and does not scan icon pixels.

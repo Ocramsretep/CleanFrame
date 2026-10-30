@@ -31,6 +31,8 @@ Icons explicitly warns that its CC0 distribution does not mean every included
 logo is CC0. No claim of individual brand-owner permission is made for the white
 adaptations. Source and licence checks are not a guarantee of non-infringement.
 
+The glow atlases in `app/assets/icons/glow/` are blurred derivatives of the corresponding SVG icons. They retain the same credits and licence terms, including the Font Awesome Xbox attribution.
+
 ## Photographs and derived materials
 
 The fifteen photo pages were individually checked on 20 October 2026. Each displayed its credited author and free use under the [Unsplash License](https://unsplash.com/license). The [asset source register](docs/asset-sources.md) links every page. Runtime paths are in `app/assets/wallpapers/SOURCES.json`.

@@ -45,10 +45,10 @@
   };
   var PRIVATE_FONTS = window.CleanFramePrivateFontIDs || [], fontMetrics = {}, unavailableFonts = {}, widthCache = {}, fontRevision = 0, fontsReady = false;
   var LOOK_VALUES = { bg: ['dark', 'light', 'photo'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
-  LOOK_VALUES.highlight = ['standard', 'indicator', 'underline'];
+  LOOK_VALUES.highlight = ['standard', 'glow', 'underline'];
   var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material', highlight: 'App highlight', dockOpacity: 'Dock opacity' };
   var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
-  VALUE_NAMES.standard = 'Standard'; VALUE_NAMES.indicator = 'Focus line'; VALUE_NAMES.underline = 'Underline';
+  VALUE_NAMES.standard = 'Standard'; VALUE_NAMES.glow = 'Glow'; VALUE_NAMES.underline = 'Underline';
   var UTIL = { sources: ['Sources', 'hdmi'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
   var MSG = {
     leave: { title: 'Leave Home?', line: 'Open Samsung Home?', note: '', actions: [['stay', 'Stay'], ['samsung', 'Samsung Home']] }
@@ -135,6 +135,7 @@
   /* Optical placement is identical for the CSS mask and the image fallback. */
   function markHtml(id, w, h, size) {
     var m = window.FrameIconMetrics && window.FrameIconMetrics[id], st;
+    var glowRow = w === 136 && h === 88 ? 0 : w === 120 && h === 72 ? 1 : w === 88 && h === 88 ? 2 : w === 84 && h === 64 ? 3 : w === 64 && h === 64 ? 4 : w === 60 && h === 44 ? 5 : -1;
     if (m) {
       var weight = clamp(Math.pow(0.45 / m.fill, 0.3), 0.84, 1.25);
       var k = Math.min(w / m.w, h / m.h, size * weight / Math.sqrt(m.w * m.h)), s = m.n * k;
@@ -142,6 +143,7 @@
     } else st = 'width:' + w + 'px;height:' + h + 'px;left:0;top:0;object-fit:contain';
     probeMark(id);
     return '<span class="mark' + (markProbes[id] === 'bad' ? ' is-bad' : '') + '" data-mark="' + id + '" style="width:' + w + 'px;height:' + h + 'px">'
+      + (glowRow < 0 ? '' : '<span class="mark-glow" aria-hidden="true" style="width:' + (w + 128) + 'px;height:' + (h + 128) + 'px;background-image:url(' + ICONS + 'glow/' + id + '.png);background-position:0 -' + (glowRow * 216) + 'px"></span>')
       + (maskSupport ? '<span class="mk" style="' + st + ';-webkit-mask-image:url(' + ICONS + id + '.svg);mask-image:url(' + ICONS + id + '.svg)"></span>' : '<img alt="" src="' + ICONS + id + '.svg" style="' + st + '">') + '</span>';
   }
   function appMark(a, w, h, size) {
@@ -348,7 +350,7 @@
       bg: pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'photo'), layout: pick(modern.layout, LOOK_VALUES.layout, legacyList ? 'list' : 'dock'),
       apps: pick(modern.apps, LOOK_VALUES.apps, legacyList ? 'text' : 'both'), controls: pick(modern.controls, LOOK_VALUES.controls, 'both'),
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
-      highlight: pick(modern.highlight === 'glow' ? 'indicator' : modern.highlight, LOOK_VALUES.highlight, 'standard'), dockOpacity: cleanOpacity(modern.dockOpacity),
+      highlight: pick(modern.highlight === 'indicator' ? 'glow' : modern.highlight, LOOK_VALUES.highlight, 'standard'), dockOpacity: cleanOpacity(modern.dockOpacity),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
       home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
       appIcons: window.FrameAppIcons.clean(s.appIcons),

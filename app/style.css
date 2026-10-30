@@ -592,16 +592,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .font-newsreader .home .tile .label,.font-newsreader .home .app-focus-name,.font-newsreader .home .full-name{font-variation-settings:"opsz" 36;font-optical-sizing:none}
 .font-newsreader .home .cap-title,.font-newsreader .home .header-utils,.font-newsreader .home .dock-action,.font-newsreader .home .ph-action,.font-newsreader .home .btn,.font-newsreader .home .dock-empty p,.font-newsreader .home .ph-empty p{font-variation-settings:"opsz" 36}
 
-/* App highlights are independent of the existing Type/Glass control focus.
-   Focus line adds a small, sharp marker below the icon, or below text-only apps. */
-.h-indicator .tile .mark::after,.h-indicator .ph-row .mark::after,.h-indicator.a-text .tile::after,.h-indicator.a-text .ph-row::after{content:"";position:absolute;left:50%;bottom:-12px;width:28px;height:4px;margin-left:-14px;border-radius:2px;background:currentColor;opacity:0;pointer-events:none;transition:opacity 160ms linear}
-.h-indicator .ph-list.is-compact .mark::after{bottom:-8px}
-.h-indicator.a-text .tile::after{bottom:12px}
-.h-indicator.a-text .ph-row::after{left:28px;bottom:8px;margin-left:0;color:var(--ph-ink)}
-.h-indicator .has-highlight .mark::after,.h-indicator.a-text .tile.has-highlight::after,.h-indicator.a-text .ph-row.has-highlight::after{opacity:1}
+/* Fixed-size, pre-rendered shadows: no live filter or icon-dependent blur scaling. */
+.mark-glow{position:absolute;left:-64px;top:-64px;display:none;background-repeat:no-repeat;opacity:0;pointer-events:none;transition:opacity 160ms linear}
+.h-glow .home .mark-glow{display:block}
+.h-glow .has-highlight .mark-glow{opacity:1}
+.bg-light .mark-glow{background-position-x:-264px!important}
+.h-glow .tile.has-highlight .mark{transform:none}
+.h-glow.a-text .has-highlight .label,.h-glow.a-text .has-highlight .ph-name{text-shadow:0 0 8px rgba(255,255,255,.6),0 0 18px rgba(255,255,255,.53)}
+.bg-light.h-glow.a-text .has-highlight .label,.bg-light.h-glow.a-text .has-highlight .ph-name{text-shadow:0 0 8px rgba(32,42,45,.6),0 0 18px rgba(32,42,45,.53)}
 .h-underline .has-highlight .label-ink,.h-underline .has-highlight .ph-name,.h-underline .app-focus-name.is-on{text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:8px}
-.h-indicator .has-highlight .tile-content,.h-indicator .has-highlight .ph-group,.h-underline .has-highlight .tile-content,.h-underline .has-highlight .ph-group{opacity:1}
-.h-indicator .dock .plate,.h-underline .dock .plate,.h-indicator .ph-scene .ph-plate,.h-underline .ph-scene .ph-plate{opacity:0}
+.h-glow .has-highlight .tile-content,.h-glow .has-highlight .ph-group,.h-underline .has-highlight .tile-content,.h-underline .has-highlight .ph-group{opacity:1}
+.h-glow .dock .plate,.h-underline .dock .plate,.h-glow .ph-scene .ph-plate,.h-underline .ph-scene .ph-plate{opacity:0}
 .detail-layout .setting-section+.setting-section,.detail-focus .setting-section+.setting-section{margin-top:28px}
 .detail-layout .is-horizontal .setting-choice{min-height:78px}
 .is-grid .setting-options{flex-direction:row;flex-wrap:wrap}
