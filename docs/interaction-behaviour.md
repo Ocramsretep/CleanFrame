@@ -13,7 +13,7 @@
 
 ## Settings and appearance
 
-Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps on Home, Sources and Samsung. OK opens a group. Appearance groups use a two-pane screen with visible choices on the left and the committed Home preview on the right.
+Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps on Home, App icons, Sources and Samsung. OK opens a group. Appearance groups use a two-pane screen with visible choices on the left and the committed Home preview on the right.
 
 | Group | Choices |
 | --- | --- |
@@ -22,6 +22,7 @@ Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps o
 | Typography | Manrope, Neue Montreal, Mori, Pangram Sans, Geist and Newsreader, when available |
 | Focus | Type or Glass; Soft, Frost or Clear tint material |
 | Apps on Home | Membership and arrangement editor |
+| App icons | Per-app white icon selection, with Home apps first |
 | Sources | Visibility, names, icons, order, HDMI assignment and connection query |
 | Samsung | Samsung Home and TV settings |
 
@@ -39,7 +40,7 @@ The nine default apps keep their known native IDs. Other installed consumer apps
 
 ## All apps
 
-The panel reads `tizen.application.getAppsInfo` on entry and shows the filtered consumer apps alphabetically. Samsung's visibility flag alone also exposes system utilities, so EP packages, background services, ad players, account utilities, placeholders and duplicates are omitted. Known brands use bundled marks. Other apps use their local installed icon, with initials as a fallback.
+The panel reads `tizen.application.getAppsInfo` on entry and shows the filtered consumer apps alphabetically. Samsung's visibility flag alone also exposes system utilities, so EP packages, background services, ad players, account utilities, placeholders and duplicates are omitted. Known brands use bundled white marks; other apps use a generic white symbol. A saved icon choice is shared with Home and the editor.
 
 The five-column grid scrolls with remote focus. OK launches an app; its On Home badge shows membership. Up from the first row reaches Apps on Home, which opens the editor. An API failure shows a retry and keeps saved Home choices. Browser previews report that installed-app discovery and launching require the TV.
 
@@ -53,6 +54,23 @@ Open the editor from Settings or All apps. On Home shows the current order on th
 - Undo reverses a completed addition, removal or reorder from the current editing session. Done or Back closes the editor and keeps completed changes. Undo history ends when the editor closes.
 
 Removing the last Home app or adding a tenth app is prevented. A failed storage write keeps the committed choices and order, with a retry message. Saved native app IDs and names survive a restart or a failed catalogue refresh.
+
+## App icons
+
+Settings > App icons lists Home apps in their saved order, followed by other
+discovered apps alphabetically. OK opens a five-column icon picker for that app.
+Arrow keys move focus and scroll; focus alone never changes the icon or launches
+the app. OK applies the focused icon immediately. A checkmark identifies the
+saved choice; Automatic restores the bundled service mark or generic fallback.
+Applying the current choice does not write again. Back returns to the same app,
+then the App icons settings group, and keeps completed changes.
+
+Choices use native app IDs and survive restart, appearance changes, Home edits,
+Undo and failed discovery. A failed storage write keeps the previous icon and
+offers another attempt with OK. Saved Home apps remain editable when discovery
+fails. The picker selects bundled icons; importing external images is not part
+of this control. Icon bounds are measured offline, and cached content refreshes
+only after a committed icon change or catalogue update.
 
 ## Art Mode and Samsung screens
 

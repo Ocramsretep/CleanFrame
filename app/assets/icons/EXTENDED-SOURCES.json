@@ -1,0 +1,342 @@
+[
+  {
+    "id": "ard",
+    "source": "https://raw.githubusercontent.com/elax46/custom-brand-icons/72731666e020c9fa7300ed08b1031f191e077ba3/icon-svg/ARD.svg",
+    "license": "MIT",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "ard.svg",
+    "checked": "2026-10-30",
+    "sha256": "a124ec9f58d1b3263c60aa88b71b692c8eb9d38242fd0cfa0afd8a5df4ff3713"
+  },
+  {
+    "id": "arte",
+    "source": "https://raw.githubusercontent.com/elax46/custom-brand-icons/72731666e020c9fa7300ed08b1031f191e077ba3/icon-svg/arte.svg",
+    "license": "MIT",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "arte.svg",
+    "checked": "2026-10-30",
+    "sha256": "64f41e876094044a2272d7119df6d1dcffe42b6c7c42af067f5b6e97c5dbbff9"
+  },
+  {
+    "id": "cupra",
+    "source": "https://raw.githubusercontent.com/elax46/custom-brand-icons/72731666e020c9fa7300ed08b1031f191e077ba3/icon-svg/cupra.svg",
+    "license": "MIT",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "cupra.svg",
+    "checked": "2026-10-30",
+    "sha256": "e1d2e04b59382b6687f3b44cd8214179c676879db27b115774ec9931d41169bb"
+  },
+  {
+    "id": "maxdome",
+    "source": "https://raw.githubusercontent.com/elax46/custom-brand-icons/72731666e020c9fa7300ed08b1031f191e077ba3/icon-svg/maxdome.svg",
+    "license": "MIT",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "maxdome.svg",
+    "checked": "2026-10-30",
+    "sha256": "7e68b4d038e984d4f082d3040d76aab6aa9985454c8f626b80a63a5047c6c63f"
+  },
+  {
+    "id": "plutotv",
+    "source": "https://raw.githubusercontent.com/elax46/custom-brand-icons/72731666e020c9fa7300ed08b1031f191e077ba3/icon-svg/plutotv.svg",
+    "license": "MIT",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "plutotv.svg",
+    "checked": "2026-10-30",
+    "sha256": "a725664bfb47097cbaa75c705a7b0f2efa5e6bcf4bc6a25631712c57bdc05837"
+  },
+  {
+    "id": "audi",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/audi.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "audi.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://www.audi.com/ci/en/intro/basics/rings.html",
+    "brand_guidelines": "https://www.audi.com/ci/en/intro/basics/rings.html",
+    "sha256": "83130a550d400306509cf1cc70254e43e68fbc008f3f7823fcab502d2890238e"
+  },
+  {
+    "id": "dazn",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/dazn.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "dazn.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://media.dazn.com/en/assets/",
+    "sha256": "62d8ae1ec586c82b839b775c4b7cdc6353cef81603bdb7213c5e6aedaf6c8966"
+  },
+  {
+    "id": "deezer",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/deezer.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "deezer.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://deezerbrand.com/document/37#/-/logo",
+    "brand_guidelines": "https://deezerbrand.com/document/37#/-/logo",
+    "sha256": "b8a3af9abde57748645357bb31a0d04794b4ba433191421d33468523bac54067"
+  },
+  {
+    "id": "paramountplus",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/paramountplus.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "paramountplus.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://www.paramount.com/brand/paramount-plus",
+    "sha256": "bb0874c87f624ff5afc756887a2fc819fd32db995f4a1ebbc898811ec2a42e5b"
+  },
+  {
+    "id": "prosieben",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/prosieben.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "prosieben.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://www.prosieben.de",
+    "sha256": "ab2c792882a00a7e19e4636748fe4a3e4e1fc857f051e65578ec9f553d1e92c5"
+  },
+  {
+    "id": "smartthings",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/smartthings.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "smartthings.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://www.smartthings.com/press-kit",
+    "brand_guidelines": "https://www.smartthings.com/press-kit",
+    "sha256": "d4e6faac2c547d2f1bc2318991e424ca7b5aef331c6de6a61226fa294c5b51d5"
+  },
+  {
+    "id": "ted",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/ted.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "ted.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://www.ted.com/participate/organize-a-local-tedx-event/tedx-organizer-guide/branding-promotions/logo-and-design/your-tedx-logo",
+    "brand_guidelines": "https://www.ted.com/participate/organize-a-local-tedx-event/tedx-organizer-guide/branding-promotions/logo-and-design/your-tedx-logo",
+    "sha256": "92cee40d2e88f677b7904daf43c2ee592ca4acdef5687471a5f3147c94910015"
+  },
+  {
+    "id": "tiktok",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/tiktok.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "tiktok.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://tiktok.com",
+    "sha256": "26f27c5ff961e844393968b374dcdec03c564fe876d302f0898e362e5d24f2c5"
+  },
+  {
+    "id": "twitch",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/twitch.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "twitch.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://brand.twitch.tv",
+    "brand_guidelines": "https://brand.twitch.tv",
+    "sha256": "01612bfd2b559020ae2f2925ee95f6c071a2c92133253a4f16e99b4c431ce256"
+  },
+  {
+    "id": "zdf",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/zdf.svg",
+    "adaptation": "White fill; source geometry preserved.",
+    "file": "zdf.svg",
+    "checked": "2026-10-30",
+    "collection_license": "CC0-1.0",
+    "rights_note": "The collection license is not a clearance of individual logo copyright or trademark rights. Upstream provides no individual license for this entry; see SIMPLE-ICONS-DISCLAIMER.md.",
+    "brand_source": "https://www.zdf.de",
+    "sha256": "60e82fa82438deb56f738ddae29ee75dcd1fc2f67cdb23d29368c93c6de01b4d"
+  },
+  {
+    "id": "joyn",
+    "source": "https://commons.wikimedia.org/wiki/File:Joyn_logo.svg",
+    "author": "Joyn GmbH; vectorisation Daniel FR",
+    "license": "PD-textlogo as recorded on Wikimedia Commons; trademarks retained",
+    "adaptation": "White fill, geometry preserved",
+    "file": "joyn.svg",
+    "checked": "2026-10-30",
+    "sha256": "219c0abd98e4b06cf4f786eb57244b01ae9e141cd3f1e0f24a875c00e07bcd75"
+  },
+  {
+    "id": "rakutentv",
+    "source": "https://commons.wikimedia.org/wiki/File:Rakuten_TV_logo.svg",
+    "author": "Rakuten / Kashiwa Sato",
+    "license": "PD-textlogo as recorded on Wikimedia Commons; trademarks retained",
+    "adaptation": "White fill, geometry preserved",
+    "file": "rakutentv.svg",
+    "checked": "2026-10-30",
+    "sha256": "bb6f6fe805eebf244140c0c15f9e943a3874c4507277d3b8d7dd0b6afc2113bb"
+  },
+  {
+    "id": "rtlplus",
+    "source": "https://commons.wikimedia.org/wiki/File:RTL%2B_Logo_2021.svg",
+    "author": "RTL Group",
+    "license": "PD-textlogo as recorded on Wikimedia Commons; trademarks retained",
+    "adaptation": "Removed three coloured background rectangles; retained letter and plus geometry, recoloured white.",
+    "file": "rtlplus.svg",
+    "checked": "2026-10-30",
+    "sha256": "7ec9d64cb6cd56e14ddaa8cf0f73e1429acf2a5fd84d613954d6c69d7e5594be"
+  },
+  {
+    "id": "airplay",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "airplay.svg",
+    "checked": "2026-10-30",
+    "sha256": "4a3aa413c38bfc344caeec422a987295bebfd9c119f4b1718d3a4b80a2ded4a2"
+  },
+  {
+    "id": "brandtv",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "brandtv.svg",
+    "checked": "2026-10-30",
+    "sha256": "fbf10d71bc87acb5a64ea1ac997e7e558ca2c0842a2f040fbb288c4dddd8f76d"
+  },
+  {
+    "id": "chili",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "chili.svg",
+    "checked": "2026-10-30",
+    "sha256": "5a606a0371056806de3ff2552b271edf87555f6cb8ce1fc8b110c904abc81182"
+  },
+  {
+    "id": "couchplay",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "couchplay.svg",
+    "checked": "2026-10-30",
+    "sha256": "ab71f726782d408e54f60067f3e80b66f117068e2c2e9a97cdcd358f8740d2c6"
+  },
+  {
+    "id": "gallery",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "gallery.svg",
+    "checked": "2026-10-30",
+    "sha256": "588f1956ea8b7c43a9c0cbed4ae3bd8f6b29dc5d407788ccadb1b5700cf762ee"
+  },
+  {
+    "id": "movies",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "movies.svg",
+    "checked": "2026-10-30",
+    "sha256": "ccfa23ec5f11c518d542f21839964142c714f7617fbb2dd4243c54832be1e594"
+  },
+  {
+    "id": "internet",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "internet.svg",
+    "checked": "2026-10-30",
+    "sha256": "aa5963ded64edbef8df4b8d0a149986b179b5c6559df2390f72ef37a698e4327"
+  },
+  {
+    "id": "sportworld",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "sportworld.svg",
+    "checked": "2026-10-30",
+    "sha256": "05e42b4c9673e943eedf1757a87347f88c704344d8b2bec9836322a9d33e9c93"
+  },
+  {
+    "id": "kids",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "kids.svg",
+    "checked": "2026-10-30",
+    "sha256": "219132293ab53d24539aa99333b85d376501c7c9a3115454d46a060bc1d1f71e"
+  },
+  {
+    "id": "youtubetv",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "youtubetv.svg",
+    "checked": "2026-10-30",
+    "sha256": "0e9ee614c034c8be312e086bea9e0d3477a8d1d1d27a67799454a7c6b1d52b92"
+  },
+  {
+    "id": "unknown",
+    "source": "Original drawing for CleanFrame icon review",
+    "license": "MIT",
+    "note": "Generic alternative, not an official brand logo.",
+    "file": "unknown.svg",
+    "checked": "2026-10-30",
+    "sha256": "50e0212b8a432e69ca587637c577c9de5d096fb83d3296324370f2bf4fd54f21"
+  },
+  {
+    "id": "cleanframe",
+    "source": "app/icon.png",
+    "license": "MIT",
+    "file": "cleanframe.svg",
+    "checked": "2026-10-30",
+    "author": "Nathan Clark (original F); frame adaptation for this fork",
+    "adaptation": "F silhouette traced as rectilinear vector geometry at the original coordinates, recoloured white; added a plain square outline.",
+    "source_sha256": "dcf3a13df66ea2623045187534d105da3584f6d410be034ac8575eda57ce730d",
+    "sha256": "20e9f20844e70f19b41fabade41a8bb63ee0a6dd7b15ed9e81d323a9e1751d9b"
+  },
+  {
+    "id": "wow",
+    "source": "https://commons.wikimedia.org/wiki/File:WOW_Logo_2022.svg",
+    "author": "Sky Deutschland",
+    "license": "PD-textlogo as recorded on Wikimedia Commons; trademarks retained",
+    "adaptation": "White silhouette; transparent background.",
+    "file": "wow.svg",
+    "checked": "2026-10-30",
+    "sha256": "57073ed718a16c05807c52a6e6011d1d4aafa9ade8ccfe55e839d0a8ef082b94"
+  },
+  {
+    "id": "magentatv",
+    "source": "https://commons.wikimedia.org/wiki/File:Magenta_TV_Logo_2024.svg",
+    "author": "Telekom Deutschland GmbH",
+    "license": "PD-textlogo as recorded on Wikimedia Commons; trademarks retained",
+    "adaptation": "White silhouette; transparent background.",
+    "file": "magentatv.svg",
+    "checked": "2026-10-30",
+    "sha256": "aaa09e202c6a3e97eab4e3e415e47c2da85f99da484a2f290c73d27838503114"
+  },
+  {
+    "id": "magentatv-alt",
+    "source": "https://commons.wikimedia.org/wiki/File:Magenta_TV_Logo_2024.svg",
+    "author": "Telekom Deutschland GmbH",
+    "license": "PD-textlogo as recorded on Wikimedia Commons; trademarks retained",
+    "adaptation": "White silhouette; transparent background.",
+    "file": "magentatv-alt.svg",
+    "checked": "2026-10-30",
+    "sha256": "aaa09e202c6a3e97eab4e3e415e47c2da85f99da484a2f290c73d27838503114"
+  },
+  {
+    "id": "tvplus",
+    "source": "https://commons.wikimedia.org/wiki/File:Samsung_TV_Plus_logo.svg",
+    "author": "Samsung Inc.",
+    "license": "PD-textlogo as recorded on Wikimedia Commons; trademarks retained",
+    "adaptation": "White silhouette; transparent background.",
+    "file": "tvplus.svg",
+    "checked": "2026-10-30",
+    "sha256": "865cdc17a169cf73f03cb64159d259f45f79746d21ee21655b0e22dd1c818f65"
+  }
+]

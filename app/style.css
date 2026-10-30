@@ -266,6 +266,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .gt .t-name{position:absolute;left:12px;right:12px;top:56px;text-align:center;font-size:40px;line-height:56px;font-weight:600;letter-spacing:-1px;white-space:nowrap;overflow:hidden}
 .gt .state{position:absolute;left:8px;right:8px;top:164px;height:36px;display:flex;justify-content:center;align-items:center;font-size:28px;line-height:36px;font-weight:500;color:var(--mute);white-space:nowrap}
 .gt.is-focus .state{color:var(--ink)}
+.at-iconPicker .s-title,.at-iconApps .s-title{max-width:1120px;overflow:hidden;text-overflow:ellipsis}
+.bg-light .mark img{filter:brightness(0)}
 .badge{width:26px;height:26px;flex:none;color:var(--ink)}
 .badge-tick{stroke:var(--knock)}
 .badge.is-off{color:var(--faint)}
@@ -300,11 +302,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 
 /* Settings overview: each group carries one short, committed summary. */
 .settings-overview{position:absolute;left:112px;top:212px;width:1056px}
-.settings-group{width:100%;height:96px;padding:8px 32px 8px 28px;border-radius:20px;display:flex;align-items:center;justify-content:space-between;color:var(--ink);transition:background-color 140ms linear,color 140ms linear}
+.settings-group{width:100%;height:82px;padding:6px 32px 6px 28px;border-radius:20px;display:flex;align-items:center;justify-content:space-between;color:var(--ink);transition:background-color 140ms linear,color 140ms linear}
 .settings-group+.settings-group{margin-top:8px}
 .settings-group-copy{min-width:0;display:flex;flex-direction:column}
-.settings-group-name{font-size:40px;line-height:48px;font-weight:500;letter-spacing:-.6px}
-.settings-group-value{font-size:26px;line-height:34px;color:var(--mute);white-space:nowrap}
+.settings-group-name{font-size:34px;line-height:40px;font-weight:500;letter-spacing:-.6px}
+.settings-group-value{font-size:24px;line-height:30px;color:var(--mute);white-space:nowrap}
 .settings-group>.ico{width:30px;height:30px;color:var(--mute)}
 .settings-group.is-focus{background:var(--solid);color:var(--solid-ink)}
 .settings-group.is-focus .settings-group-value,.settings-group.is-focus>.ico{color:var(--solid-mute)}

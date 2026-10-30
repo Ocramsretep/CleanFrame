@@ -141,10 +141,7 @@
       + (maskSupport ? '<span class="mk" style="' + st + ';-webkit-mask-image:url(' + ICONS + id + '.svg);mask-image:url(' + ICONS + id + '.svg)"></span>' : '<img alt="" src="' + ICONS + id + '.svg" style="' + st + '">') + '</span>';
   }
   function appMark(a, w, h, size) {
-    if (a.mark && (maskSupport || S.c.bg !== 'light')) return markHtml(a.brand || a.id, w, h, size);
-    var words = a.name.split(/\s+/), letters = words[0].charAt(0) + (words.length > 1 ? words[1].charAt(0) : '');
-    return '<span class="mark monogram' + (a.icon ? ' native-icon' : '') + '" style="width:' + w + 'px;height:' + h + 'px;font-size:' + Math.round(size * .65) + 'px"><span>' + esc(letters.toUpperCase()) + '</span>'
-      + (a.icon ? '<img alt="" data-native-icon="true" src="' + esc(a.icon) + '">' : '') + '</span>';
+    return markHtml(S.c.appIcons[a.appId] || window.FrameAppIcons.resolve(a.appId, a.brand || a.id), w, h, size);
   }
   function smallMark(a) { return appMark(a, 56, 44, 36); }
   var measureCanvas = document.createElement('canvas'), measureContext = measureCanvas.getContext('2d'), measureSpan = document.createElement('span');
@@ -334,7 +331,7 @@
     var legacyList = s.theme === 'list', h = [], recent = [], records = Array.isArray(s.appRecords) ? s.appRecords : [];
     records.slice(0, 256).forEach(function (a) {
       if (!a || !safeId(a.id) || !safeId(a.appId) || typeof a.name !== 'string' || !a.name.trim() || app(a.id)) return;
-      APPS.push({ id: a.id, appId: a.appId, name: a.name.slice(0, 160), brand: ['hbomax', 'spotify', 'tubi'].indexOf(a.brand) >= 0 ? a.brand : '', mark: ['hbomax', 'spotify', 'tubi'].indexOf(a.brand) >= 0, icon: safeIcon(a.icon) });
+      APPS.push({ id: a.id, appId: a.appId, name: a.name.slice(0, 160), brand: window.FrameAppIcons.has(a.brand) ? a.brand : '', mark: window.FrameAppIcons.has(a.brand), icon: safeIcon(a.icon) });
     });
     (Array.isArray(s.home) ? s.home : Array.isArray(s.dock) ? s.dock : []).forEach(function (id) {
       if (!safeId(id) || h.indexOf(id) >= 0 || h.length >= CAP) return;
@@ -349,6 +346,7 @@
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
       home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
+      appIcons: window.FrameAppIcons.clean(s.appIcons),
       mode: pick(s.mode, MODES.map(function (m) { return m.id; }), 'fixed')
     };
   }
@@ -374,7 +372,7 @@
   }
   function clearSession() { S.undo = []; S.removedAt = {}; S.note = null; S.err = null; }
   function begin() { S.note = null; }
-  function next(home, recent) { var c = lookOf(S.c); c.home = home; c.recent = recent; c.lastApp = S.c.lastApp; c.mode = S.c.mode; return c; }
+  function next(home, recent) { var c = lookOf(S.c); c.home = home; c.recent = recent; c.lastApp = S.c.lastApp; c.mode = S.c.mode; c.appIcons = window.FrameAppIcons.clean(S.c.appIcons); return c; }
   function snap() { return { home: S.c.home.slice(), recent: S.c.recent.slice() }; }
   function pushRecent(list, id) { return [id].concat(without(list, id)).slice(0, 5); }
   function write(c, label) {
@@ -488,6 +486,12 @@
       });
       ALPHA.sort(function (a, b) { return app(a).name.toLowerCase().localeCompare(app(b).name.toLowerCase()); });
       catalog.loaded = true; catalog.error = null; catalog.revision++;
+      S.stack.forEach(function (panel) {
+        if (panel.id !== 'iconApps') return;
+        var focused = panel.items[panel.f.i];
+        panel.items = iconAppItems();
+        if (panel.items.indexOf(focused) >= 0) panel.f.i = panel.items.indexOf(focused);
+      });
       if (top().id === 'apps' && oldFocus && ALPHA.indexOf(oldFocus) >= 0) top().f.i = ALPHA.indexOf(oldFocus);
       norm(); render();
     });
@@ -824,6 +828,7 @@
       { id: 'typography', label: 'Typography', value: FONTS[S.c.font].name },
       { id: 'focus', label: 'Focus', value: VALUE_NAMES[S.c.focus] + (materialApplies() ? ', ' + VALUE_NAMES[S.c.material] : '') },
       { id: 'editor', label: 'Apps on Home', value: n + (n === 1 ? ' app' : ' apps') },
+      { id: 'icons', label: 'App icons', value: 'Choose an icon for each app' },
       { id: 'sources', label: 'Sources', value: 'TV, consoles and HDMI connections' },
       { id: 'samsung', label: 'Samsung', value: 'Home and TV settings' }];
   }
@@ -843,9 +848,73 @@
   };
   function settingsOk(id) {
     if (id === 'editor') openEditor('settings');
+    else if (id === 'icons') openIconApps();
     else if (id === 'sources') openSources();
     else openAppearance(id);
   }
+  /* Icon choices follow native app IDs and share the atomic preference write. */
+  function iconAppItems() { return S.c.home.concat(ALPHA.filter(function (id) { return !onHome(id); })); }
+  function openIconApps() {
+    S.err = null;
+    push({ id: 'iconApps', items: iconAppItems(), top: 0, f: { zone: 'grid', i: 0, h: 0 } });
+    refreshCatalog();
+  }
+  function iconOptions(a) {
+    var automatic = window.FrameAppIcons.resolve(a.appId, a.brand || a.id);
+    return [{ id: 'auto', name: 'Automatic', mark: automatic }].concat(window.FrameAppIcons.list.map(function (item) {
+      return { id: item.id, name: item.name, mark: item.id };
+    }));
+  }
+  function openIconPicker(id) {
+    var a = app(id), options = iconOptions(a), chosen = S.c.appIcons[a.appId] || 'auto', at = 0;
+    options.forEach(function (item, i) { if (item.id === chosen) at = i; });
+    S.err = null;
+    push({ id: 'iconPicker', app: id, options: options, top: Math.max(0, Math.floor(at / COLS) - 2), f: { zone: 'grid', i: at, h: 0 } });
+  }
+  function applyAppIcon(t) {
+    var a = app(t.app), chosen = t.options[t.f.i].id, current = S.c.appIcons[a.appId] || 'auto', c;
+    if (chosen === current) { S.err = null; return; }
+    c = next(S.c.home.slice(), S.c.recent.slice());
+    if (chosen === 'auto') delete c.appIcons[a.appId];
+    else c.appIcons[a.appId] = chosen;
+    if (write(c, 'Icon for ' + a.name)) catalog.revision++;
+  }
+  function iconPanelHead(t) {
+    var entries = [['back', t.id === 'iconApps' ? 'Settings' : 'Apps', '', 'left']];
+    if (t.id === 'iconApps' && catalog.error) entries.push(['retry', 'Try again', '', '']);
+    return entries;
+  }
+  function iconPanelNorm(t) {
+    var n = (t.id === 'iconApps' ? t.items : t.options).length;
+    t.f.i = clamp(t.f.i, 0, Math.max(0, n - 1));
+    t.f.h = clamp(t.f.h, 0, iconPanelHead(t).length - 1);
+    if (!n) t.f.zone = 'head';
+  }
+  function iconPanelKey(t, k) {
+    var f = t.f, n = (t.id === 'iconApps' ? t.items : t.options).length, col = f.i % COLS, row = Math.floor(f.i / COLS);
+    if (k === 'back') { S.err = null; pop(); return; }
+    if (f.zone === 'head') {
+      if (k === 'down' && n) f.zone = 'grid';
+      else if (k === 'left' && f.h > 0) f.h--;
+      else if (k === 'right' && f.h < iconPanelHead(t).length - 1) f.h++;
+      else if (k === 'ok') { if (f.h === 1) refreshCatalog(); else { S.err = null; pop(); } }
+      return;
+    }
+    if (k === 'left' && col > 0) f.i--;
+    else if (k === 'right' && col < COLS - 1 && f.i < n - 1) f.i++;
+    else if (k === 'down' && row < Math.ceil(n / COLS) - 1) f.i = Math.min(f.i + COLS, n - 1);
+    else if (k === 'up') { if (row > 0) f.i -= COLS; else f.zone = 'head'; }
+    else if (k === 'ok' && n) { if (t.id === 'iconApps') openIconPicker(t.items[f.i]); else applyAppIcon(t); }
+  }
+  function iconPanelPoint(t, z, i) {
+    if (z === 'grid') { t.f.zone = 'grid'; t.f.i = i; }
+    else if (z === 'head') { t.f.zone = 'head'; t.f.h = i; }
+    else return;
+    iconPanelKey(t, 'ok');
+  }
+  V.iconApps = { sheet: true, norm: iconPanelNorm, key: iconPanelKey, point: iconPanelPoint };
+  V.iconPicker = { sheet: true, norm: iconPanelNorm, key: iconPanelKey, point: iconPanelPoint };
+
   /* Sources use their own storage, so app membership and appearance never change. */
   var sourceScan = { text: 'Choose Check connections to read the TV.', loading: false, token: 0 };
   function openSource(item) {
@@ -1639,7 +1708,42 @@
       return '<button type="button" tabindex="-1" class="btn' + (i === fi ? ' is-focus' : '') + (b[2] ? ' ' + b[2] : '') + '" data-z="head" data-i="' + i + '" data-action="' + prefix + '.' + b[0] + '" aria-label="' + esc(b[0] === 'undo' ? undoCaption() : b[1]) + '">' + (b[3] ? icon(b[3]) : '') + '<span>' + b[1] + '</span></button>';
     }).join('');
   }
+  function fillIconPanel(t, el) {
+    var picker = t.id === 'iconPicker', a = picker ? app(t.app) : null, items = picker ? t.options : t.items;
+    var f = t.f, rows = Math.ceil(items.length / COLS), row = Math.floor(f.i / COLS), chosen = a && (S.c.appIcons[a.appId] || 'auto');
+    var hint = picker ? 'OK applies the icon. Back keeps completed changes.' : 'Apps on Home appear first. Choose an app to change its icon.';
+    if (!picker && catalog.loading) hint = 'Loading installed apps… Your Home apps are available below.';
+    else if (!picker && catalog.error) hint = catalog.error + ' Your saved Home apps are still available.';
+    setHTML(el.title, picker ? esc(a.name) + ' icon' : 'App icons');
+    setHTML(el.sub, picker && S.err ? '<span class="warn">Couldn’t save. Your previous icon is kept. OK tries again.</span>' : esc(hint));
+    setHTML(el.head, headButtons(iconPanelHead(t), f.zone === 'head' ? f.h : -1, picker ? 'icon' : 'icons'));
+    el.head.className = 's-head' + (f.zone === 'head' ? ' is-awake' : '');
+    if (f.zone === 'grid') { if (row < t.top) t.top = row; if (row > t.top + 2) t.top = row - 2; }
+    t.top = clamp(t.top, 0, Math.max(0, rows - 3));
+    el.grid.setAttribute('role', picker ? 'radiogroup' : 'group');
+    el.grid.setAttribute('aria-label', picker ? 'Icon for ' + a.name : 'Apps, Home first');
+    keyed(el.grid, items.map(function (item) { return { key: picker ? item.id : item, item: item }; }), function (tile, entry, i) {
+      var item = entry.item, selected = picker && chosen === item.id, visible = Math.floor(i / COLS) >= t.top && Math.floor(i / COLS) < t.top + 3;
+      setContent(tile, entry.key + '|' + chosen + '|' + (picker ? '' : onHome(item)), function () {
+        if (!picker) return gridTileHtml(item);
+        return '<span class="panel-content">' + markHtml(item.mark, 120, 72, 58) + '<span class="label">' + esc(item.name) + '</span></span><span class="state">' + (selected ? badge(true) + '<span>Applied</span>' : '') + '</span>';
+      });
+      tile.className = 'gt' + (f.zone === 'grid' && i === f.i ? ' is-focus' : '') + (selected ? ' is-applied' : '');
+      tile.style.transform = 'translate3d(' + ((i % COLS) * GRID_COL) + 'px,' + (Math.floor(i / COLS) * GRID_ROW) + 'px,0)';
+      tile.style.visibility = visible ? 'visible' : 'hidden';
+      tile.setAttribute('role', picker ? 'radio' : 'button'); tile.setAttribute('tabindex', '-1');
+      tile.setAttribute('aria-label', picker ? item.name : app(item).name);
+      if (picker) tile.setAttribute('aria-checked', String(selected));
+      attrs(tile, 'grid', i, (picker ? 'icon.choose.' : 'icons.app.') + entry.key);
+    });
+    el.grid.style.transform = 'translate3d(0,' + (-t.top * GRID_ROW) + 'px,0)';
+    el.view.className = 'grid-view';
+    el.before.className = 'row-cue grid-before' + (t.top > 0 ? ' is-on' : '');
+    el.after.className = 'row-cue grid-after' + (rows - t.top > 3 ? ' is-on' : '');
+  }
   var FRAMES = {
+    iconApps: function () { return FRAMES.apps(); },
+    iconPicker: function () { return FRAMES.apps(); },
     sources: function () { return '<h2 class="s-title">Sources</h2><p class="s-sub">Choose which inputs appear in the Sources menu.</p><div class="source-settings-list" data-slot="list"></div><p class="source-status" data-slot="status"></p>'; },
     sourceEdit: function () { return '<h2 class="s-title" data-slot="title"></h2><p class="s-sub">OK changes the selected value. Back keeps completed changes.</p><div class="source-settings-list" data-slot="list"></div><p class="source-status" data-slot="status"></p>'; },
     sourceName: function (t) { return '<h2 class="s-title">Shortcut name</h2><p class="s-sub">Select the name to open the keyboard, then choose Save.</p><div class="source-name"><input id="sourceNameInput" type="text" maxlength="24" aria-label="Shortcut name" value="' + esc(t.value) + '"><div data-slot="buttons"></div></div>'; },
@@ -1665,6 +1769,8 @@
     return '<span class="panel-content">' + appMark(a, 120, 72, 58) + '<span class="label">' + esc(a.name) + '</span></span><span class="state">' + state + '</span>';
   }
   var FILLS = {
+    iconApps: fillIconPanel,
+    iconPicker: fillIconPanel,
     sources: function (t, el) {
       var rows = window.FrameSources.all().map(function (item) { return [item.id, item.name, sourceStatus(item), sourceIcon(item)]; });
       rows.push(['scan', 'Check connections', sourceScan.loading ? 'Checking…' : 'Read connected HDMI inputs']);

@@ -1,0 +1,2 @@
+# Keep SVG provenance hashes stable across Windows and Unix checkouts.
+app/assets/icons/*.svg text eol=lf

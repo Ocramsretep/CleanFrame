@@ -16,13 +16,20 @@ The public app uses Manrope, Geist and Newsreader. A personal widget containing 
 
 | Material | Provenance and terms |
 | --- | --- |
-| Simple Icons service marks | CC0; exact revisions and adaptations in `app/assets/icons/SOURCES.json` and `ADDITIONAL-SOURCES.json`. The CC0 text is retained beside the icons. |
-| Disney+, ABC and SBS marks | [Custom Brand Icons](https://github.com/elax46/custom-brand-icons), MIT. The retained licence is `app/assets/icons/CUSTOM-BRAND-ICONS-LICENSE.txt`. ABC and SBS sources were replaced during the public-source review. Exact revisions, source files and extraction/recolour notes are in `SOURCES.json`. |
+| Simple Icons service marks | The collection is CC0; individual logo and trademark rights are not automatically cleared by that licence. Exact sources and adaptations are in `app/assets/icons/SOURCES.json`, `ADDITIONAL-SOURCES.json` and `EXTENDED-SOURCES.json`. The CC0 text and upstream `SIMPLE-ICONS-DISCLAIMER.md` are retained beside the icons. The extended register includes upstream brand sources and available guidelines. |
+| Disney+, ABC, SBS, ARD, ARTE, CUPRA, maxdome and Pluto TV marks | [Custom Brand Icons](https://github.com/elax46/custom-brand-icons), MIT. The retained licence is `app/assets/icons/CUSTOM-BRAND-ICONS-LICENSE.txt`. ABC and SBS sources were replaced during the public-source review. Exact revisions, source files and adaptations are in `SOURCES.json` and `EXTENDED-SOURCES.json`. |
+| Joyn, Rakuten TV, RTL+, WOW, MagentaTV and Samsung TV Plus marks | The linked Wikimedia Commons file pages record these as `PD-textlogo` (simple text/geometric logos). This records the source's copyright assessment, not a worldwide clearance or trademark licence. Authors, source pages, adaptations and file hashes are retained in `app/assets/icons/EXTENDED-SOURCES.json`. |
 | Art, apps, settings and home outlines | Original CleanFrame drawings, covered by the project's MIT licence. |
 | Xbox mark | Font Awesome Free 6.7.2, Copyright 2024 Fonticons, Inc.; [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `app/assets/icons/FONT-AWESOME-LICENSE.txt` retains the terms. Shape unchanged, recoloured white. [Source](https://github.com/FortAwesome/Font-Awesome/blob/6.7.2/svgs/brands/xbox.svg). |
 | HDMI, console and soundbar outlines | Original drawings for this fork, covered by the project's MIT licence. |
+| Extended generic symbols and framed CleanFrame F | Original symbol drawings and a vector adaptation of the project's `app/icon.png`, covered by the project's MIT licence. Generic alternatives are not official brand logos. See `app/assets/icons/EXTENDED-SOURCES.json`. |
 
 Brand marks identify services. Their owners retain trademark rights; this project claims no endorsement or affiliation. The older Australian TV icon archive's GPL text is retained for historical provenance only; no current icon uses that archive.
+
+Collection licences do not replace individual brand terms. In particular, Simple
+Icons explicitly warns that its CC0 distribution does not mean every included
+logo is CC0. No claim of individual brand-owner permission is made for the white
+adaptations. Source and licence checks are not a guarantee of non-infringement.
 
 ## Photographs and derived materials
 

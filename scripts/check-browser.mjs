@@ -20,7 +20,7 @@ const CATALOG = IDS.map((id, i) => ({ id, name: NAMES[i], show: true, iconPath: 
 const walls = JSON.parse(readFileSync(root + 'app/assets/wallpapers/SOURCES.json', 'utf8'));
 const out = root + '.local/qa/';
 mkdirSync(out, { recursive: true });
-const sourceFiles = ['app/main.js', 'app/device.js', 'app/index.html', 'app/style.css', 'app/config.xml', 'app/assets/wallpapers/SOURCES.json', 'app/assets/wallpapers/catalog.js', 'app/assets/adaptive-ink.js', 'app/assets/icons/metrics.js'];
+const sourceFiles = ['app/main.js', 'app/app-icons.js', 'app/device.js', 'app/index.html', 'app/style.css', 'app/config.xml', 'app/assets/wallpapers/SOURCES.json', 'app/assets/wallpapers/catalog.js', 'app/assets/adaptive-ink.js', 'app/assets/icons/metrics.js'];
 const hashes = () => Object.fromEntries(sourceFiles.map(f => [f, createHash('sha256').update(readFileSync(root + f)).digest('hex')]));
 const report = { scope: 'Production UI in Chromium; mock public Tizen API only; no TV contacted.', sourceBefore: hashes(), checks: [], failures: [], pageErrors: [], expectedNetworkFailures: [] };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -285,7 +285,8 @@ try {
       p.__expectedFailures.push('/assets/materials/');
       await p.route('**/assets/materials/*', route => failImages ? route.abort('failed') : route.continue());
     });
-    await current.waitForFunction(() => window.ShoreQA && !ShoreQA.state().pending && !ShoreQA.ready());
+    // Hidden documents allow 20 seconds for suspended image callbacks in whenReady.
+    await current.waitForFunction(() => window.ShoreQA && !ShoreQA.state().pending && !ShoreQA.ready(), null, { timeout: 25000 });
     const before = await stored();
     failImages = false;
     await current.evaluate(() => window.__setHidden(false)); await ready();
@@ -387,7 +388,7 @@ try {
         const scale = document.getElementById('stage').getBoundingClientRect().width / 1920;
         return elements.map(e => (e.querySelector('.ico').getBoundingClientRect().left - e.querySelector('.settings-group-copy').getBoundingClientRect().right) / scale);
       });
-      check('Settings group arrows stay separate from their copy at ' + width, groups.length === 7 && groups.every(gap => gap >= 31.5), groups);
+      check('Settings group arrows stay separate from their copy at ' + width, groups.length === 8 && groups.every(gap => gap >= 31.5), groups);
       await wallpaper();
       const caption = await current.locator('.wallpaper-preview-name').evaluate(e => {
         const scale = document.getElementById('stage').getBoundingClientRect().width / 1920;
@@ -442,20 +443,75 @@ try {
     await current.waitForSelector('[data-action="apps.open.' + EXTRA + '"]');
     check('Retry displays real installed names', (await current.locator('[data-action^="apps.open."]').count()) === 12);
   });
-  await run('Native icon and failed-image fallback', async () => {
+  await run('White icon fallback for unknown apps', async () => {
     await page({ catalog: CATALOG.map(a => a.id === EXTRA ? { ...a, iconPath: '/home/assets/icons/netflix.svg' } : a) });
     await library();
-    await current.waitForFunction(id => { const row = document.querySelector('[data-action="apps.open.' + id + '"]'); const img = row && row.querySelector('img'); return img && img.complete && img.naturalWidth > 0; }, EXTRA);
-    check('Unbranded installed app uses its native icon', await current.evaluate(id => { const img = document.querySelector('[data-action="apps.open.' + id + '"] img'); return img && getComputedStyle(img).display !== 'none' && img.parentNode.classList.contains('has-native-icon'); }, EXTRA));
-    current.__expectedFailures.push('/missing-native-icon.png');
+    check('Unknown app uses a white bundled symbol', await current.locator('[data-action="apps.open.' + EXTRA + '"] [data-mark="unknown"]').count() === 1);
     await current.evaluate(id => { __tv.catalog.find(a => a.id === id).iconPath = '/home/assets/icons/missing-native-icon.png'; }, EXTRA);
     await library();
-    await current.waitForFunction(id => { const img = document.querySelector('[data-action="apps.open.' + id + '"] img'); return img && img.src.includes('/missing-native-icon.png') && img.complete; }, EXTRA);
-    const fallback = await current.evaluate(id => {
-      const row = document.querySelector('[data-action="apps.open.' + id + '"]'), mark = row.querySelector('.native-icon'), img = mark && mark.querySelector('img');
-      return { html: row.innerHTML, src: img && img.src, imageDisplay: img && getComputedStyle(img).display, initialsVisibility: mark && getComputedStyle(mark.firstChild).visibility, complete: img && img.complete, width: img && img.naturalWidth, text: row.textContent };
-    }, EXTRA);
-    check('Failed native icon leaves readable initials and app name', fallback.imageDisplay === 'none' && fallback.initialsVisibility === 'visible' && fallback.text.includes('Family'), fallback);
+    check('Native icon failure cannot replace the white fallback', await current.locator('[data-action="apps.open.' + EXTRA + '"] [data-mark="unknown"]').count() === 1);
+    check('Unknown app keeps its readable name', (await current.locator('[data-action="apps.open.' + EXTRA + '"]').textContent()).includes('Family'));
+  });
+  await run('App icons apply, persist and reset', async () => {
+    await page(); await scene('settings'); await act('settings.group.icons');
+    await current.waitForFunction(() => !ShoreQA.state().catalog.loading);
+    check('Home apps come first in icon settings', same((await call('actions')).filter(a => a.startsWith('icons.app.')).slice(0, 9), PRIMARY.map(id => 'icons.app.' + id)));
+    await act('icons.app.netflix');
+    const before = await stored();
+    await nav('right');
+    check('Focusing a different icon does not save', same(await stored(), before));
+    await act('icon.choose.cleanframe');
+    check('Choice is saved by native ID', (await stored()).appIcons['org.tizen.netflix-app'] === 'cleanframe');
+    check('Only the applied icon is checked', same((await radios()).filter(r => r.checked === 'true').map(r => r.action), ['icon.choose.cleanframe']));
+    const writes = (await state()).writes;
+    await nav('ok'); check('Applying the same icon does not write again', (await state()).writes === writes);
+    await nav('back'); check('Back restores the app focus', (await state()).focusAction === 'icons.app.netflix');
+    await nav('back'); check('Back restores the settings group', (await state()).focusAction === 'settings.group.icons');
+    await scene('home');
+    check('Home refreshes cached icon content', await current.locator('[data-action="home.app.netflix"] [data-mark="cleanframe"]').count() === 1);
+    await look({ bg: 'light', layout: 'list' });
+    check('Appearance changes preserve icon overrides', (await stored()).appIcons['org.tizen.netflix-app'] === 'cleanframe');
+    await current.reload(); await ready();
+    check('Custom icon survives reload without discovery', await current.locator('[data-action="home.app.netflix"] [data-mark="cleanframe"]').count() === 1);
+    await editor(); await remove('netflix'); await act('editor.undo');
+    check('Membership edits and Undo preserve icon overrides', (await stored()).appIcons['org.tizen.netflix-app'] === 'cleanframe');
+    await scene('settings'); await act('settings.group.icons'); await act('icons.app.netflix'); await act('icon.choose.auto');
+    check('Automatic removes only this override', !Object.hasOwn((await stored()).appIcons, 'org.tizen.netflix-app'));
+    await scene('home');
+    check('Automatic restores the service mark', await current.locator('[data-action="home.app.netflix"] [data-mark="netflix"]').count() === 1);
+    check('Icon settings never launch an app', (await current.evaluate(() => __tv.calls)).length === 0);
+  });
+  await run('App icons failure, scrolling and offline recovery', async () => {
+    await page({ seed: baseline({ appIcons: { 'org.tizen.netflix-app': 'cleanframe', 'Invalid.App': '../../bad', constructor: 'youtube' } }), catalogFailure: true });
+    check('Malformed overrides are discarded', same((await stored()).appIcons, { 'org.tizen.netflix-app': 'cleanframe' }));
+    await scene('settings'); await act('settings.group.icons');
+    await current.waitForFunction(() => !ShoreQA.state().catalog.loading);
+    check('Saved Home apps remain editable offline', (await call('actions')).includes('icons.app.netflix'));
+    await act('icons.app.netflix');
+    await current.evaluate(() => { __failWrites = true; });
+    await act('icon.choose.auto');
+    check('Failed save keeps the previous icon and checked state', (await state()).appIcons['org.tizen.netflix-app'] === 'cleanframe' && (await radios()).find(r => r.action === 'icon.choose.cleanframe').checked === 'true');
+    check('Failed icon write offers a retry on OK', (await current.locator('.s-sub').textContent()).includes('OK tries again'));
+    await current.evaluate(() => { __failWrites = false; }); await nav('ok');
+    check('OK retries the selected icon', !Object.hasOwn((await stored()).appIcons, 'org.tizen.netflix-app'));
+    for (let i = 0; i < 12; i++) await nav('down');
+    check('Last icon rows are reachable with one focus', (await call('where')).focusCount === 1 && (await state()).focusAction !== 'icon.choose.auto');
+    const saved = await stored(); await nav('back');
+    check('Back without applying leaves icons unchanged', same(await stored(), saved));
+    await nav('back'); check('Offline Back returns to settings', (await state()).view === 'settings');
+  });
+  await run('App icons layout at both preview sizes', async () => {
+    await page();
+    for (const width of [1920, 1280]) {
+      await current.setViewportSize({ width, height: width * 9 / 16 });
+      await scene('settings');
+      const fits = await current.locator('.settings-group').evaluateAll(els => els.every(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }));
+      check('All eight settings rows fit at ' + width, fits && await current.locator('.settings-group').count() === 8);
+      await act('settings.group.icons'); await act('icons.app.netflix');
+      await act('icon.choose.cleanframe');
+      check('Icon picker has one visible focus at ' + width, (await call('where')).focusCount === 1);
+      await current.screenshot({ path: out + 'app-icons-' + width + '.png' });
+    }
   });
   await run('Catalogue response after closing and reopening', async () => {
     await page();
@@ -537,8 +593,8 @@ try {
   });
   await run('Settings overview and visible choices', async () => {
     await page(); await scene('settings');
-    const expected = ['settings.group.background', 'settings.group.layout', 'settings.group.typography', 'settings.group.focus', 'settings.editor', 'settings.group.samsung'];
-    check('Overview has all six settings groups', same((await call('actions')).filter(a => expected.includes(a)).sort(), expected.slice().sort()));
+    const expected = ['settings.group.background', 'settings.group.layout', 'settings.group.typography', 'settings.group.focus', 'settings.editor', 'settings.group.icons', 'settings.group.sources', 'settings.group.samsung'];
+    check('Overview has all eight settings groups', same((await call('actions')).sort(), expected.slice().sort()));
     const specs = {
       background: { bg: ['dark', 'light', 'photo'] },
       layout: { layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], controls: ['icons', 'both', 'text'] },
