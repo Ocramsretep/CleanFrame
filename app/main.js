@@ -897,7 +897,7 @@
   function settingsRows() {
     var n = S.c.home.length;
     return [{ id: 'background', label: 'Background', value: S.c.bg === 'photo' ? wall(S.c.wall).name : VALUE_NAMES[S.c.bg] },
-      { id: 'dock', label: 'Dock', value: VALUE_NAMES[S.c.layout] + ' · ' + n + (n === 1 ? ' app' : ' apps') },
+      { id: 'dock', label: 'Home Apps', value: VALUE_NAMES[S.c.layout] + ' · ' + n + (n === 1 ? ' app' : ' apps') },
       { id: 'actionbar', label: 'Action Bar', value: VALUE_NAMES[S.c.controls] + ' · Sources' },
       { id: 'widgets', label: 'Widgets', value: S.c.clockFormat + '-hour clock' + (window.FrameWeather.view().enabled ? ' · Weather' : '') },
       { id: 'design', label: 'Design', value: VALUE_NAMES[S.c.focus] + (materialApplies() ? ', ' + VALUE_NAMES[S.c.material] : '') + ' · ' + S.c.dockOpacity + '%' },
@@ -1123,7 +1123,7 @@
     },
     point: function (t, z, i) { t.f.i = i; this.key(t, 'ok'); }
   };
-  var DETAIL_NAMES = { background: 'Background', dock: 'Dock', actionbar: 'Action Bar', typography: 'Typography', design: 'Design', widgets: 'Widgets', rotation: 'Rotation', daily: 'Online pictures', local: 'Local pictures', samsung: 'Samsung' };
+  var DETAIL_NAMES = { background: 'Background', dock: 'Home Apps', actionbar: 'Action Bar', typography: 'Typography', design: 'Design', widgets: 'Widgets', rotation: 'Rotation', daily: 'Online pictures', local: 'Local pictures', samsung: 'Samsung' };
   function choice(axis, value, disabled) {
     if (axis === 'dockOpacity') return { action: 'panel.opacity', axis: axis, label: 'Panel opacity', slider: true, disabled: !!disabled };
     if (axis === 'dockOffset') return { action: 'dock.position', axis: axis, label: 'Vertical position', slider: true, disabled: !!disabled };
@@ -1151,13 +1151,16 @@
       { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true }] },
       { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name }]  }
     ];
-    if (t.group === 'dock') return [
-      { id: 'layout', title: 'Home layout', horizontal: true, items: options('layout', ['list', 'dock']) },
+    if (t.group === 'dock') {
+      var homeAppSections = [
+      { id: 'layout', title: 'App layout', horizontal: true, items: options('layout', ['list', 'dock']) },
       { id: 'apps', title: 'App display', horizontal: true, items: options('apps', ['text', 'icons', 'both']) },
-      { id: 'dockApps', title: 'Apps in Dock', items: [{ action: 'dock.apps', label: 'Choose and arrange apps' }] },
-      { id: 'dockPosition', title: 'Vertical position', items: [choice('dockOffset', S.c.dockOffset)],
-        reason: 'Left / Right moves the Dock. The preview updates; OK saves.' }
-    ];
+      { id: 'dockApps', title: 'Apps in Dock', items: [{ action: 'dock.apps', label: 'Choose and arrange apps' }] }
+      ];
+      if (S.c.layout === 'dock') homeAppSections.push({ id: 'dockPosition', title: 'Vertical position', items: [choice('dockOffset', S.c.dockOffset)],
+        reason: 'Left / Right moves the Dock. The preview updates; OK saves.' });
+      return homeAppSections;
+    }
     if (t.group === 'actionbar') return [
       { id: 'controls', title: 'Action Bar display', horizontal: true, items: options('controls', ['text', 'icons', 'both']) },
       { id: 'sources', title: 'Sources', items: [{ action: 'actionbar.sources', label: 'Configure sources' }] }

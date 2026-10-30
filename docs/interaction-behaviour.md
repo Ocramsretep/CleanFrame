@@ -8,6 +8,7 @@ This describes the source UI and its intended interactions. Device-specific resu
 - List: Up/Down scrolls the apps without wrapping. Right enters the bottom-right controls, aligned with the clock above. Up/Down moves between Sources, All apps and Settings. Left or Back returns to the selected app. The list fades at both ends as it scrolls.
 - OK opens the selected item. Focus alone never launches an app.
 - Icons-only apps and controls reveal their names when focused. App presentation and control presentation are independent.
+- List and Dock share the same saved Home app order. In the broad Dock, Icons mode fits all nine possible apps at once; Icons and text uses wider tiles and scrolls to the remaining apps after about five visible tiles.
 - Back from the app list or Dock opens a choice to stay or open Samsung Home.
 - A panel keeps focus within its own controls. Back closes one panel at a time.
 - The icon group opposite the clock and widgets is the Action Bar. Its controls share one focus treatment; Sources, Weather and Picture info share one popup surface.
@@ -17,12 +18,12 @@ This describes the source UI and its intended interactions. Device-specific resu
 
 ## Settings and appearance
 
-Settings opens a grouped overview: Background, Dock, Action Bar, Widgets, Design, Typography, App icons and Samsung. OK opens a group. Appearance groups use a two-pane screen with visible choices on the left and the Home preview on the right. Dock position drafts move the Dock in that preview before OK saves them.
+Settings opens a grouped overview: Background, Home Apps, Action Bar, Widgets, Design, Typography, App icons and Samsung. OK opens a group. Appearance groups use a two-pane screen with visible choices on the left and the Home preview on the right. Dock position drafts move the Dock in that preview before OK saves them.
 
 | Group | Choices |
 | --- | --- |
 | Background | Local pictures and Online pictures; their settings gears |
-| Dock | List or Dock; Text, Icons or Both for apps; Apps in Dock; vertical Dock position |
+| Home Apps | List or Dock; Text, Icons or Both for apps; Apps in Dock; vertical position when Dock is active |
 | Action Bar | Text, Icons or Both for its controls; Sources |
 | Widgets | 12-hour or 24-hour clock format; optional weather and location |
 | Design | Type or Glass focus; Soft, Frost or Clear tint material; app highlight; shared Panel opacity |
@@ -36,11 +37,11 @@ Material applies to a photographic Dock, or Glass focus on a photographic List. 
 
 App highlight is shared by Dock and List, including Text, Icons and Both. Standard preserves the existing Type/Glass appearance. Glow adds a bounded, soft light behind the icon using pre-rendered shadows at the actual display size. App names remain sharp in Both mode; Text mode uses a text glow. Underline marks the app name, including the focused caption in Icons mode. Light tile adds a softly rounded, translucent plate behind the icon and name, preserving their normal ink colour. It also works with Type focus; on a Light background the plate uses a subtle dark tint. These options affect app focus, independently of the Type/Glass choice for Home controls. The Settings and Wallpaper previews show the same focused-app scaling, opacity and plate as Home, while interactive focus remains in Settings. In particular, Standard with Type has no app plate in either view; Standard with Glass shows the same glass plate in both. Existing preferences default to Standard. Saved Focus line preferences migrate to Glow. Saved Light tile preferences use the translucent style.
 
-Apps in Dock opens the existing membership and arrangement editor. Sources opens the existing shortcut editor for visibility, names, icons, order, HDMI assignment and connection queries. Back returns to Dock or Action Bar respectively. Widgets changes the Home clock between 12-hour and 24-hour display; existing preferences default to 12-hour. Weather is off until a location is chosen. See [weather](weather.md) for requests, cache and offline behaviour.
+Apps in Dock opens the existing membership and arrangement editor. Sources opens the existing shortcut editor for visibility, names, icons, order, HDMI assignment and connection queries. Back returns to Home Apps or Action Bar respectively. Widgets changes the Home clock between 12-hour and 24-hour display; existing preferences default to 12-hour. Weather is off until a location is chosen. See [weather](weather.md) for requests, cache and offline behaviour.
 
 Design's Panel opacity slider ranges from 0% to 100% in 5% steps. It controls the Dock material, Action Bar focus lens and Sources, Weather and Picture info panel backgrounds while keeping their text and controls fully opaque. The slider remains available in both layouts and on all backgrounds. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. The saved dockOpacity preference is retained across updates, layout changes and restart.
 
-Dock's vertical position slider moves the Dock in 20px steps from 160px above to 80px below its original position. Left/Right and dragging update the Home preview immediately. OK saves; Back or leaving the row discards an unconfirmed position. Existing preferences keep the original position. The Dock's navigation cues and action button move with it.
+Dock's vertical position slider appears only when Dock is the active app layout. It moves the Dock in 20px steps from 160px above to 80px below its original position. Left/Right and dragging update the Home preview immediately. OK saves; Back or leaving the row discards an unconfirmed position. Existing preferences keep the original position, including while List is active. The Dock's navigation cues and action button move with it.
 
 A font or photo change applies only after its resources are ready and storage succeeds. A load or storage failure keeps the previous appearance and checkmark, with a Try again action. Back cancels a pending change, leaves the group and keeps completed changes. Late load callbacks cannot apply a cancelled choice. There is no Save button. Returning to a group restores its last choice focus; returning to Settings restores its category focus. Local pictures settings contains Wallpaper and Rotation. Online pictures settings contains source and sizing controls. Back returns to the originating gear; leaving Rotation returns to Local pictures.
 

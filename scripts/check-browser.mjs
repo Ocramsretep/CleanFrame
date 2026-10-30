@@ -599,6 +599,8 @@ try {
     await page(); await scene('settings');
     const expected = ['settings.group.background', 'settings.group.dock', 'settings.group.actionbar', 'settings.group.widgets', 'settings.group.design', 'settings.group.typography', 'settings.group.icons', 'settings.group.samsung'];
     check('Overview has all eight settings groups', same((await call('actions')).sort(), expected.slice().sort()));
+    check('App settings group is named Home Apps', await current.locator('[data-action="settings.group.dock"] .settings-group-name').innerText() === 'Home Apps');
+    await current.screenshot({ path: out + 'settings-home-apps-overview.png' });
     const specs = {
       background: { bg: ['photo', 'daily'] },
       dock: { layout: ['list', 'dock'], apps: ['icons', 'both', 'text'] },
@@ -628,6 +630,7 @@ try {
     await nav('back');
     check('Rotation Back restores its Background row', (await state()).settingsGroup === 'local' && (await state()).focusAction === 'background.rotation', await call('where'));
     await scene('settings'); await group('dock');
+    check('Home Apps detail uses the same title', await current.locator('#appearanceTitle').innerText() === 'Home Apps');
     const dockActions = await call('actions');
     check('Dock contains app arrangement and vertical position', dockActions.includes('dock.apps') && dockActions.includes('dock.position'), dockActions);
     await act('dock.apps');
@@ -665,6 +668,13 @@ try {
     await nav('right', 'back');
     await scene('home');
     check('Back discards a new Dock position draft', (await state()).look.dockOffset === -20 && await current.locator('.dock').evaluate(el => getComputedStyle(el).top) === '656px');
+    await scene('settings'); await group('dock'); await act('choice.layout.list');
+    check('List hides Dock position while retaining its saved value', !(await call('actions')).includes('dock.position') && (await state()).look.dockOffset === -20);
+    await current.screenshot({ path: out + 'home-apps-list-1280.png' });
+    await current.reload(); await ready(); await group('dock');
+    check('List keeps Dock position hidden after restart', !(await call('actions')).includes('dock.position'));
+    await act('choice.layout.dock');
+    check('Dock restores its saved position control', (await call('actions')).includes('dock.position') && await current.locator('#dockPositionInput').inputValue() === '-20');
   });
   await run('Weather opt-in, forecast and cached Home widget', async () => {
     const now = new Date(); now.setMinutes(0, 0, 0);

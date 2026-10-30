@@ -21,4 +21,4 @@ The owner has confirmed CleanFrame rendering, navigation, app launches, Live TV 
 
 ## Open checks
 
-Keep new TV results separate from browser checks and installation responses. The latest recorded update confirms the compact Picture info focus, side-by-side links and panel placement; any later changed UI or remote flows need their own visible check. Do not transfer upstream Home, startup, Art Mode, app-ID or firmware results to this TV.
+Keep new TV results separate from browser checks and installation responses. The compact Picture info focus, side-by-side links and panel placement are confirmed. The owner also confirmed the latest Home Apps settings update: Vertical position appears for Dock and is hidden for List. Do not transfer upstream Home, startup, Art Mode, app-ID or firmware results to this TV.
