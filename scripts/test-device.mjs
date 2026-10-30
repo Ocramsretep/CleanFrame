@@ -70,6 +70,28 @@ test('regional streaming apps stay distinct and system helpers stay hidden', () 
   assert.equal(apps.find(a => a.name === 'HBO Max').brand, 'hbomax');
 });
 
+test('alternate Netflix entry is hidden when the working primary app is installed', () => {
+  const h = harness();
+  let apps;
+  h.device.apps((error, value) => { assert.equal(error, null); apps = value; });
+  h.requests[0].ok([
+    { id: 'RN1MCdNq8t.Netflix', name: 'Netflix', show: true },
+    { id: 'org.tizen.netflixlowmem', name: 'Netflix', show: true },
+    { id: 'org.tizen.netflix-app', name: 'Netflix', show: false }
+  ]);
+  assert.equal(apps.length, 1);
+  assert.equal(apps[0].appId, 'org.tizen.netflix-app');
+});
+
+test('alternate Netflix entry remains available without the primary app', () => {
+  const h = harness();
+  let apps;
+  h.device.apps((error, value) => { assert.equal(error, null); apps = value; });
+  h.requests[0].ok([{ id: 'RN1MCdNq8t.Netflix', name: 'Netflix', show: true }]);
+  assert.equal(apps.length, 1);
+  assert.equal(apps[0].appId, 'RN1MCdNq8t.Netflix');
+});
+
 test('launch keeps its eight-second deadline independently of discovery', () => {
   const h = harness(), results = [];
   h.device.launchApp('Synthetic.App', error => results.push(error));
