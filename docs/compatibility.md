@@ -1,12 +1,13 @@
 # TV compatibility evidence
 
-Updated 28 October 2026. App rendering and native Home reassignment need separate evidence. Tizen version alone does not establish support. The source manifest requires Tizen 6.5; older adapted builds do not change that requirement.
+Updated 30 October 2026. App rendering and native Home reassignment need separate evidence. Tizen version alone does not establish support. The source manifest requires Tizen 6.5; this fork's separate NU8000 overlay requests Tizen 4.0 for its generated package.
 
 ## Recorded results
 
 | TV / platform | Web launcher | Native Home | Evidence |
 | --- | --- | --- | --- |
-| Maintainer LS03D, Tizen 9, firmware 2130.0 | Installation and selected remote flows confirmed; other checks remain pending | Exact-value restore/reapply and Home from Netflix confirmed | [Maintainer record](tv-status.md) |
+| This fork: UE49NU8079, Tizen 4.0, firmware 1360.0 | Rendering, navigation, app launches, Live TV and selected updates confirmed | Home opens Samsung Home; no reassignment performed | [Current TV status](tv-status.md), [detailed record](nu8000.md) |
+| Upstream maintainer LS03D, Tizen 9, firmware 2130.0 | Installation and selected remote flows confirmed; other checks remain pending | Exact-value restore/reapply and Home from Netflix confirmed on that TV | [Upstream record](upstream-tv-status.md) |
 | QN43Q60BAFXZA, Tizen 6.5, Chromium 85 | Contributor reports rendering, navigation and hidden-boot work in their adapted fork; this branch reworks the boot path | Contributor reports query/apply/restore/reapply, cold boot and Home from Netflix | [PR #2](https://github.com/nthnclrk/CleanFrame/pull/2), [PR #5](https://github.com/nthnclrk/CleanFrame/pull/5) |
 | QA75LS03BASXNZ, Tizen 6.5, Chromium 85 | Contributor reports Dock labels and rounded utility focus fixed in their adapted build | No native Home result supplied | [PR #10](https://github.com/nthnclrk/CleanFrame/pull/10) |
 | Another 2025 Frame, Tizen 9 | Contributor reports saved apps, scrolling, Home from Netflix and appearance changes on their 0.6.4 build | Existing assignment retained during that update | [PR #7](https://github.com/nthnclrk/CleanFrame/pull/7) |

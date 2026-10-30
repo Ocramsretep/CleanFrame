@@ -1,23 +1,23 @@
 # CleanFrame
 
-This fork also preserves an optional [Samsung UE49NU8079 / Tizen 4 adaptation](docs/nu8000.md), including an offline build overlay and the known TV-settings navigation issue. The upstream app and native Home guards remain unchanged.
+This fork adapts CleanFrame for a [Samsung UE49NU8079 running Tizen 4](docs/nu8000.md). Its TV results are in [TV status](docs/tv-status.md). The source app and native Home helper originated on a different Samsung TV.
 
-A quieter home screen for Samsung The Frame. Your apps, a photograph and the time, with an interface made for the TV remote.
+A quieter home screen for Samsung TVs. Your apps, a photograph and the time, with an interface made for the TV remote.
 
 ![CleanFrame browser preview using the bundled Manrope font](docs/images/cleanframe-dock.jpg)
 
-I built CleanFrame for one TV: my own Samsung The Frame, running Tizen. I'm sharing the code and setup notes as a starting point for other people to build on.
+The original CleanFrame was built for a Samsung The Frame. This fork records a separate adaptation and on-device checks for the UE49NU8079. Other TVs need their own checks.
 
-**Use it at your own risk.** Most of the work has gone into making it work well on my TV. Very little has gone into making it portable. The setup scripts reflect my computer, TV and firmware, so expect to adapt them and test the result on your own hardware.
+**Use it at your own risk.** The setup scripts still contain upstream computer, TV and firmware assumptions. Adapt and verify them for your own hardware.
 
-I highly recommend forking it and building on top of it, ideally with a coding agent that can help you understand and adapt the setup. Start with the browser preview, make the interface your own, then work through TV installation when you're ready. Native Home/startup changes need particular care; the setup guide covers the risks and recovery steps.
+Start with the browser preview, then follow the separate NU8000 build instructions if you have that TV. Native Home/startup changes have not been performed on the NU8000; the setup guide covers the upstream method and its recovery requirements.
 
 ## Try the interface
 
 You need Node.js 22.13+ (22 LTS), or 24+, and Python 3.10+ to run the browser preview.
 
 ```sh
-git clone https://github.com/nthnclrk/CleanFrame.git
+git clone https://github.com/Ocramsretep/CleanFrame.git
 cd CleanFrame
 npm ci
 npm run dev:public
@@ -55,19 +55,19 @@ See [working with an agent](docs/for-agents.md) for the TV setup prompt and the 
 
 ## Put it on a TV
 
-Use the staged [Samsung The Frame setup guide](docs/agent-tv-setup-guide.md) to understand the process used on my TV and adapt it to yours. It covers the remote's Developer Mode sequence, official Samsung tools, your own certificates and app identity, installation, visible checks and recovery.
+Use the [NU8000 adaptation record](docs/nu8000.md) for this fork's build and device results. The staged [Samsung The Frame setup guide](docs/agent-tv-setup-guide.md) describes the upstream installation process and must be adapted to another TV. It covers Developer Mode, official Samsung tools, certificates, installation, visible checks and recovery.
 
 Signing supports an ignored `.local/signing.json` based on `signing.example.json`: select your SDK, existing certificate profile and your own SDK-generated app identity. See [local signing setup](docs/development.md#local-tv-tools-and-signing). The TV installation commands and native Home helper still contain reference-machine assumptions. Your agent must check the installed-app IDs and each device stage with you. Installing the app and assigning the remote Home button are separate steps.
 
 | Area | Evidence and limits |
 | --- | --- |
-| Reference hardware | Samsung QA55LS03DAWXXY / LS03D, firmware 2130.0, Tizen 9.0, 32-bit ARM |
-| App installation | Signed installation and launch commands succeeded through 0.6.1. Latest rendering and remote feel still need physical observation. |
-| App launch and Home | Netflix/YouTube launch and physical Home from Netflix were confirmed on the reference setup. |
-| Still open | Normal power-on after streaming/Art Mode, corrected Smart Hub escape and native Art Mode destinations need definite physical checks. |
+| This fork's hardware | Samsung UE49NU8079, firmware T-KTM2DEUC-1360.0, Tizen 4.0, ARMv7 |
+| App installation | The separate NU8000 build was signed and installed in place; individual visible checks are recorded in the TV status. |
+| Home button | Physical Home still opens Samsung Home. Native Home/startup reassignment was not performed. |
+| Still open | Further changed UI and remote flows need visible checks on this TV. There is no verified Home reassignment and rollback method for it. |
 | Other TVs | No compatibility claim. This is Tizen source; Android TV, Google TV, LG webOS and Roku need their own implementations. |
 
-The detailed [device record](docs/tv-status.md) separates observed results from SDK responses. Native Home/startup uses undocumented, guarded helpers; it is optional and can fail after firmware changes. Keep a recovery baseline before attempting that work. The app can be opened manually without it.
+The [TV status](docs/tv-status.md) links to the detailed NU8000 record and separates it from the [upstream LS03D results](docs/upstream-tv-status.md). The upstream native Home helper does not target this TV. CleanFrame can be opened manually without native reassignment.
 
 ## Develop and check
 

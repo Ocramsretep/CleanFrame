@@ -33,12 +33,12 @@ For manual review, use `npm run dev` and open `/home/`. Use the arrow keys, Ente
 
 ## Physical TV checks
 
-Run these only under a task that includes TV testing. Announce any installation or launch first, then follow `development.md`. SDK success alone is not a visible result. Ask Nathan to confirm the normal remote behaviour and record the version, firmware, result and any open checks in `tv-status.md`.
+Run these only under a task that includes TV testing. Announce any installation or launch first, then follow `development.md`. SDK success alone is not a visible result. Ask this TV's owner to confirm the normal remote behaviour and record the version, firmware, result and any open checks in `nu8000.md` and the summary in `tv-status.md`.
 
 1. Move in both directions through each layout and Settings; check focus, response and readable labels from the sofa.
-2. Launch Netflix/YouTube, press Home to return, and check the selected app. Treat streaming apps' own Back handling separately.
-3. Check Art Mode, Other apps, TV settings and Settings → Samsung → Samsung Home; verify the actual visible destinations.
+2. Launch Netflix/YouTube, press physical Home and confirm Samsung Home opens on the NU8000. Reopen CleanFrame manually and check the selected app. Treat streaming apps' own Back handling separately.
+3. Check Other apps, TV settings and Settings → Samsung → Samsung Home; verify the actual visible destinations. Check Art Mode only on a TV that has the feature.
 4. Check saved appearance/app order/wallpaper after relaunch. Check timed rotation pauses while a panel is open or the app is hidden.
-5. Test normal power-on after a streaming app and the usual Art Mode routine only when that work is included. Preserve the native Home recovery baseline and restore it before any uninstall/identity change.
+5. Test normal power-on after a streaming app only when that work is included. This NU8000 has no native Home reassignment or recovery baseline; never use the upstream baseline for it.
 
-The current pending results are listed at the top of `tv-status.md`. Browser CPU throttling is a development comparison, not a TV performance measurement.
+The current open checks are summarized in `tv-status.md`. Browser CPU throttling is a development comparison, not a TV performance measurement.

@@ -19,16 +19,21 @@ All UI assets, public fonts and the fifteen wallpapers are bundled. This private
 
 - `app/index.html` loads the device adapter, gallery/font/palette catalogues, `assets/icons/metrics.js` and `main.js`, with `style.css`.
 - `main.js` owns the List and Dock layouts, panel stack, focus, preferences and wallpaper timers. `device.js` owns installed-app discovery and Tizen calls. Keep device details in that adapter.
+- `ui.js` and the shared `ui-focus-*` / `ui-popup` classes define Action Bar focus and popup surfaces; see [Home UI components](ui-components.md). `main.js` retains navigation and panel ownership.
 - `app-icons.js` holds the bundled icon catalogue, public app-ID aliases and override validation. `appIcons` preferences map native app IDs to allowlisted icon names; ordinary appearance and Home writes preserve this map. `main.js` owns the icon picker and invalidates cached marks only after a successful write.
+- The optional [weather widget](weather.md) uses `weather.js` for location search, forecast requests and a bounded local cache. `main.js` owns its focus, menus and inline SVG weather symbols.
 - The logical stage is 1920 x 1080, scaled uniformly to the viewport. Check at 1920 x 1080 and 1280 x 720. Glass geometry and cached materials must stay aligned.
 - Preferences use localStorage key `cleanframe.home.v1`, with a fallback read from `cleanframe.shore.v1`. Legacy fields are `dock`, `wallpaper`, `mode`, `lastApp` and `theme`. The 0.6 migration preserves app order, wallpaper, rotation and selection. Legacy `list` becomes Dark / List / Type; `shore` and `grid` become Photo / Dock / Glass. Appearance axes are stored separately. A saved dynamic app keeps its real app ID and name; discovery refreshes the installed catalogue. Keep migration checks when changing this format.
+- Dock position is stored as `dockOffset` in 20px steps, defaulting to zero for existing preferences. The saved `dockOpacity` field now supplies the shared Design panel opacity without changing its storage key.
 - `window.ShoreQA.state()` and `.where()` expose state and focus for browser tests. `minuteMs` can shorten rotation intervals in an isolated browser test.
 
-The tested target is the Tizen 9.0 TV in [TV status](tv-status.md); [contributor reports](compatibility.md) cover other TVs. The manifest's `required_version="6.5"` is a package declaration, not proof of broad Tizen 6.5 support. The exact reference TV Chromium/WebKit engine version has not been recorded. `npm run lint` uses ESLint's ES5 grammar for all runtime JavaScript and checks undefined names, unused code and dynamic evaluation. This does not check DOM/CSS or TV API availability; verify new APIs on the target before claiming support. The CSS guard rejects `inset` and flex `gap` declarations; use explicit top/right/bottom/left edges and child margins. The spacing fallback addresses the older engine reported in PR #11 without changing the package minimum. Geometry checks cover both Home layouts, all three control modes and both preview sizes; they do not establish TV compositor support. Tooling stays in development dependencies and outside the widget. See [ESLint's language options](https://eslint.org/docs/latest/use/configure/language-options).
+The source app originated on the upstream Tizen 9.0 [reference TV](upstream-tv-status.md). This fork's Tizen 4.0 results and separate build overlay are in [TV status](tv-status.md) and the [NU8000 record](nu8000.md); [other reports](compatibility.md) remain separate. The manifest's `required_version="6.5"` is a package declaration, not proof of broad Tizen 6.5 support. The exact upstream reference TV Chromium/WebKit engine version has not been recorded. `npm run lint` uses ESLint's ES5 grammar for all runtime JavaScript and checks undefined names, unused code and dynamic evaluation. This does not check DOM/CSS or TV API availability; verify new APIs on the target before claiming support. The CSS guard rejects `inset` and flex `gap` declarations; use explicit top/right/bottom/left edges and child margins. The spacing fallback addresses the older engine reported in PR #11 without changing the package minimum. Geometry checks cover both Home layouts, all three control modes and both preview sizes; they do not establish TV compositor support. Tooling stays in development dependencies and outside the widget. See [ESLint's language options](https://eslint.org/docs/latest/use/configure/language-options).
 
 Keep material rendering in the development tools. See [asset generation](assets.md) and [testing](testing.md).
 
 ## Local TV tools and signing
+
+The setup below originated on the upstream LS03D and a Mac. This fork's Windows/NU8000 build and observed behavior are documented in [NU8000 adaptation](nu8000.md); its current Home status is in [TV status](tv-status.md). Do not apply the upstream native Home steps to the NU8000.
 
 This Mac's setup lives under `.local/` and is excluded from Git:
 
@@ -79,7 +84,7 @@ For developer access, connect the TV and Mac to the same network, enable Develop
 
 ## Native Home and recovery
 
-Native Home/startup was configured separately from the app installer. Physical Home from Netflix is confirmed. The one-shot helper runs as the SDK user. See scripts/native-home/README.md and docs/tv-status.md for the tested firmware and pending visual checks.
+On the upstream LS03D, native Home/startup was configured separately from the app installer and physical Home from Netflix was confirmed. The one-shot helper runs as the SDK user there; see scripts/native-home/README.md and [the upstream TV record](upstream-tv-status.md). On this fork's NU8000, Home still opens Samsung Home and no native reassignment was performed; see [TV status](tv-status.md).
 
 Query with `python3 scripts/native-home/run.py query`. Restore the saved pre-integration Home/startup values with `python3 scripts/native-home/run.py restore`. The private baseline is `.local/native-home/original.json`; preserve it and do not replace it with the applied state. The legacy `.local/native-home/run.py` command is also retained. Restore before uninstalling CleanFrame or changing its stable app identity.
 

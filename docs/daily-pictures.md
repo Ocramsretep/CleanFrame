@@ -55,12 +55,14 @@ picture uses `contain` with dark borders. Neither stretches aspect ratio. Online
 pictures use fixed dark gradients and neutral translucent materials for
 legibility, with no live blur or pixel analysis on the TV.
 
-Picture info shows the supplied title, full credit, provider and rights label,
-with source and licence links. No permanent credit strip is shown on Home.
-The five icon buttons share one horizontal row: Sources, All apps, Settings,
-Next picture and Picture info. The last two appear only in Online pictures.
-Left/Right moves along the row; OK activates a button. Back closes picture info;
-Up/Down scrolls long details. Next picture uses the offline queue.
+Picture info shows the supplied title, full credit, provider and rights label.
+Its header has a Skip button with the original curved arrow; Skip uses the offline
+queue. Picture Page and License appear side by side when their links exist; full URLs stay hidden. OK requests the TV
+browser for the chosen HTTPS link; the TV must have a handler for that request.
+Up/Down moves through the panel and scrolls long details; Back closes it.
+No permanent credit strip is shown on Home. The Action Bar has four icons:
+Sources, All apps, Settings and Picture info. Picture info appears only in
+Online pictures. Left/Right moves along the Action Bar; OK opens a control.
 Local picture and rotation settings can be edited regardless of the active
 background. The Online pictures thumbnail uses the cached online image, or an
 image symbol until the first download is ready.

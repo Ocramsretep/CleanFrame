@@ -1,6 +1,6 @@
 # Working with a coding agent
 
-CleanFrame was built for one TV, with very little work on portability. Treat the source and setup notes as a starting point to adapt, and explain that use is at the owner's risk. Inspect the actual scripts and hardware assumptions before proposing device commands.
+CleanFrame originated on an upstream Samsung LS03D. This fork records a separate UE49NU8079 adaptation in [TV status](tv-status.md) and [NU8000 adaptation](nu8000.md). Treat the source and setup notes as a starting point to adapt, and explain that use is at the owner's risk. Inspect the actual scripts and hardware assumptions before proposing device commands.
 
 Choose the scope before starting: a browser contribution, an independently signed app or a native Home experiment. Each needs a different level of local access and owner authority.
 

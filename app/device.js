@@ -59,6 +59,15 @@
   }
   function home(done) { launchApp('com.samsung.tv.csfs', done); }
   function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }
+  function openUrl(url, done) {
+    if (typeof url !== 'string' || !/^https:\/\/[^\s]+$/i.test(url)) { done({ message: 'This picture link is unavailable.' }); return; }
+    if (!api()) { unavailable(done); return; }
+    var finish = bounded(done);
+    try {
+      var control = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', url);
+      api().launchAppControl(control, null, function () { finish(null); }, function (err) { finish(failure(err)); });
+    } catch (err) { finish(failure(err)); }
+  }
   // Source discovery/viewer flow informed by scottheinrich91's CleanFrame PR #14.
   // Use reported source objects, synchronous getSource, and propagate failures.
   function videoSources(done) {
@@ -129,5 +138,5 @@
       }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
-  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, apps: apps, videoSources: videoSources, setSource: setSource };
+  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, openUrl: openUrl, apps: apps, videoSources: videoSources, setSource: setSource };
 }());

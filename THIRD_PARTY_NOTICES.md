@@ -65,6 +65,10 @@ retains their image-page links, supplied credits and rights labels.
 Do not publish the downloaded cache. A personal widget can contain its owner's
 extractable Pixabay key; public export always injects an empty configuration.
 
+## Optional weather data
+
+The optional widget uses [Open-Meteo](https://open-meteo.com/) forecast and geocoding APIs. Open-Meteo's free service is for non-commercial use and its data is provided under [CC BY 4.0](https://open-meteo.com/en/terms). The forecast panel displays “Data: Open-Meteo.com”; Settings displays “Weather data by Open-Meteo.com”. Location search data is based on GeoNames; see the [geocoding documentation](https://open-meteo.com/en/docs/geocoding-api). No forecast data or remote weather artwork is bundled with the widget.
+
 ## Development dependencies and exports
 
 Development dependencies retain the licences in their npm packages. They are not copied into the TV JavaScript runtime.

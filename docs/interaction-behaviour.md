@@ -1,5 +1,7 @@
 # Interaction behaviour â€” 0.6.1
 
+This describes the source UI and its intended interactions. Device-specific results for this fork are in [TV status](tv-status.md) and the [NU8000 record](nu8000.md). Upstream LS03D Home routing and Samsung component behavior do not establish the same behavior on this TV.
+
 ## Home
 
 - Dock: Left/Right scrolls the apps without wrapping. Up enters the top-right controls, starting with Sources or the last selected control. Left/Right moves between Sources, All apps and Settings. Down or Back returns to the selected app. The clock is at the top left.
@@ -8,22 +10,24 @@
 - Icons-only apps and controls reveal their names when focused. App presentation and control presentation are independent.
 - Back from the app list or Dock opens a choice to stay or open Samsung Home.
 - A panel keeps focus within its own controls. Back closes one panel at a time.
+- The icon group opposite the clock and widgets is the Action Bar. Its controls share one focus treatment; Sources, Weather and Picture info share one popup surface.
 - This fork adds configurable [source shortcuts](sources.md): OK on Sources opens a submenu; Up/Down selects, OK switches, and Back/Left closes it. Its styling follows Home settings.
+- When weather is enabled, its icon and temperature appear beside the clock. In Dock, Left from Sources reaches it; in List, Up from Sources reaches it. OK opens a compact forecast panel with four three-hour periods and two days, separated visually. Back closes it.
 - Returning to the running launcher keeps the selected app or panel item. There is no auto-return timer. Held OK and Back keys act once until the key is released.
 
 ## Settings and appearance
 
-Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps on Home, App icons, Sources and Samsung. OK opens a group. Appearance groups use a two-pane screen with visible choices on the left and the committed Home preview on the right.
+Settings opens a grouped overview: Background, Dock, Action Bar, Widgets, Design, Typography, App icons and Samsung. OK opens a group. Appearance groups use a two-pane screen with visible choices on the left and the Home preview on the right. Dock position drafts move the Dock in that preview before OK saves them.
 
 | Group | Choices |
 | --- | --- |
-| Background | Local pictures and Online pictures; Right reaches each row’s settings gear, OK opens its submenu |
-| Layout | List or Dock; independent Text, Icons or Both choices for apps and Home controls; Dock background opacity |
+| Background | Local pictures and Online pictures; their settings gears |
+| Dock | List or Dock; Text, Icons or Both for apps; Apps in Dock; vertical Dock position |
+| Action Bar | Text, Icons or Both for its controls; Sources |
+| Widgets | 12-hour or 24-hour clock format; optional weather and location |
+| Design | Type or Glass focus; Soft, Frost or Clear tint material; app highlight; shared Panel opacity |
 | Typography | Manrope, Neue Montreal, Mori, Pangram Sans, Geist and Newsreader, when available |
-| Focus | Type or Glass; Soft, Frost or Clear tint material; Standard, Glow, Underline or Light tile app highlight |
-| Apps on Home | Membership and arrangement editor |
 | App icons | Per-app white icon selection, with Home apps first |
-| Sources | Visibility, names, icons, order, HDMI assignment and connection query |
 | Samsung | Samsung Home and TV settings |
 
 Up/Down moves between rows. Left/Right moves between choices in a horizontal row. Focus alone changes neither the preview nor saved preferences in these appearance groups. Wallpaper has its own temporary photo preview, described below. OK applies the focused value. A checkmark identifies the applied value; the filled plate identifies remote focus. Applying the current value does not write again.
@@ -32,16 +36,23 @@ Material applies to a photographic Dock, or Glass focus on a photographic List. 
 
 App highlight is shared by Dock and List, including Text, Icons and Both. Standard preserves the existing Type/Glass appearance. Glow adds a bounded, soft light behind the icon using pre-rendered shadows at the actual display size. App names remain sharp in Both mode; Text mode uses a text glow. Underline marks the app name, including the focused caption in Icons mode. Light tile adds a softly rounded, translucent plate behind the icon and name, preserving their normal ink colour. It also works with Type focus; on a Light background the plate uses a subtle dark tint. These options affect app focus, independently of the Type/Glass choice for Home controls. The Settings and Wallpaper previews show the same focused-app scaling, opacity and plate as Home, while interactive focus remains in Settings. In particular, Standard with Type has no app plate in either view; Standard with Glass shows the same glass plate in both. Existing preferences default to Standard. Saved Focus line preferences migrate to Glow. Saved Light tile preferences use the translucent style.
 
-Layout's Dock background opacity slider ranges from 0% to 100% in 5% steps; 100% preserves the original material. It changes only the Dock background, leaving app marks, captions and focus indicators readable. It is available with Photo and Dock; List and flat backgrounds retain the value but disable the slider. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. Saved values survive layout changes and restart.
+Apps in Dock opens the existing membership and arrangement editor. Sources opens the existing shortcut editor for visibility, names, icons, order, HDMI assignment and connection queries. Back returns to Dock or Action Bar respectively. Widgets changes the Home clock between 12-hour and 24-hour display; existing preferences default to 12-hour. Weather is off until a location is chosen. See [weather](weather.md) for requests, cache and offline behaviour.
+
+Design's Panel opacity slider ranges from 0% to 100% in 5% steps. It controls the Dock material, Action Bar focus lens and Sources, Weather and Picture info panel backgrounds while keeping their text and controls fully opaque. The slider remains available in both layouts and on all backgrounds. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. The saved dockOpacity preference is retained across updates, layout changes and restart.
+
+Dock's vertical position slider moves the Dock in 20px steps from 160px above to 80px below its original position. Left/Right and dragging update the Home preview immediately. OK saves; Back or leaving the row discards an unconfirmed position. Existing preferences keep the original position. The Dock's navigation cues and action button move with it.
 
 A font or photo change applies only after its resources are ready and storage succeeds. A load or storage failure keeps the previous appearance and checkmark, with a Try again action. Back cancels a pending change, leaves the group and keeps completed changes. Late load callbacks cannot apply a cancelled choice. There is no Save button. Returning to a group restores its last choice focus; returning to Settings restores its category focus. Local pictures settings contains Wallpaper and Rotation. Online pictures settings contains source and sizing controls. Back returns to the originating gear; leaving Rotation returns to Local pictures.
 
 The selected font applies to Home app names, the clock and Home controls, including Newsreader. Settings, All apps, the Home editor and status text retain Manrope. The preview shows the committed Home appearance and its clock continues to update. Pangram faces are available in Nathan's private build when the local files are present; their binaries are not included in the public source. An unavailable optional face is omitted. If the baseline font is slow or missing, Home remains usable with a local fallback and can recover when the font loads.
 
-Online pictures adds Next picture and Picture info to the existing Home controls,
-forming one row of five icons in both layouts. Left/Right moves between them.
-Picture info contains image credits and source/licence links; Back closes it and
-Up/Down scrolls long text. Credits are not displayed separately at the bottom.
+Online pictures adds Picture info to the Action Bar, forming one row of four
+icons in both layouts. Left/Right moves between them. Picture info contains
+image credits, a Skip button beside the title, and selectable Picture Page/License
+links in one row without displaying their full URLs. Up/Down moves between the
+controls and scrolls long details; Left/Right also moves between the links. OK opens
+a link through the TV browser request or skips to the next cached picture.
+Back closes the panel. Credits are not displayed separately at the bottom.
 Local pictures settings remain editable when another background is active;
 changing a wallpaper or its rotation does not activate Local pictures.
 The online thumbnail shows the current cached image instead of the local photo.
@@ -54,9 +65,9 @@ The nine default apps keep their known native IDs. Other installed consumer apps
 
 The panel reads `tizen.application.getAppsInfo` on entry and shows the filtered consumer apps alphabetically. Samsung's visibility flag alone also exposes system utilities, so EP packages, background services, ad players, account utilities, placeholders and duplicates are omitted. Known brands use bundled white marks; other apps use a generic white symbol. A saved icon choice is shared with Home and the editor.
 
-The five-column grid scrolls with remote focus. OK launches an app; its On Home badge shows membership. Up from the first row reaches Apps on Home, which opens the editor. An API failure shows a retry and keeps saved Home choices. Browser previews report that installed-app discovery and launching require the TV.
+The five-column grid scrolls with remote focus. OK launches an app; its On Home badge shows membership. Up from the first row reaches Apps in Dock, which opens the editor. An API failure shows a retry and keeps saved Home choices. Browser previews report that installed-app discovery and launching require the TV.
 
-## Apps on Home
+## Apps in Dock
 
 Open the editor from Settings or All apps. On Home shows the current order on the left. Not on Home shows Recently removed first, followed by other installed apps on the right. Home holds one to nine apps.
 
@@ -88,9 +99,9 @@ only after a committed icon change or catalogue update.
 
 Art Mode sends an application control to the installed `org.tizen.art-app`, with `mode=fullscreen` and `requester=mobile`. This aims to enter native Art Mode with its current artwork, without toggling power or changing the selected artwork.
 
-This mode comes from [research on Samsung's Art app](https://github.com/TheFab21/ha-samsungtv-smart/blob/master/notes/QN55LS03FAFXZA/ART_MODE_DECOMPILED.md), on another Tizen 9 Frame model. It is an internal Samsung contract, not a documented public Art API. Its visible behaviour on this exact firmware must be confirmed on the TV.
+This mode comes from [research on Samsung's Art app](https://github.com/TheFab21/ha-samsungtv-smart/blob/master/notes/QN55LS03FAFXZA/ART_MODE_DECOMPILED.md), on another Tizen 9 Frame model. It is an internal Samsung contract, not a documented public Art API. It has not been verified as an NU8000 feature.
 
-Samsung Home explicitly launches the original `com.samsung.tv.csfs` app, independently of the new Home assignment. The earlier `com.samsung.tv.coba.newhome` component did not open Smart Hub visibly and is no longer the escape target. TV settings still uses `com.samsung.tv.coba.setting`. Exact on-device destinations are recorded in docs/tv-status.md; launch callbacks alone are not visual proof. There is no blind power-key fallback.
+The source Samsung Home control launches `com.samsung.tv.csfs`. On the NU8000, the overlay retains that target and the owner confirmed the visible Samsung Home escape. Its TV-settings route uses an application control to `org.tizen.menu`; see the [NU8000 record](nu8000.md). The upstream LS03D used a different TV-settings route, and its `com.samsung.tv.coba.newhome` trial did not visibly open Smart Hub. Launch callbacks alone are not visual proof. There is no blind power-key fallback.
 
 All calls have bounded response handling. A failure leaves CleanFrame usable. No simulated device success views remain. Browser validation cannot confirm the visible Samsung destination.
 
@@ -111,7 +122,7 @@ Launcher wallpaper is separate from native Art Mode. Runtime photos, materials a
 - [Samsung Application API](https://developer.samsung.com/smarttv/develop/api-references/tizen-web-device-api-references/application-api.html): installed-app discovery and application control.
 - [Samsung application termination guide](https://developer.samsung.com/smarttv/develop/guides/fundamentals/terminating-applications.html): exiting is not treated as a deterministic Samsung Home route.
 
-The native Home operation and startup configuration from 19 October remain separate from this app update. Home from Netflix was confirmed for that configuration; power-on after Netflix remains provisional. Streaming apps retain their own Back navigation. Netflix did not exit on repeated Back in the observed test, so there was no app-exit destination to verify. No global Back interception or key-filter hook was installed. See [TV status](tv-status.md) for device evidence; this behaviour specification is not an installation or visual-verification record for 0.6.0.
+The upstream LS03D native Home operation and startup configuration from 19 October are separate from this app and from the NU8000 adaptation. On this fork's TV, physical Home still opens Samsung Home and native reassignment was not performed. Streaming apps retain their own Back navigation; no global Back interception or key-filter hook was installed. See [TV status](tv-status.md) for this fork's device evidence and the [upstream record](upstream-tv-status.md) for the LS03D results.
 
 ## Clock and rendering
 

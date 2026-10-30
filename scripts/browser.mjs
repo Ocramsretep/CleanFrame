@@ -7,6 +7,12 @@ import { chromium } from 'playwright';
 export const root = fileURLToPath(new URL('../', import.meta.url));
 
 export async function openPreview({ publicFonts = false } = {}) {
+  const external = process.env.CLEANFRAME_PREVIEW_URL;
+  if (external) {
+    if (!/^http:\/\/(?:127\.0\.0\.1|localhost):\d+$/.test(external)) throw Error('Preview URL must be local');
+    const browser = await chromium.launch({ headless: true, ...(process.env.CLEANFRAME_BROWSER_CHANNEL ? { channel: process.env.CLEANFRAME_BROWSER_CHANNEL } : {}) });
+    return { browser, baseURL: external, close: async () => browser.close() };
+  }
   const args = ['scripts/preview.py', '--port', '0'];
   if (publicFonts || process.env.CLEANFRAME_PUBLIC_FONTS === '1') args.push('--public-fonts');
   const server = spawn(process.env.CLEANFRAME_PYTHON || 'python3', args, {

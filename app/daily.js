@@ -115,7 +115,7 @@
   }
   function eligible(item) { return opt.sources[item.source] && state.history.indexOf(item.id) < 0 && (!state.current || state.current.id !== item.id); }
   function advance(skip) {
-    if (!opened || saving || advancing || !canAdvance) return;
+    if (!opened || saving || advancing || (!canAdvance && (!skip || !active))) return;
     if (!skip && state.current && state.date === day() && opt.sources[state.current.source]) return;
     var candidates = state.queue.filter(eligible), candidate = candidates.filter(function (i) { return i.theme !== state.theme; })[0] || candidates[0];
     if (!candidate) { if (skip) { status = 'No next picture ready. Downloading more…'; retryAt = 0; fill(); changed(); } return; }
@@ -124,7 +124,7 @@
     show(candidate, function (result) {
       advancing = false;
       if (!result) { state.queue = state.queue.filter(function (i) { return i.id !== candidate.id; }); retryAt = 0; fill(); return; }
-      if (token !== generation || !canAdvance || saving || !opt.sources[candidate.source]) { window.URL.revokeObjectURL(result.url); return; }
+      if (token !== generation || (!canAdvance && (!skip || !active)) || saving || !opt.sources[candidate.source]) { window.URL.revokeObjectURL(result.url); return; }
       var data = snapshot();
       data.current = candidate; data.date = day(); data.theme = candidate.theme; data.source = candidate.source;
       data.queue = data.queue.filter(function (i) { return i.id !== candidate.id; });

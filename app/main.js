@@ -44,9 +44,9 @@
     newsreader: { name: 'Newsreader', family: 'Study Newsreader', display: 400, ui: 400, clock: 400 }
   };
   var PRIVATE_FONTS = window.CleanFramePrivateFontIDs || [], fontMetrics = {}, unavailableFonts = {}, widthCache = {}, fontRevision = 0, fontsReady = false;
-  var LOOK_VALUES = { bg: ['dark', 'light', 'photo', 'daily'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
+  var LOOK_VALUES = { bg: ['dark', 'light', 'photo', 'daily'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'], clockFormat: ['12', '24'] };
   LOOK_VALUES.highlight = ['standard', 'glow', 'underline', 'tile'];
-  var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material', highlight: 'App highlight', dockOpacity: 'Dock opacity' };
+  var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Action Bar display', focus: 'Focus', material: 'Material', highlight: 'App highlight', dockOpacity: 'Panel opacity', dockOffset: 'Dock position', clockFormat: 'Clock format' };
   var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
   VALUE_NAMES.daily = 'Online pictures';
   VALUE_NAMES.photo = 'Local pictures';
@@ -73,6 +73,15 @@
     hdmi: '<path d="M4 5h16v9l-4 5H8l-4-5Z M8 8v4m4-4v4m4-4v4"/>',
     console: '<path d="M7 7h10c3 0 5 11 2 11l-4-3H9l-4 3C2 18 4 7 7 7Z M7 10v4m-2-2h4m6-1h.1m2 2h.1"/>',
     soundbar: '<rect x="2" y="8" width="20" height="8" rx="2"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/><path d="M10 12h4"/>',
+    location: '<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+    weatherSun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/>',
+    weatherMoon: '<path d="M20 15.7A8.5 8.5 0 0 1 8.3 4 8.5 8.5 0 1 0 20 15.7Z"/>',
+    weatherCloud: '<path d="M7 18h11a4 4 0 0 0 .3-8A6 6 0 0 0 6.8 9 4.5 4.5 0 0 0 7 18Z"/>',
+    weatherPartly: '<path d="M12 3v2M4 11H2m3-6 1.4 1.4M14 8a4 4 0 0 0-7.5 1.8"/><path d="M7 19h11a4 4 0 0 0 .3-8A6 6 0 0 0 6.8 10 4.5 4.5 0 0 0 7 19Z"/>',
+    weatherRain: '<path d="M7 16h11a4 4 0 0 0 .3-8A6 6 0 0 0 6.8 7 4.5 4.5 0 0 0 7 16Z M8 19l-1 2m6-2-1 2m6-2-1 2"/>',
+    weatherSnow: '<path d="M7 15h11a4 4 0 0 0 .3-8A6 6 0 0 0 6.8 6 4.5 4.5 0 0 0 7 15Z M8 19v3m-1.5-1.5h3M16 19v3m-1.5-1.5h3"/>',
+    weatherStorm: '<path d="M7 15h11a4 4 0 0 0 .3-8A6 6 0 0 0 6.8 6 4.5 4.5 0 0 0 7 15Z M13 16l-3 4h3l-2 3"/>',
+    weatherFog: '<path d="M3 8h18M5 12h14M3 16h18M7 20h10"/>',
     warn: '<path d="M12 4 2.8 19.5h18.4Z"/><path d="M12 10v4.5M12 17.3v.1"/>'
   };
 
@@ -92,10 +101,11 @@
     for (var i = 0; i < list.length; i++) if (list[i].toLowerCase() === v) return list[i];
     return fallback;
   }
-  function lookOf(c) { return { bg: c.bg, wall: c.wall, layout: c.layout, apps: c.apps, font: c.font, controls: c.controls, focus: c.focus, material: c.material, highlight: c.highlight, dockOpacity: c.dockOpacity }; }
+  function lookOf(c) { return { bg: c.bg, wall: c.wall, layout: c.layout, apps: c.apps, font: c.font, controls: c.controls, focus: c.focus, material: c.material, highlight: c.highlight, dockOpacity: c.dockOpacity, dockOffset: c.dockOffset, clockFormat: c.clockFormat }; }
   function cleanOpacity(value) { return typeof value === 'number' && isFinite(value) ? clamp(Math.round(value / 5) * 5, 0, 100) : 100; }
+  function cleanDockOffset(value) { return typeof value === 'number' && isFinite(value) ? clamp(Math.round(value / 20) * 20, -160, 80) : 0; }
+  function dockPositionLabel(value) { return value === 0 ? 'Default' : Math.abs(value) + ' px ' + (value < 0 ? 'higher' : 'lower'); }
   function photographic(c) { return c.bg === 'photo' || c.bg === 'daily'; }
-  function dockOpacityApplies() { return S.c.layout === 'dock' && photographic(S.c); }
   function materialApplies(c) { c = c || S.c; return photographic(c) && (c.layout === 'dock' || c.focus === 'glass'); }
 
   /* ---------- Helpers ---------- */
@@ -353,7 +363,8 @@
       bg: pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'photo'), layout: pick(modern.layout, LOOK_VALUES.layout, legacyList ? 'list' : 'dock'),
       apps: pick(modern.apps, LOOK_VALUES.apps, legacyList ? 'text' : 'both'), controls: pick(modern.controls, LOOK_VALUES.controls, 'both'),
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
-      highlight: pick(modern.highlight === 'indicator' ? 'glow' : modern.highlight, LOOK_VALUES.highlight, 'standard'), dockOpacity: cleanOpacity(modern.dockOpacity),
+      highlight: pick(modern.highlight === 'indicator' ? 'glow' : modern.highlight, LOOK_VALUES.highlight, 'standard'), dockOpacity: cleanOpacity(modern.dockOpacity), dockOffset: cleanDockOffset(modern.dockOffset),
+      clockFormat: pick(modern.clockFormat, LOOK_VALUES.clockFormat, '12'),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
       home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
       appIcons: window.FrameAppIcons.clean(s.appIcons),
@@ -508,18 +519,17 @@
   }
 
   /* ---------- Navigation targets ---------- */
-  function utils() { return S.c.bg === 'daily' ? ['sources', 'apps', 'settings', 'skip', 'info'] : ['sources', 'apps', 'settings']; }
+  function utils() { return S.c.bg === 'daily' ? ['sources', 'apps', 'settings', 'info'] : ['sources', 'apps', 'settings']; }
   /* prev/next run along the apps; out goes to the controls, inn comes back (or to a per-app action). */
   function axes() {
     var v = S.c.layout === 'list';
     return { prev: v ? 'up' : 'left', next: v ? 'down' : 'right', out: v ? 'right' : 'up', inn: v ? 'left' : 'down' };
   }
-  UTIL.skip = ['Next picture', 'nextPicture']; UTIL.info = ['Picture info', 'pictureInfo'];
-  SVG.nextPicture = '<path d="M5 16a8 8 0 1 1 13-9M18 2v5h-5"/>';
+  UTIL.info = ['Picture info', 'pictureInfo'];
+  SVG.skipArrow = '<path d="M5 16a8 8 0 1 1 13-9M18 2v5h-5"/>';
   SVG.pictureInfo = '<path d="M13 20H3V4h18v7M3 15l5-5 5 5"/><circle cx="8" cy="8" r="1"/><circle cx="17.5" cy="17.5" r="5"/><path d="M17.5 17v3m0-6v1"/>';
   function utilAction(u) {
-    if (u === 'skip') { window.CleanFrameDaily.skip(); return; }
-    if (u === 'info') { top().f.info = !top().f.info; return; }
+    if (u === 'info') { top().f.info = !top().f.info; top().f.infoIndex = 0; return; }
     if (u === 'sources') push({ id: 'sourceMenu', f: { i: 0 } });
     else if (u === 'apps') openApps();
     else openSettings();
@@ -549,21 +559,53 @@
       previewTimer: 0, previewDue: null, applyPending: null, failedId: null, failedApply: false, retryBundle: null });
   }
   function isSettingsDetail(t) { return t.id === 'appearance' || t.id === 'wallpaper'; }
+  function pictureLink(kind) {
+    var current = window.CleanFrameDaily.view().current, url;
+    if (!current) return '';
+    url = kind === 'license' ? current.licenseURL || '' : current.page || '';
+    if (kind === 'license' && !/^https:\/\/(creativecommons\.org|www\.nasa\.gov|pixabay\.com)\//.test(url)) return '';
+    return /^https:\/\/[^\s]+$/i.test(url) ? url : '';
+  }
 
   var V = {};
 
   /* ---------- Home (browse) ---------- */
   V.home = {
+    norm: function (t) { if (t.f.zone === 'weather' && !window.FrameWeather.view().enabled) t.f.zone = 'apps'; },
     key: function (t, k) {
       var f = t.f, h = S.c.home, U = utils(), x = axes(), i = ensureSel();
       if (f.info) {
-        if (k === 'back' || k === 'ok') { f.info = false; return; }
-        if (k === 'up' || k === 'down') { $('dailyDetails').scrollTop += k === 'down' ? 100 : -100; return; }
-        f.info = false;
+        var lastInfo = pictureLink('license') ? 2 : pictureLink('page') ? 1 : 0, infoBody = $('dailyDetailsContent');
+        f.infoIndex = clamp(f.infoIndex || 0, 0, lastInfo);
+        if (k === 'back') { f.info = false; return; }
+        if (k === 'up') {
+          if (infoBody.scrollTop > 0) infoBody.scrollTop = Math.max(0, infoBody.scrollTop - 100);
+          else f.infoIndex = Math.max(0, f.infoIndex - 1);
+        } else if (k === 'down') {
+          if (f.infoIndex < lastInfo) f.infoIndex++;
+          else infoBody.scrollTop += 100;
+        } else if (k === 'left' && f.infoIndex === 2) f.infoIndex = 1;
+        else if (k === 'right' && f.infoIndex === 1 && lastInfo === 2) f.infoIndex = 2;
+        else if (k === 'ok') {
+          if (f.infoIndex === 0) window.CleanFrameDaily.skip();
+          else {
+            var url = pictureLink(f.infoIndex === 1 ? 'page' : 'license');
+            if (url) perform('Picture link', function (done) { FrameDevice.openUrl(url, done); });
+          }
+        }
+        return;
+      }
+      if (f.zone === 'weather') {
+        if (k === 'ok') push({ id: 'weatherMenu', f: {} });
+        else if (k === 'back') f.zone = 'apps';
+        else if (k === 'down') { f.zone = S.c.layout === 'list' ? 'util' : 'apps'; f.u = 0; }
+        else if (k === 'right') { f.zone = 'util'; f.u = 0; }
+        return;
       }
       if (S.c.bg === 'daily' && S.c.layout === 'list' && f.zone === 'util') {
         if (k === 'left') f.u = Math.max(0, f.u - 1);
         else if (k === 'right') f.u = Math.min(U.length - 1, f.u + 1);
+        else if (k === 'up' && window.FrameWeather.view().enabled) f.zone = 'weather';
         else if (k === 'back' || k === 'down' || k === 'up') f.zone = 'apps';
         else if (k === 'ok') utilAction(U[f.u]);
         S.lastUtil = f.u; return;
@@ -572,6 +614,7 @@
       if (f.zone === 'util') {
         f.u = clamp(f.u, 0, U.length - 1);
         if (k === x.prev && f.u > 0) f.u--;
+        else if (k === x.prev && f.u === 0 && window.FrameWeather.view().enabled) f.zone = 'weather';
         else if (k === x.next && f.u < U.length - 1) f.u++;
         else if (k === x.inn || k === 'back') f.zone = 'apps';
         else if (k === 'ok') { S.lastUtil = f.u; utilAction(U[f.u]); return; }
@@ -587,7 +630,9 @@
       else if (k === 'ok') launch(S.sel);
     },
     point: function (t, z, i) {
+      if (z === 'info-skip' || z === 'info-link') { t.f.info = true; t.f.infoIndex = i; this.key(t, 'ok'); return; }
       if (z === 'util') { t.f.zone = 'util'; t.f.u = i; S.lastUtil = i; }
+      else if (z === 'weather') { t.f.zone = 'weather'; }
       else if (z === 'app') { t.f.zone = 'apps'; setSel(S.c.home[i]); }
       else if (z === 'empty') t.f.zone = 'apps';
       else return;
@@ -599,6 +644,7 @@
     if (f.zone === 'util') {
       f.u = clamp(f.u, 0, U.length - 1);
       if (k === 'up' && f.u > 0) f.u--;
+      else if (k === 'up' && f.u === 0 && window.FrameWeather.view().enabled) f.zone = 'weather';
       else if (k === 'down' && f.u < U.length - 1) f.u++;
       else if (k === 'left' || k === 'back') f.zone = 'apps';
       else if (k === 'ok') { S.lastUtil = f.u; utilAction(U[f.u]); return; }
@@ -716,7 +762,7 @@
 
   /* ---------- Installed apps ---------- */
   function appsItems() { return catalog.error ? [] : ALPHA; }
-  function appsHead() { return catalog.error ? [['retry', 'Try again', '', '']] : [['editor', 'Apps on Home', '', 'home']]; }
+  function appsHead() { return catalog.error ? [['retry', 'Try again', '', '']] : [['editor', 'Apps in Dock', '', 'home']]; }
   V.apps = {
     sheet: true,
     norm: function (t) {
@@ -851,12 +897,12 @@
   function settingsRows() {
     var n = S.c.home.length;
     return [{ id: 'background', label: 'Background', value: S.c.bg === 'photo' ? wall(S.c.wall).name : VALUE_NAMES[S.c.bg] },
-      { id: 'layout', label: 'Layout', value: VALUE_NAMES[S.c.layout] },
+      { id: 'dock', label: 'Dock', value: VALUE_NAMES[S.c.layout] + ' · ' + n + (n === 1 ? ' app' : ' apps') },
+      { id: 'actionbar', label: 'Action Bar', value: VALUE_NAMES[S.c.controls] + ' · Sources' },
+      { id: 'widgets', label: 'Widgets', value: S.c.clockFormat + '-hour clock' + (window.FrameWeather.view().enabled ? ' · Weather' : '') },
+      { id: 'design', label: 'Design', value: VALUE_NAMES[S.c.focus] + (materialApplies() ? ', ' + VALUE_NAMES[S.c.material] : '') + ' · ' + S.c.dockOpacity + '%' },
       { id: 'typography', label: 'Typography', value: FONTS[S.c.font].name },
-      { id: 'focus', label: 'Focus', value: VALUE_NAMES[S.c.focus] + (materialApplies() ? ', ' + VALUE_NAMES[S.c.material] : '') },
-      { id: 'editor', label: 'Apps on Home', value: n + (n === 1 ? ' app' : ' apps') },
       { id: 'icons', label: 'App icons', value: 'Choose an icon for each app' },
-      { id: 'sources', label: 'Sources', value: 'TV, consoles and HDMI connections' },
       { id: 'samsung', label: 'Samsung', value: 'Home and TV settings' }];
   }
   function settingsIds() { return settingsRows().map(function (r) { return r.id; }); }
@@ -874,9 +920,7 @@
     point: function (t, z, i, id) { if (z === 'row' && id) { t.f.id = id; this.key(t, 'ok'); } }
   };
   function settingsOk(id) {
-    if (id === 'editor') openEditor('settings');
-    else if (id === 'icons') openIconApps();
-    else if (id === 'sources') openSources();
+    if (id === 'icons') openIconApps();
     else openAppearance(id);
   }
   /* Icon choices follow native app IDs and share the atomic preference write. */
@@ -949,6 +993,38 @@
     perform(item.name, function (done) { FrameDevice.setSource(item.type, item.number, done); });
   }
   function openSources() { push({ id: 'sources', f: { i: 0 } }); }
+  function openWeatherLocation() { push({ id: 'weatherLocation', query: '', results: [], status: 'Search for a city or postal code.', token: 0, f: { i: 0 } }); }
+  function searchWeatherLocation(t) {
+    var query = $('weatherLocationInput').value.replace(/^\s+|\s+$/g, ''), token = ++t.token;
+    t.query = query; t.results = []; t.status = 'Searching…'; t.f.i = 1; render();
+    window.FrameWeather.search(query, function (error, results) {
+      if (top() !== t || token !== t.token) return;
+      t.results = results; t.status = error || 'Choose a location.'; t.f.i = results.length ? 2 : 1; render();
+    });
+  }
+  V.weatherMenu = {
+    key: function (t, k) { if (k === 'back' || k === 'left' || k === 'ok') pop(); },
+    point: function () { pop(); }
+  };
+  V.weatherLocation = {
+    sheet: true,
+    norm: function (t) { t.f.i = clamp(t.f.i, 0, t.results.length + 2); },
+    key: function (t, k) {
+      if (k === 'back') { t.token++; pop(); focusStage(); return; }
+      if (k === 'up') t.f.i = Math.max(0, t.f.i - 1);
+      else if (k === 'down') t.f.i = Math.min(t.results.length + 2, t.f.i + 1);
+      else if (k === 'left' && t.f.i === 1) t.f.i = 0;
+      else if (k === 'right' && t.f.i === 0) t.f.i = 1;
+      else if (k === 'ok') {
+        if (t.f.i === 0) $('weatherLocationInput').focus();
+        else if (t.f.i === 1) searchWeatherLocation(t);
+        else if (t.f.i === t.results.length + 2) { t.token++; pop(); focusStage(); }
+        else if (window.FrameWeather.choose(t.results[t.f.i - 2])) { t.token++; pop(); focusStage(); }
+        else t.status = 'Could not save this location. Try again.';
+      }
+    },
+    point: function (t, z, i) { if (z !== 'weather-location') return; t.f.i = i; this.key(t, 'ok'); }
+  };
   V.sourceMenu = {
     norm: function (t) { t.f.i = clamp(t.f.i, 0, window.FrameSources.visible().length); },
     key: function (t, k) {
@@ -958,7 +1034,7 @@
       else if (k === 'down') t.f.i = Math.min(items.length, t.f.i + 1);
       else if (k === 'ok') {
         pop();
-        if (t.f.i === items.length) { openSettings(); top().f.id = 'sources'; S.settingsFocus = 'sources'; openSources(); }
+        if (t.f.i === items.length) { openSettings(); top().f.id = 'actionbar'; S.settingsFocus = 'actionbar'; openAppearance('actionbar'); openSources(); }
         else openSource(items[t.f.i]);
       }
     },
@@ -1047,11 +1123,12 @@
     },
     point: function (t, z, i) { t.f.i = i; this.key(t, 'ok'); }
   };
-  var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', daily: 'Online pictures', local: 'Local pictures', samsung: 'Samsung' };
+  var DETAIL_NAMES = { background: 'Background', dock: 'Dock', actionbar: 'Action Bar', typography: 'Typography', design: 'Design', widgets: 'Widgets', rotation: 'Rotation', daily: 'Online pictures', local: 'Local pictures', samsung: 'Samsung' };
   function choice(axis, value, disabled) {
-    if (axis === 'dockOpacity') return { action: 'dock.opacity', label: 'Dock opacity', slider: true, disabled: !!disabled };
+    if (axis === 'dockOpacity') return { action: 'panel.opacity', axis: axis, label: 'Panel opacity', slider: true, disabled: !!disabled };
+    if (axis === 'dockOffset') return { action: 'dock.position', axis: axis, label: 'Vertical position', slider: true, disabled: !!disabled };
     return { action: axis === 'mode' ? 'rotation.' + value : 'choice.' + axis + '.' + value, axis: axis, value: value, disabled: !!disabled,
-      label: axis === 'font' ? FONTS[value].name : axis === 'mode' ? MODES.filter(function (m) { return m.id === value; })[0].name : value === 'both' ? 'Both' : VALUE_NAMES[value] };
+      label: axis === 'font' ? FONTS[value].name : axis === 'mode' ? MODES.filter(function (m) { return m.id === value; })[0].name : axis === 'clockFormat' ? value + '-hour' : value === 'both' ? 'Both' : VALUE_NAMES[value] };
   }
   function detailSections(t) {
     var flat = S.c.bg !== 'photo', inactive = !materialApplies();
@@ -1074,19 +1151,34 @@
       { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true }] },
       { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name }]  }
     ];
-    if (t.group === 'layout') return [
-      { id: 'layout', title: 'Layout', horizontal: true, items: options('layout', ['list', 'dock']) },
+    if (t.group === 'dock') return [
+      { id: 'layout', title: 'Home layout', horizontal: true, items: options('layout', ['list', 'dock']) },
       { id: 'apps', title: 'App display', horizontal: true, items: options('apps', ['text', 'icons', 'both']) },
-      { id: 'controls', title: 'Home controls', horizontal: true, items: options('controls', ['text', 'icons', 'both']) },
-      { id: 'dockOpacity', title: 'Dock background opacity', items: [choice('dockOpacity', S.c.dockOpacity, !dockOpacityApplies())],
-        reason: dockOpacityApplies() ? 'Left / Right: 5% steps. OK applies.' : 'Choose Dock and a Photo background to adjust opacity.' }
+      { id: 'dockApps', title: 'Apps in Dock', items: [{ action: 'dock.apps', label: 'Choose and arrange apps' }] },
+      { id: 'dockPosition', title: 'Vertical position', items: [choice('dockOffset', S.c.dockOffset)],
+        reason: 'Left / Right moves the Dock. The preview updates; OK saves.' }
+    ];
+    if (t.group === 'actionbar') return [
+      { id: 'controls', title: 'Action Bar display', horizontal: true, items: options('controls', ['text', 'icons', 'both']) },
+      { id: 'sources', title: 'Sources', items: [{ action: 'actionbar.sources', label: 'Configure sources' }] }
     ];
     if (t.group === 'typography') return [{ id: 'font', title: '', items: options('font', LOOK_VALUES.font) }];
-    if (t.group === 'focus') return [
+    if (t.group === 'widgets') {
+      var weather = window.FrameWeather.view();
+      return [{ id: 'clockFormat', title: 'Clock format', horizontal: true, items: options('clockFormat', LOOK_VALUES.clockFormat) },
+        { id: 'weather', title: 'Weather beside the clock', items: [{ action: 'weather.toggle', label: weather.enabled ? 'On' : 'Off', toggle: weather.enabled }] },
+        { id: 'weatherLocation', title: 'Location', items: [{ action: 'weather.location', label: weather.location ? weather.location.name : 'Choose a location',
+          description: weather.location ? [weather.location.admin, weather.location.country].filter(function (part) { return !!part; }).join(' · ') : 'Search for a city or postal code' }] },
+        { id: 'weatherStatus', title: '', items: [{ action: 'weather.refresh', label: 'Refresh weather', disabled: !weather.enabled }],
+          reason: weather.status || 'Weather data by Open-Meteo.com' }];
+    }
+    if (t.group === 'design') return [
       { id: 'focus', title: 'Focus style', horizontal: true, items: options('focus', ['type', 'glass']) },
       { id: 'material', title: 'Material', horizontal: true, items: options('material', ['soft', 'frost', 'tint'], inactive),
         reason: inactive ? flat ? 'Materials are available with a Photo background.' : 'Choose Glass focus or the Dock layout to use materials.' : '' },
-      { id: 'highlight', title: 'App highlight · Dock and List', columns: 2, items: options('highlight', LOOK_VALUES.highlight) }
+      { id: 'highlight', title: 'App highlight · Dock and List', columns: 2, items: options('highlight', LOOK_VALUES.highlight) },
+      { id: 'panelOpacity', title: 'Panel opacity', items: [choice('dockOpacity', S.c.dockOpacity)],
+        reason: 'Dock, Action Bar and popup backgrounds. Left / Right: 5% steps. OK applies.' }
     ];
     if (t.group === 'rotation') return [{ id: 'mode', title: '', items: options('mode', MODES.map(function (m) { return m.id; })),
       reason: 'Timed changes pause while Settings or another panel is open.' }];
@@ -1112,7 +1204,8 @@
     return { rows: rows, row: row, column: column, item: rows[row][column] };
   }
   function detailFocus(t, item, column) {
-    if (t.f.action === 'dock.opacity' && item.action !== t.f.action) delete t.f.opacity;
+    if (t.f.action === 'panel.opacity' && item.action !== t.f.action) delete t.f.opacity;
+    if (t.f.action === 'dock.position' && item.action !== t.f.action) delete t.f.dockOffset;
     t.f.action = item.action;
     if (item.action !== 'settings.back') S.detailFocus[t.group] = item.action;
     if (column !== undefined) t.f.column = column;
@@ -1130,7 +1223,11 @@
     var patch = {}, error = S.lookError;
     if (item.action === 'settings.back') { detailBack(); return; }
     if (item.disabled || S.pending) return;
-    if (item.slider) { setLook({ dockOpacity: t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity }, { row: 'dockOpacity' }); return; }
+    if (item.slider) {
+      if (item.axis === 'dockOffset') setLook({ dockOffset: t.f.dockOffset === undefined ? S.c.dockOffset : t.f.dockOffset }, { row: 'dockOffset' });
+      else setLook({ dockOpacity: t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity }, { row: 'dockOpacity' });
+      return;
+    }
     if (item.action === 'settings.retry') {
       if (error && error.patch[error.row] !== undefined) detailFocus(t, choice(error.row, error.patch[error.row]), 0);
       if (error && error.row === 'mode') applyRotation(error.patch.mode);
@@ -1142,6 +1239,14 @@
     else if (item.action === 'daily.retry') window.CleanFrameDaily.retry();
     else if (item.action === 'background.local') openAppearance('local');
     else if (item.action === 'background.daily') openAppearance('daily');
+    else if (item.action === 'dock.apps') openEditor('settings');
+    else if (item.action === 'actionbar.sources') openSources();
+    else if (item.action === 'weather.toggle') {
+      if (!window.FrameWeather.view().location) openWeatherLocation();
+      else window.FrameWeather.enable(!window.FrameWeather.view().enabled);
+    }
+    else if (item.action === 'weather.location') openWeatherLocation();
+    else if (item.action === 'weather.refresh') window.FrameWeather.refresh();
     else if (item.axis === 'mode') applyRotation(item.value);
     else if (item.axis) { patch[item.axis] = item.value; setLook(patch, { row: item.axis }); }
     else if (item.action === 'background.wallpaper') openWallpaper();
@@ -1152,7 +1257,7 @@
   V.appearance = {
     norm: function (t) {
       var rows = detailRows(t), exists = false, applied = null;
-      var axis = { background: 'bg', layout: 'layout', typography: 'font', focus: 'focus', rotation: 'mode' }[t.group];
+      var axis = { background: 'bg', dock: 'layout', actionbar: 'controls', typography: 'font', design: 'focus', widgets: 'clockFormat', rotation: 'mode' }[t.group];
       rows.forEach(function (items) { items.forEach(function (item) {
         if (item.action === t.f.action) exists = true;
         if (item.axis === axis && item.value === S.c[axis]) applied = item;
@@ -1169,7 +1274,11 @@
         column = Math.min(t.f.column || 0, at.rows[row].length - 1);
         detailFocus(t, at.rows[row][column]);
       } else if (k === 'left' || k === 'right') {
-        if (at.item.slider) { t.f.opacity = clamp((t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity) + (k === 'left' ? -5 : 5), 0, 100); return; }
+        if (at.item.slider) {
+          if (at.item.axis === 'dockOffset') t.f.dockOffset = cleanDockOffset((t.f.dockOffset === undefined ? S.c.dockOffset : t.f.dockOffset) + (k === 'left' ? -20 : 20));
+          else t.f.opacity = cleanOpacity((t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity) + (k === 'left' ? -5 : 5));
+          return;
+        }
         column = clamp(column + (k === 'left' ? -1 : 1), 0, at.rows[row].length - 1);
         detailFocus(t, at.rows[row][column], column);
       }
@@ -1254,7 +1363,13 @@
     stage.className = 'stage bg-' + (S.c.bg === 'daily' ? 'photo' : S.c.bg) + ' l-' + S.c.layout + ' v-' + S.variant + ' m-' + (materialApplies() ? S.c.material : 'none') + ' f-' + S.c.focus + ' a-' + S.c.apps + ' u-' + S.c.controls + ' g-' + S.geom + ' tone-' + shown.tone + ' tr-' + tr + ' br-' + br + wallClasses(shown) + inkRungClasses(palette, adaptive) + ' at-' + t.id + ' font-' + homeFont() + (homeFont() !== 'manrope' ? ' font-custom' : '') + (S.fontSwitch ? ' is-font-switch' : '') + (adaptive ? ' has-adaptive-ink adaptive-tl-' + palette.tl.pol : '') + (!adaptive && shown.clockInk ? ' has-clock-ink' : '') + (!adaptive && shown.dockClockInk ? ' has-dock-clock-ink' : '') + (registeredMaterial(shown.id) ? ' registered-material' : '') + (sheet ? ' is-sheet' : '') + (S.reflow ? ' is-reflow' : '');
     stage.className += ' h-' + S.c.highlight + (S.c.bg === 'daily' ? ' is-daily' : '');
     renderDaily(t);
-    stage.style.setProperty('--dock-opacity', String(S.c.dockOpacity / 100));
+    window.FrameWeather.setActive(!document.hidden && window.FrameWeather.view().enabled);
+    stage.style.setProperty('--panel-opacity', String(S.c.dockOpacity / 100));
+    var dockOffset = t.id === 'appearance' && t.group === 'dock' && t.f.dockOffset !== undefined ? t.f.dockOffset : S.c.dockOffset;
+    stage.style.setProperty('--dock-y', px(676 + dockOffset));
+    stage.style.setProperty('--dock-cue-y', px(768 + dockOffset));
+    stage.style.setProperty('--dock-action-y', px(932 + dockOffset));
+    stage.style.setProperty('--dock-action-status-y', px(924 + dockOffset));
     if (!adaptive && S.c.bg !== 'daily' && shown.clockInk) stage.style.setProperty('--clock-ink', shown.clockInk);
     else stage.style.removeProperty('--clock-ink');
     if (!adaptive && S.c.bg !== 'daily' && shown.dockClockInk) stage.style.setProperty('--dock-clock-ink', shown.dockClockInk);
@@ -1263,27 +1378,35 @@
     if (!sheet) renderHome(t);
     renderSheet(t, sheet);
     renderSources(t);
+    renderWeatherMenu(t);
     renderAppearance(t);
     renderFocusStatus(t);
   }
 
   function renderDaily(t) {
     var daily = window.CleanFrameDaily.view(), enabled = S.c.bg === 'daily' && t.id !== 'wallpaper', image = $('dailyPhoto'), credit = $('dailyCredit');
-    var details = $('dailyDetails'), expanded = enabled && t.id === 'home' && !!t.f.info;
+    var details = $('dailyDetails'), head = $('dailyDetailsHead'), body = $('dailyDetailsContent'), expanded = enabled && t.id === 'home' && !!t.f.info, scroll = body.scrollTop;
     window.CleanFrameDaily.setActive(enabled && !document.hidden, t.id === 'home' && !S.pending && !expanded);
     image.hidden = !enabled || !daily.url;
     if (enabled && daily.url && image.getAttribute('src') !== daily.url) image.src = daily.url;
     image.style.objectFit = daily.options.fit;
-    details.hidden = !expanded; credit.hidden = true;
+    window.FrameUI.setPopupOpen(details, expanded, utilsEl.querySelector('[data-action="daily.info"]')); credit.hidden = true;
     if (enabled && daily.current && daily.url) {
       stage.className += ' daily-ready';
       var c = daily.current;
       var provider = window.CleanFrameDaily.providers.filter(function (p) { return p.id === c.source; })[0];
-      var licenseURL = /^https:\/\/(creativecommons\.org|www\.nasa\.gov|pixabay\.com)\//.test(c.licenseURL || '') ? c.licenseURL : '';
+      var licenseURL = pictureLink('license'), pageURL = pictureLink('page');
       var attribution = esc(c.credit) + ' · ' + esc(provider ? provider.name : c.source) + ' · ' + esc(c.license);
       setHTML(credit, '<a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(c.page) + '">' + esc(c.title) + '</a> · ' + attribution + (daily.options.fit === 'cover' ? ' · Cropped to screen' : ''));
-      setHTML(details, '<h2>' + esc(c.title) + '</h2><p>' + attribution + '</p><p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(c.page) + '">' + esc(c.page) + '</a></p>' + (licenseURL ? '<p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(licenseURL) + '">' + esc(licenseURL) + '</a></p>' : ''));
-    } else { credit.textContent = daily.status || 'Preparing daily pictures… Your saved photo stays visible until a picture is ready.'; details.textContent = credit.textContent; }
+      setHTML(head, '<h2>' + esc(c.title) + '</h2><button type="button" tabindex="-1" id="dailySkip" class="daily-info-action' + window.FrameUI.focusClass('surface', expanded && (t.f.infoIndex || 0) === 0) + '" data-z="info-skip" data-i="0" data-action="daily.skip" aria-label="Skip picture">' + icon('skipArrow') + '<span>Skip</span></button>');
+      setHTML(body, '<p>' + attribution + '</p><div class="daily-info-links">' + (pageURL ? '<button type="button" tabindex="-1" class="daily-info-link' + window.FrameUI.focusClass('surface', expanded && t.f.infoIndex === 1) + '" data-z="info-link" data-i="1" data-action="daily.link.page" aria-label="Open picture page in browser"><span>Picture Page</span></button>' : '') + (licenseURL ? '<button type="button" tabindex="-1" class="daily-info-link' + window.FrameUI.focusClass('surface', expanded && t.f.infoIndex === 2) + '" data-z="info-link" data-i="2" data-action="daily.link.license" aria-label="Open license in browser"><span>License</span></button>' : '') + '</div>');
+    } else {
+      credit.textContent = daily.status || 'Preparing daily pictures… Your saved photo stays visible until a picture is ready.';
+      setHTML(head, '<h2>Picture info</h2><button type="button" tabindex="-1" id="dailySkip" class="daily-info-action' + window.FrameUI.focusClass('surface', expanded) + '" data-z="info-skip" data-i="0" data-action="daily.skip" aria-label="Skip picture">' + icon('skipArrow') + '<span>Skip</span></button>');
+      setHTML(body, esc(credit.textContent));
+    }
+    body.scrollTop = scroll;
+    window.FrameUI.placePopup(details, utilsEl.querySelector('[data-action="daily.info"]'), null, { stage: stage, alignRight: true });
   }
 
   function applyHomeFont() {
@@ -1306,6 +1429,7 @@
     var hs = homeState(t);
     renderCaption(t, hs);
     renderUtils(hs);
+    if (S.c.bg === 'daily') window.FrameUI.setPopupOpen($('dailyDetails'), !$('dailyDetails').hidden, utilsEl.querySelector('[data-action="daily.info"]'));
     if (S.c.layout === 'list') renderList(hs);
     else { photoMode = null; renderDock(hs); }
     renderAppFocusName(hs);
@@ -1313,34 +1437,63 @@
   function sourceIcon(item) { return item.icon === 'xbox' ? markHtml('xbox', 42, 42, 42) : icon(item.icon); }
   function sourceRowsHtml(rows, focused) {
     return rows.map(function (row, i) {
-      return '<button type="button" tabindex="-1" class="source-setting' + (i === focused ? ' is-focus' : '') + '" data-z="source-setting" data-i="' + i + '" data-action="sources.' + row[0] + '">' + (row[3] || '') + '<span class="source-setting-label">' + esc(row[1]) + '</span><span class="source-setting-value">' + esc(row[2]) + '</span></button>';
+      return '<button type="button" tabindex="-1" class="source-setting' + window.FrameUI.focusClass('solid', i === focused) + '" data-z="source-setting" data-i="' + i + '" data-action="sources.' + row[0] + '">' + (row[3] || '') + '<span class="source-setting-label">' + esc(row[1]) + '</span><span class="source-setting-value">' + esc(row[2]) + '</span></button>';
     }).join('');
   }
   function renderSources(t) {
-    var menu = $('sourceMenu'), im = $('sourceMenuImage'), anchor = utilsEl.querySelector('[data-action="util.sources"]'), items = window.FrameSources.visible(), html, r, sr, scale, x, y, src;
-    menu.hidden = t.id !== 'sourceMenu';
+    var menu = $('sourceMenu'), im = $('sourceMenuImage'), anchor = utilsEl.querySelector('[data-action="util.sources"]'), items = window.FrameSources.visible(), html;
+    window.FrameUI.setPopupOpen(menu, t.id === 'sourceMenu', anchor);
     if (anchor) { anchor.setAttribute('aria-haspopup', 'menu'); anchor.setAttribute('aria-expanded', String(!menu.hidden)); }
     if (menu.hidden) return;
     html = '<p class="source-menu-title">Sources</p>' + (!items.length ? '<p class="source-menu-empty">Choose sources in Settings.</p>' : '');
     html += items.map(function (item, i) {
-      return '<button type="button" tabindex="-1" role="menuitem" class="source-button' + (t.f.i === i ? ' is-focus' : '') + '" data-z="source-menu" data-i="' + i + '" data-action="source.' + item.id + '" aria-label="' + esc(item.name) + '">' + sourceIcon(item) + '<span>' + esc(item.name) + '</span></button>';
+      return '<button type="button" tabindex="-1" role="menuitem" class="source-button' + window.FrameUI.focusClass('surface', t.f.i === i) + '" data-z="source-menu" data-i="' + i + '" data-action="source.' + item.id + '" aria-label="' + esc(item.name) + '">' + sourceIcon(item) + '<span>' + esc(item.name) + '</span></button>';
     }).join('');
-    html += '<button type="button" tabindex="-1" role="menuitem" class="source-button source-configure' + (t.f.i === items.length ? ' is-focus' : '') + '" data-z="source-menu" data-i="' + items.length + '" data-action="source.configure">' + icon('settings') + '<span>Configure sources</span></button>';
+    html += '<button type="button" tabindex="-1" role="menuitem" class="source-button source-configure' + window.FrameUI.focusClass('surface', t.f.i === items.length) + '" data-z="source-menu" data-i="' + items.length + '" data-action="source.configure">' + icon('settings') + '<span>Configure sources</span></button>';
     setHTML($('sourceMenuContent'), html);
-    r = anchor.getBoundingClientRect(); sr = stage.getBoundingClientRect(); scale = sr.width / 1920;
-    x = clamp((r.left - sr.left) / scale, 80, 1400);
-    y = clamp(S.c.layout === 'list' && S.c.bg !== 'daily' ? (r.top - sr.top) / scale - menu.offsetHeight - 18 : (r.bottom - sr.top) / scale + 18, 80, 1000 - menu.offsetHeight);
-    menu.style.left = px(x); menu.style.top = px(y);
-    im.hidden = S.c.bg !== 'photo';
-    if (!im.hidden) {
-      src = fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material);
-      if (im.getAttribute('src') !== src) im.src = src;
-      im.style.left = px(-x); im.style.top = px(-y);
-    }
+    window.FrameUI.placePopup(menu, anchor, im, { stage: stage, above: S.c.layout === 'list' && S.c.bg !== 'daily', photo: S.c.bg === 'photo', imageSrc: fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material) });
+  }
+
+  function weatherKind(code, day) {
+    if (code === 0) return { icon: day ? 'weatherSun' : 'weatherMoon', name: 'Clear' };
+    if (code <= 2) return { icon: day ? 'weatherPartly' : 'weatherMoon', name: 'Partly cloudy' };
+    if (code === 3) return { icon: 'weatherCloud', name: 'Cloudy' };
+    if (code === 45 || code === 48) return { icon: 'weatherFog', name: 'Fog' };
+    if (code >= 95) return { icon: 'weatherStorm', name: 'Thunderstorm' };
+    if (code >= 71 && code <= 77 || code === 85 || code === 86) return { icon: 'weatherSnow', name: 'Snow' };
+    return { icon: 'weatherRain', name: 'Rain' };
+  }
+  function weatherHour(value) {
+    var hour = Number(value.slice(11, 13));
+    return S.c.clockFormat === '24' ? (hour < 10 ? '0' : '') + hour + ':00' : (hour % 12 || 12) + (hour < 12 ? ' AM' : ' PM');
+  }
+  function weatherDay(value) {
+    var bits = value.split('-'), date = new Date(Number(bits[0]), Number(bits[1]) - 1, Number(bits[2]));
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+  }
+  function renderWeatherMenu(t) {
+    var menu = $('weatherMenu'), view = window.FrameWeather.view(), anchor = caption.querySelector('.weather-chip'), im = $('weatherMenuImage'), html, i, group, hour, temp;
+    window.FrameUI.setPopupOpen(menu, t.id === 'weatherMenu' && view.enabled, anchor);
+    if (menu.hidden || !anchor) return;
+    html = '<div class="weather-menu-head"><p class="weather-menu-kicker">' + icon('location') + '<span>' + esc(view.location.name) + '</span></p><p class="weather-menu-credit">Data: Open-Meteo.com</p></div>';
+    if (view.data) {
+      html += '<div class="weather-forecast"><div class="weather-hours" aria-label="Next 12 hours in three-hour groups">';
+      for (i = 0; i < 12; i += 3) {
+        group = view.data.hours.slice(i, i + 3); hour = group[1];
+        temp = Math.round((group[0].temp + group[1].temp + group[2].temp) / 3);
+        html += '<div class="weather-hour" aria-label="From ' + weatherHour(group[0].time) + ', three-hour average ' + temp + ' degrees, ' + weatherKind(hour.code, hour.day).name + '"><span>' + weatherHour(group[0].time) + '</span>' + icon(weatherKind(hour.code, hour.day).icon) + '<strong>' + temp + '°</strong></div>';
+      }
+      html += '</div><div class="weather-days" aria-label="Next two days">' + view.data.days.map(function (day) {
+        return '<div class="weather-day" aria-label="' + weatherDay(day.date) + ', high ' + Math.round(day.max) + ' degrees, low ' + Math.round(day.min) + ' degrees"><span>' + weatherDay(day.date) + '</span>' + icon(weatherKind(day.code, true).icon) + '<span><strong>' + Math.round(day.max) + '°</strong><span class="weather-low"> ' + Math.round(day.min) + '°</span></span></div>';
+      }).join('') + '</div></div>';
+    } else html += '<p class="weather-empty">' + esc(view.status || 'Weather is loading…') + '</p>';
+    if (view.data && (view.status || view.stale)) html += '<p class="weather-menu-note">' + esc(view.status || 'Saved forecast · refreshing') + '</p>';
+    setHTML($('weatherMenuContent'), html);
+    window.FrameUI.placePopup(menu, anchor, im, { stage: stage, offset: 16, bottom: 64, photo: S.c.bg === 'photo', imageSrc: fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material) });
   }
 
   function clockText() {
-    var d = new Date(), h = d.getHours() % 12 || 12, m = d.getMinutes();
+    var d = new Date(), h = S.c.clockFormat === '24' ? d.getHours() : d.getHours() % 12 || 12, m = d.getMinutes();
     return h + ':' + (m < 10 ? '0' : '') + m;
   }
   function clockHtml() {
@@ -1349,22 +1502,30 @@
     return text.replace(/[0-9]/g, function (digit) { return '<span class="clock-digit">' + digit + '</span>'; });
   }
   function renderCaption(t, hs) {
-    var html = '<span class="clock">' + clockHtml() + '</span>';
+    var weather = window.FrameWeather.view(), now = weather.data && weather.data.current, kind = now ? weatherKind(now.code, now.day) : null;
+    var html = '<span class="caption-top"><span class="clock">' + clockHtml() + '</span>';
+    if (weather.enabled && weather.location) {
+      html += '<button type="button" tabindex="-1" class="weather-chip' + window.FrameUI.focusClass('surface', t.id === 'home' && t.f.zone === 'weather') + (t.id === 'weatherMenu' ? ' is-open' : '') + '"'
+        + (t.id === 'home' ? ' data-z="weather" data-i="0" data-action="home.weather"' : '')
+        + ' aria-label="Weather in ' + esc(weather.location.name) + (now ? ', ' + Math.round(now.temp) + ' degrees, ' + kind.name : ', unavailable') + '" aria-haspopup="dialog" aria-expanded="' + (t.id === 'weatherMenu') + '">'
+        + icon(kind ? kind.icon : 'weatherCloud') + '<span>' + (now ? Math.round(now.temp) + '°' : '–°') + '</span></button>';
+    }
+    html += '</span>';
     if (S.c.apps !== 'icons' && hs.items[hs.i] && (S.c.layout === 'list' ? photoLabel(hs.items[hs.i].id, false).size < 88 || photoLabel(hs.items[hs.i].id, false).ellipsis : hs.zone === 'apps' && reducedDockLabel(hs.items[hs.i].id))) html += '<span class="cap-line full-name">' + esc(app(hs.items[hs.i].id).name) + '</span>';
     setHTML(caption, html);
   }
 
   function utilBtn(z, i, action, inner, extra, name) {
-    return '<button type="button"' + (action === 'daily.skip' ? ' id="dailySkip"' : action === 'daily.info' ? ' id="dailyInfo"' : '') + ' tabindex="-1" class="u' + (extra || '') + '" data-z="' + z + '" data-i="' + i + '" data-action="' + action + '" aria-label="' + esc(name) + '"><span class="u-content">' + inner + '</span></button>';
+    return '<button type="button"' + (action === 'daily.info' ? ' id="dailyInfo"' : '') + ' tabindex="-1" class="u ui-focus ui-focus-utility' + (extra || '') + '" data-z="' + z + '" data-i="' + i + '" data-action="' + action + '" aria-label="' + esc(name) + '"><span class="u-content">' + inner + '</span></button>';
   }
   function renderUtils(hs) {
     var html = '', style = S.c.bg === 'daily' ? 'icons' : hs.mode === 'arrange' && S.c.controls !== 'text' ? 'both' : S.c.controls;
     var iconsOnly = style === 'icons', U = utils(), focused = null;
     utilsEl.className = 'utils quiet-utils is-' + style + (hs.zone === 'util' || hs.zone === 'ctl' ? ' is-awake' : '');
-    U.forEach(function (u, i) { html += utilBtn('util', i, u === 'skip' ? 'daily.skip' : u === 'info' ? 'daily.info' : 'util.' + u, icon(UTIL[u][1], '', true) + '<span class="u-label">' + UTIL[u][0] + '</span>', '', UTIL[u][0]); });
+    U.forEach(function (u, i) { html += utilBtn('util', i, u === 'info' ? 'daily.info' : 'util.' + u, icon(UTIL[u][1], '', true) + '<span class="u-label">' + UTIL[u][0] + '</span>', '', UTIL[u][0]); });
     setHTML(utilsEl, html);
     Array.prototype.forEach.call(utilsEl.querySelectorAll('.u'), function (b) {
-      var z = b.getAttribute('data-z'), focus = hs.zone === z && hs.u === Number(b.getAttribute('data-i'));
+      var z = b.getAttribute('data-z'), focus = !top().f.info && hs.zone === z && hs.u === Number(b.getAttribute('data-i'));
       b.className = b.className.replace(/\s+is-focus/g, '') + (focus ? ' is-focus' : '');
       if (focus) focused = b;
     });
@@ -1429,18 +1590,22 @@
       x = 280; placement = phFields[photoPlateIndex]._placement;
       y = placement.y + placement.height / 2 - 24;
     } else {
-      x = clamp(dockAnchorCenter - width / 2, 140, 1780 - width); y = 932;
+      x = clamp(dockAnchorCenter - width / 2, 140, 1780 - width); y = 932 + currentDockShift();
     }
     appFocusName.style.left = x + 'px'; appFocusName.style.top = (y + fontShift('primary', S.c.layout === 'list' ? 40 : 36)) + 'px';
     appFocusName.className = 'app-focus-name is-on';
   }
 
+  function currentDockShift() {
+    var t = top();
+    return t.id === 'appearance' && t.group === 'dock' && t.f.dockOffset !== undefined ? t.f.dockOffset : S.c.dockOffset;
+  }
   function dockGeom(n) {
     var m = DOCK_MODES[S.c.apps], vis = Math.max(1, Math.min(5, n)), shelfW = vis * m.pitch - 8, w = shelfW + 32;
     var broad = S.geom === 'broad' && n > 5;
     if (n < 0) { w = 912; shelfW = 880; }
     else if (broad) { w = 1728; shelfW = 1696; }
-    return { x: Math.round((1920 - w) / 2), y: 908 - m.th - 32, h: m.th + 32, w: w, shelf: shelfW, vis: vis, broad: broad, empty: n < 0, tw: m.tw, th: m.th, pitch: m.pitch };
+    return { x: Math.round((1920 - w) / 2), y: 908 - m.th - 32 + currentDockShift(), h: m.th + 32, w: w, shelf: shelfW, vis: vis, broad: broad, empty: n < 0, tw: m.tw, th: m.th, pitch: m.pitch };
   }
   /* Five centred: the window moves one tile when focus passes an edge. Broad: keep a
      148px glimpse of the neighbour, as the current dock does. */
@@ -1547,7 +1712,7 @@
       dockAction.className = 'dock-action';
       dockAction.removeAttribute('data-z'); dockAction.removeAttribute('data-action');
     }
-    setHTML(dockEmpty, empty ? '<p>No apps on Home</p><button type="button" tabindex="-1" class="btn' + (hs.zone === 'empty' ? ' is-focus' : '') + '" data-z="empty" data-i="0" data-action="home.add-apps">' + icon('plus') + '<span>Add apps</span></button>' : '');
+    setHTML(dockEmpty, empty ? '<p>No apps on Home</p><button type="button" tabindex="-1" class="btn' + window.FrameUI.focusClass('solid', hs.zone === 'empty') + '" data-z="empty" data-i="0" data-action="home.add-apps">' + icon('plus') + '<span>Add apps</span></button>' : '');
   }
 
   function photoModeTransition(compact) {
@@ -1644,7 +1809,7 @@
       attrs(phAction, 'act', anchor, 'arrange.' + (s.removed ? 'restore.' : 'remove.') + s.id);
     } else { phAction.className = 'ph-action'; phAction.removeAttribute('data-z'); phAction.removeAttribute('data-action'); }
     phEmpty.className = 'ph-empty' + (!compact && !n ? ' is-on' : '');
-    setHTML(phEmpty, !compact && !n ? '<p>No apps on Home</p><button type="button" tabindex="-1" class="btn' + (hs.zone === 'empty' ? ' is-focus' : '') + '" data-z="empty" data-i="0" data-action="home.add-apps">' + icon('plus') + '<span>Add apps</span></button>' : '');
+    setHTML(phEmpty, !compact && !n ? '<p>No apps on Home</p><button type="button" tabindex="-1" class="btn' + window.FrameUI.focusClass('solid', hs.zone === 'empty') + '" data-z="empty" data-i="0" data-action="home.add-apps">' + icon('plus') + '<span>Add apps</span></button>' : '');
   }
 
   /* Sheets: a frame is built once per view/mode; fill() updates its slots. Persistent
@@ -1678,7 +1843,7 @@
     function command(item, inner, cls) {
       var applied = item.toggle !== undefined ? item.toggle : item.axis && S.c[item.axis] === item.value;
       var loading = !!(item.axis && S.pending && S.pending.target[item.axis] === item.value && S.pending.row === item.axis);
-      return '<button type="button" tabindex="-1" class="setting-choice' + (cls ? ' ' + cls : '') + (t.f.action === item.action ? ' is-focus' : '') + (item.disabled ? ' is-disabled' : '') + (applied ? ' is-applied' : '') + (loading ? ' is-loading' : '') + '"'
+      return '<button type="button" tabindex="-1" class="setting-choice' + (cls ? ' ' + cls : '') + window.FrameUI.focusClass('solid', t.f.action === item.action) + (item.disabled ? ' is-disabled' : '') + (applied ? ' is-applied' : '') + (loading ? ' is-loading' : '') + '"'
         + (item.toggle !== undefined ? ' aria-pressed="' + !!item.toggle + '"' : '') + (item.axis ? ' role="radio" aria-checked="' + !!applied + '"' : '') + ' aria-label="' + esc(item.axis && item.value === 'both' ? 'Icons and text' : item.label) + '" aria-disabled="' + !!item.disabled + '" aria-busy="' + loading + '"'
         + ' data-z="detail" data-i="0" data-id="' + item.action + '" data-action="' + item.action + '">' + inner
         + (item.axis || item.toggle !== undefined ? '<span class="setting-tick" aria-hidden="true">' + (applied ? icon('check') : '') + '</span>' : '') + '</button>';
@@ -1691,9 +1856,15 @@
         + section.items.map(function (item) {
           var swatch = item.axis === 'bg', body = '';
           if (item.slider) {
+            if (item.axis === 'dockOffset') {
+              var offset = t.f.dockOffset === undefined ? S.c.dockOffset : t.f.dockOffset;
+              return '<div class="opacity-setting dock-position-setting' + window.FrameUI.focusClass('solid', t.f.action === item.action) + '" data-z="detail" data-i="0" data-id="dock.position" data-action="dock.position">'
+                + '<input id="dockPositionInput" type="range" min="-160" max="80" step="20" value="' + offset + '" aria-label="Vertical Dock position" aria-valuetext="' + dockPositionLabel(offset) + '" tabindex="-1">'
+                + '<span class="opacity-value dock-position-value">' + dockPositionLabel(offset) + '</span><span class="setting-tick" aria-hidden="true">' + (offset === S.c.dockOffset ? icon('check') : '') + '</span></div>';
+            }
             var value = t.f.opacity === undefined ? S.c.dockOpacity : t.f.opacity;
-            return '<div class="opacity-setting' + (t.f.action === item.action ? ' is-focus' : '') + (item.disabled ? ' is-disabled' : '') + '" aria-disabled="' + !!item.disabled + '" data-z="detail" data-i="0" data-id="dock.opacity" data-action="dock.opacity">'
-              + '<input id="dockOpacityInput" type="range" min="0" max="100" step="5" value="' + value + '" aria-label="Dock background opacity" aria-valuetext="' + value + ' percent" tabindex="-1"' + (item.disabled ? ' disabled' : '') + '>'
+            return '<div class="opacity-setting' + window.FrameUI.focusClass('solid', t.f.action === item.action) + (item.disabled ? ' is-disabled' : '') + '" aria-disabled="' + !!item.disabled + '" data-z="detail" data-i="0" data-id="panel.opacity" data-action="panel.opacity">'
+              + '<input id="panelOpacityInput" type="range" min="0" max="100" step="5" value="' + value + '" aria-label="Panel opacity" aria-valuetext="' + value + ' percent" tabindex="-1"' + (item.disabled ? ' disabled' : '') + '>'
               + '<span class="opacity-value">' + value + '%</span><span class="setting-tick" aria-hidden="true">' + (value === S.c.dockOpacity ? icon('check') : '') + '</span></div>';
           }
           if (item.value === 'daily') { var online = window.CleanFrameDaily.view(); body += online.url ? '<img class="setting-swatch" src="' + esc(online.url) + '" alt="">' : '<span class="setting-swatch" aria-hidden="true">' + icon('pictureInfo') + '</span>'; }
@@ -1714,10 +1885,10 @@
         + command({ action: 'settings.retry', label: 'Try again' }, '<span>Try again</span>', 'setting-retry');
     }
     setHTML(appearanceStatus, status);
-    hint = selected.disabled ? '' : selected.action === 'settings.back' ? 'Return to ' + (t.group === 'rotation' ? 'Local pictures' : (t.group === 'local' || t.group === 'daily') ? 'Background' : 'Settings') : selected.action === 'settings.retry' ? 'Retry this change' : selected.axis ? 'Apply selected setting' : selected.action === 'background.wallpaper' ? 'Choose a wallpaper' : selected.action === 'background.rotation' ? 'Choose a rotation interval' : 'Open on the TV';
+    hint = selected.disabled ? '' : selected.action === 'settings.back' ? 'Return to ' + (t.group === 'rotation' ? 'Local pictures' : (t.group === 'local' || t.group === 'daily') ? 'Background' : 'Settings') : selected.action === 'settings.retry' ? 'Retry this change' : selected.axis ? 'Apply selected setting' : selected.action === 'background.wallpaper' ? 'Choose a wallpaper' : selected.action === 'background.rotation' ? 'Choose a rotation interval' : selected.action === 'weather.location' ? 'Choose a location' : selected.action === 'weather.refresh' ? 'Refresh forecast' : selected.action === 'weather.toggle' ? 'Turn weather on or off' : 'Open on the TV';
     if (t.group === 'daily') hint = selected.action === 'settings.back' ? 'Return to Background' : selected.action === 'daily.retry' ? 'Retry downloads' : 'Apply setting';
     if (selected.gear) hint = 'Open picture settings';
-    if (selected.slider) hint = 'Apply selected opacity';
+    if (selected.slider) hint = selected.axis === 'dockOffset' ? 'Save Dock position' : 'Apply selected opacity';
     setHTML(appearanceDesc, hint ? '<span class="remote-key">OK</span><span>' + esc(hint) + '</span>' : '');
   }
   function renderWallpaper(t) {
@@ -1725,13 +1896,13 @@
     appearanceEl.className = 'appearance detail-wallpaper';
     appearanceTitle.textContent = 'Wallpaper';
     appearanceRows.className = 'appearance-rows wallpaper-picker';
-    setHTML(appearanceBack, '<button type="button" tabindex="-1" class="setting-choice setting-back' + (t.f.zone === 'back' ? ' is-focus' : '') + '" data-z="wall-back" data-action="wallpaper.back">' + icon('left') + '<span>Background</span></button>');
+    setHTML(appearanceBack, '<button type="button" tabindex="-1" class="setting-choice setting-back' + window.FrameUI.focusClass('solid', t.f.zone === 'back') + '" data-z="wall-back" data-action="wallpaper.back">' + icon('left') + '<span>Background</span></button>');
     setHTML(appearanceRows, '<div class="wallpaper-edge wallpaper-before" aria-hidden="true">' + icon('up') + '</div><div class="wallpaper-list" role="radiogroup" aria-label="Wallpaper"><div class="wallpaper-rows"></div></div><div class="wallpaper-edge wallpaper-after" aria-hidden="true">' + icon('down') + '</div>');
     var rows = appearanceRows.querySelector('.wallpaper-rows'), shown = wall(S.wallShown) || wall(S.c.wall), candidate = WALLS[t.i], status, note, hint;
     keyed(rows, WALLS.map(function (w) { return { key: w.id, wall: w }; }), function (row, item, i) {
       var visible = i >= t.top && i < t.top + WALL_VISIBLE, w = item.wall, image;
       setContent(row, w.id + '|' + visible, function () { return '<span class="wallpaper-thumb">' + (visible ? '<img src="' + WP + w.id + '-thumb.jpg" alt="">' : '') + '</span><span class="setting-copy"><span class="setting-name">' + esc(w.name) + '</span></span><span class="setting-tick" aria-hidden="true"></span>'; });
-      row.className = 'setting-choice wallpaper-choice' + (t.f.zone === 'photo' && t.i === i ? ' is-focus' : '') + (w.id === S.c.wall ? ' is-applied' : '');
+      row.className = 'setting-choice wallpaper-choice' + window.FrameUI.focusClass('solid', t.f.zone === 'photo' && t.i === i) + (w.id === S.c.wall ? ' is-applied' : '');
       row.style.transform = 'translate3d(0,' + (i * WALL_ROW) + 'px,0)'; row.style.visibility = visible ? 'visible' : 'hidden';
       row.setAttribute('role', 'radio'); row.setAttribute('tabindex', '-1'); row.setAttribute('aria-label', w.name);
       row.setAttribute('aria-checked', String(w.id === S.c.wall)); row.setAttribute('aria-posinset', String(i + 1)); row.setAttribute('aria-setsize', String(WALLS.length));
@@ -1751,7 +1922,7 @@
     note = t.previewDue ? 'Preparing ' + candidate.name + '…' : S.wallPending ? (t.applyPending ? 'Applying ' : 'Loading ') + candidate.name + '…' : shown.id === S.c.wall ? 'Applied' : 'Preview';
     if (t.failedId) note = S.err ? 'Couldn’t save ' + wall(t.failedId).name + '.' : 'Couldn’t load ' + wall(t.failedId).name + '.';
     status = '<p class="wallpaper-preview-name"><span>' + esc(shown.name) + '</span><span class="wallpaper-count">' + (wallIndex(shown.id) + 1) + ' of ' + WALLS.length + '</span></p><p class="wallpaper-preview-state' + (t.failedId ? ' setting-error' : '') + '">' + esc(note) + '</p>';
-    if (t.failedId) status += '<button type="button" tabindex="-1" class="setting-choice setting-retry' + (t.f.zone === 'retry' ? ' is-focus' : '') + '" data-z="wall-retry" data-action="wallpaper.retry">Try again</button>';
+    if (t.failedId) status += '<button type="button" tabindex="-1" class="setting-choice setting-retry' + window.FrameUI.focusClass('solid', t.f.zone === 'retry') + '" data-z="wall-retry" data-action="wallpaper.retry">Try again</button>';
     setHTML(appearanceStatus, status);
     hint = t.f.zone === 'back' ? 'Return to Background' : t.f.zone === 'retry' ? 'Retry this photo' : 'Apply selected photo';
     if (t.f.zone === 'photo' && candidate.id === S.c.wall && !S.pending && !t.failedId) hint = '';
@@ -1796,7 +1967,7 @@
   }
   function headButtons(list, fi, prefix) {
     return list.map(function (b, i) {
-      return '<button type="button" tabindex="-1" class="btn' + (i === fi ? ' is-focus' : '') + (b[2] ? ' ' + b[2] : '') + '" data-z="head" data-i="' + i + '" data-action="' + prefix + '.' + b[0] + '" aria-label="' + esc(b[0] === 'undo' ? undoCaption() : b[1]) + '">' + (b[3] ? icon(b[3]) : '') + '<span>' + b[1] + '</span></button>';
+      return '<button type="button" tabindex="-1" class="btn' + window.FrameUI.focusClass('solid', i === fi) + (b[2] ? ' ' + b[2] : '') + '" data-z="head" data-i="' + i + '" data-action="' + prefix + '.' + b[0] + '" aria-label="' + esc(b[0] === 'undo' ? undoCaption() : b[1]) + '">' + (b[3] ? icon(b[3]) : '') + '<span>' + b[1] + '</span></button>';
     }).join('');
   }
   function fillIconPanel(t, el) {
@@ -1838,13 +2009,14 @@
     sources: function () { return '<h2 class="s-title">Sources</h2><p class="s-sub">Choose which inputs appear in the Sources menu.</p><div class="source-settings-list" data-slot="list"></div><p class="source-status" data-slot="status"></p>'; },
     sourceEdit: function () { return '<h2 class="s-title" data-slot="title"></h2><p class="s-sub">OK changes the selected value. Back keeps completed changes.</p><div class="source-settings-list" data-slot="list"></div><p class="source-status" data-slot="status"></p>'; },
     sourceName: function (t) { return '<h2 class="s-title">Shortcut name</h2><p class="s-sub">Select the name to open the keyboard, then choose Save.</p><div class="source-name"><input id="sourceNameInput" type="text" maxlength="24" aria-label="Shortcut name" value="' + esc(t.value) + '"><div data-slot="buttons"></div></div>'; },
+    weatherLocation: function (t) { return '<h2 class="s-title">Weather location</h2><p class="s-sub">Search by city or postal code, then choose the matching place.</p><div class="weather-location-search"><input id="weatherLocationInput" type="text" maxlength="80" aria-label="City or postal code" value="' + esc(t.query) + '"><button type="button" class="btn weather-location-search-button ui-focus ui-focus-solid" data-slot="search">Search</button></div><p class="weather-location-status" data-slot="status"></p><div class="weather-location-results" data-slot="results"></div><p class="weather-location-credit">Location search by Open-Meteo · GeoNames</p>'; },
     apps: function () {
       return '<h2 class="s-title" data-slot="title"></h2><p class="s-sub" data-slot="sub"></p><div class="s-head" data-slot="head"></div>'
         + '<div class="grid-view" data-slot="view"><div class="grid-in" data-slot="grid"></div></div>'
         + '<div class="row-cue grid-before" data-slot="before" aria-hidden="true">' + icon('up') + '</div><div class="row-cue grid-after" data-slot="after" aria-hidden="true">' + icon('down') + '</div>';
     },
     editor: function () {
-      return '<h2 class="s-title">Apps on Home</h2><p class="s-sub" data-slot="sub"></p><div class="s-head" data-slot="head"></div>'
+      return '<h2 class="s-title">Apps in Dock</h2><p class="s-sub" data-slot="sub"></p><div class="s-head" data-slot="head"></div>'
         + '<p class="s-label z-home" data-slot="lh"></p><p class="s-label z-other">Not on Home</p>'
         + '<div class="ed-home" data-slot="home"></div><div class="ed-order-break" data-slot="break">Then scroll</div><div class="ed-other-view" data-slot="ov"><div class="ed-other" data-slot="other"></div></div><div class="ed-origin" data-slot="origin"></div>'
         + '<div class="row-cue editor-before" data-slot="otherBefore" aria-hidden="true">' + icon('up') + '</div><div class="row-cue editor-after" data-slot="otherAfter" aria-hidden="true">' + icon('down') + '</div>';
@@ -1878,8 +2050,19 @@
       input.setAttribute('data-action', 'source.name.input');
       input.setAttribute('data-z', 'name'); input.setAttribute('data-i', '0');
       setHTML(el.buttons, [['save', 'Save'], ['cancel', 'Cancel']].map(function (entry, i) {
-        return '<button class="btn' + (t.f.i === i + 1 ? ' is-focus' : '') + '" data-z="name" data-i="' + (i + 1) + '" data-action="source.name.' + entry[0] + '">' + entry[1] + '</button>';
+        return '<button class="btn' + window.FrameUI.focusClass('solid', t.f.i === i + 1) + '" data-z="name" data-i="' + (i + 1) + '" data-action="source.name.' + entry[0] + '">' + entry[1] + '</button>';
       }).join(''));
+    },
+    weatherLocation: function (t, el) {
+      var input = $('weatherLocationInput');
+      input.className = t.f.i === 0 ? 'is-focus' : '';
+      input.setAttribute('data-z', 'weather-location'); input.setAttribute('data-i', '0'); input.setAttribute('data-action', 'weather.location.input');
+      el.search.className = 'btn weather-location-search-button' + window.FrameUI.focusClass('solid', t.f.i === 1);
+      el.search.setAttribute('data-z', 'weather-location'); el.search.setAttribute('data-i', '1'); el.search.setAttribute('data-action', 'weather.location.search');
+      setHTML(el.status, esc(t.status));
+      setHTML(el.results, t.results.map(function (place, i) {
+        return '<button type="button" tabindex="-1" class="source-setting' + window.FrameUI.focusClass('solid', t.f.i === i + 2) + '" data-z="weather-location" data-i="' + (i + 2) + '" data-action="weather.location.result.' + i + '"><span class="source-setting-label">' + esc(place.name) + '</span><span class="source-setting-value">' + esc([place.admin, place.country].filter(function (part) { return !!part; }).join(' · ')) + '</span></button>';
+      }).join('') + '<button type="button" tabindex="-1" class="source-setting weather-location-back' + window.FrameUI.focusClass('solid', t.f.i === t.results.length + 2) + '" data-z="weather-location" data-i="' + (t.results.length + 2) + '" data-action="weather.location.back">Back</button>');
     },
     apps: function (t, el) {
       var f = t.f, items = appsItems(), n = items.length, rows = Math.ceil(n / COLS), vis = 3, row = Math.floor(f.i / COLS);
@@ -1964,13 +2147,13 @@
     settings: function (t, el) {
       var html = '';
       settingsRows().forEach(function (r) {
-        html += '<button type="button" tabindex="-1" class="settings-group' + (r.id === t.f.id ? ' is-focus' : '') + '" data-z="row" data-i="0" data-id="' + r.id + '" data-action="settings.' + (r.id === 'editor' ? 'editor' : 'group.' + r.id) + '"><span class="settings-group-copy"><span class="settings-group-name">' + esc(r.label) + '</span><span class="settings-group-value">' + esc(r.value) + '</span></span>' + icon('right') + '</button>';
+        html += '<button type="button" tabindex="-1" class="settings-group' + window.FrameUI.focusClass('solid', r.id === t.f.id) + '" data-z="row" data-i="0" data-id="' + r.id + '" data-action="settings.' + (r.id === 'editor' ? 'editor' : 'group.' + r.id) + '"><span class="settings-group-copy"><span class="settings-group-name">' + esc(r.label) + '</span><span class="settings-group-value">' + esc(r.value) + '</span></span>' + icon('right') + '</button>';
       });
       setHTML(el.list, html);
     },
     message: function (t, el) {
       setHTML(el.acts, messageContent(t).actions.map(function (a, i) {
-        return '<button type="button" tabindex="-1" class="btn' + (i === t.f.b ? ' is-focus' : '') + '" data-z="act" data-i="' + i + '" data-action="message.' + a[0] + '"><span>' + a[1] + '</span></button>';
+        return '<button type="button" tabindex="-1" class="btn' + window.FrameUI.focusClass('solid', i === t.f.b) + '" data-z="act" data-i="' + i + '" data-action="message.' + a[0] + '"><span>' + a[1] + '</span></button>';
       }).join(''));
     }
   };
@@ -2024,6 +2207,7 @@
       if (k === 'wall') { if (!wall(patch[k])) throw new Error('Unknown wallpaper: ' + patch[k]); }
       else if (k === 'font') { if (!FONTS[patch[k]] || patch[k] !== 'manrope' && PRIVATE_FONTS.indexOf(patch[k]) < 0) throw new Error('Unavailable font: ' + patch[k]); }
       else if (k === 'dockOpacity') { if (typeof patch[k] !== 'number' || !isFinite(patch[k]) || patch[k] !== cleanOpacity(patch[k])) throw new Error('Invalid dock opacity'); }
+      else if (k === 'dockOffset') { if (typeof patch[k] !== 'number' || !isFinite(patch[k]) || patch[k] !== cleanDockOffset(patch[k])) throw new Error('Invalid dock position'); }
       else if (!LOOK_VALUES[k] || LOOK_VALUES[k].indexOf(patch[k]) < 0) throw new Error('Invalid appearance value: ' + k);
       out[k] = patch[k];
     }
@@ -2133,6 +2317,10 @@
     clockTimer = setTimeout(updateClock, 60000 - (Date.now() % 60000) + 30);
   }
   function focusStage() { try { stage.focus({ preventScroll: true }); } catch (e) { stage.focus(); } }
+  function focusStageUnlessEditing() {
+    var active = document.activeElement;
+    if (!active || active.id !== 'weatherLocationInput' && active.id !== 'sourceNameInput') focusStage();
+  }
   function after() { norm(); render(); syncRotation(); }
   function goScene(name) {
     if (top().id === 'wallpaper') cancelWallpaperTimer(top());
@@ -2187,17 +2375,26 @@
   });
   appearanceRows.addEventListener('input', function (ev) {
     var input = ev.target, t = top(), container;
-    if (input.id !== 'dockOpacityInput' || t.id !== 'appearance' || !dockOpacityApplies()) return;
-    detailFocus(t, choice('dockOpacity'), 0);
-    t.f.opacity = cleanOpacity(Number(input.value));
+    if (t.id !== 'appearance' || input.id !== 'panelOpacityInput' && input.id !== 'dockPositionInput') return;
+    var dockPosition = input.id === 'dockPositionInput';
+    detailFocus(t, choice(dockPosition ? 'dockOffset' : 'dockOpacity'), 0);
+    if (dockPosition) t.f.dockOffset = cleanDockOffset(Number(input.value));
+    else t.f.opacity = cleanOpacity(Number(input.value));
     // Keep the native thumb alive while dragging; only OK commits the draft.
     container = input.parentNode;
     Array.prototype.forEach.call(appearanceEl.querySelectorAll('.is-focus'), function (el) { el.classList.remove('is-focus'); });
     container.classList.add('is-focus');
-    input.setAttribute('aria-valuetext', t.f.opacity + ' percent');
-    container.querySelector('.opacity-value').textContent = t.f.opacity + '%';
-    setHTML(container.querySelector('.setting-tick'), t.f.opacity === S.c.dockOpacity ? icon('check') : '');
-    setHTML(appearanceDesc, '<span class="remote-key">OK</span><span>Apply selected opacity</span>');
+    input.setAttribute('aria-valuetext', dockPosition ? dockPositionLabel(t.f.dockOffset) : t.f.opacity + ' percent');
+    container.querySelector('.opacity-value').textContent = dockPosition ? dockPositionLabel(t.f.dockOffset) : t.f.opacity + '%';
+    setHTML(container.querySelector('.setting-tick'), (dockPosition ? t.f.dockOffset === S.c.dockOffset : t.f.opacity === S.c.dockOpacity) ? icon('check') : '');
+    if (dockPosition) {
+      stage.style.setProperty('--dock-y', px(676 + t.f.dockOffset));
+      stage.style.setProperty('--dock-cue-y', px(768 + t.f.dockOffset));
+      stage.style.setProperty('--dock-action-y', px(932 + t.f.dockOffset));
+      stage.style.setProperty('--dock-action-status-y', px(924 + t.f.dockOffset));
+      renderHome(t);
+    }
+    setHTML(appearanceDesc, '<span class="remote-key">OK</span><span>' + (dockPosition ? 'Save Dock position' : 'Apply selected opacity') + '</span>');
   });
   stage.addEventListener('click', function (ev) {
     var el = ev.target;
@@ -2205,6 +2402,9 @@
     focusStage();
     if (!el || el === stage) return;
     pointAt(el);
+  });
+  sheetView.addEventListener('input', function (ev) {
+    if (ev.target.id === 'weatherLocationInput' && top().id === 'weatherLocation') top().query = ev.target.value;
   });
   var heldKeys = {};
   document.addEventListener('keydown', function (ev) {
@@ -2217,6 +2417,13 @@
       }
       return;
     }
+    if (ev.target.id === 'weatherLocationInput') {
+      // Samsung IME needs Enter on the focused input to open its keyboard.
+      if (code === 65376 && top().id === 'weatherLocation') {
+        window.setTimeout(function () { if (top().id === 'weatherLocation') { focusStage(); searchWeatherLocation(top()); } }, 0);
+      } else if (code === 65385 || code === 27 || code === 10009) focusStage();
+      return;
+    }
     if (code === 9) { ev.preventDefault(); return; }
     if (!k || ev.metaKey || ev.ctrlKey || ev.altKey) return;
     ev.preventDefault();
@@ -2225,14 +2432,14 @@
   });
   document.addEventListener('keyup', function (ev) { delete heldKeys[ev.keyCode]; });
   window.addEventListener('blur', function () { heldKeys = {}; });
-  window.addEventListener('focus', function () { release(); focusStage(); after(); updateClock(); });
+  window.addEventListener('focus', function () { release(); focusStageUnlessEditing(); after(); updateClock(); });
   document.addEventListener('visibilitychange', function () {
     heldKeys = {};
-    if (document.hidden) { window.CleanFrameDaily.setActive(false, false); pauseRotation(); clearTimeout(clockTimer); }
+    if (document.hidden) { window.CleanFrameDaily.setActive(false, false); window.FrameWeather.setActive(false); pauseRotation(); clearTimeout(clockTimer); }
     else {
       release();
       if (photographic(S.c) && !S.pending && !S.previewBundle && (!committedBundle || S.bundleKey !== bundleKey(S.c))) setLook({}, { transient: true, startup: true });
-      after(); updateClock(); focusStage();
+      after(); updateClock(); focusStageUnlessEditing();
     }
   });
   window.addEventListener('resize', fit);
@@ -2243,6 +2450,7 @@
     var out = serialise(S.c), t = top(), item = t.id === 'appearance' ? detailLocation(t).item : null;
     out.committed = S.c; out.shown = S.shown; out.pending = S.pending; out.view = t.id; out.selected = S.sel;
     out.sources = window.FrameSources.all();
+    out.weather = window.FrameWeather.view();
     out.focusAction = focusedAction(); out.writes = S.writes; out.failedWrites = S.failed; out.error = S.err;
     out.catalog = { loading: catalog.loading, loaded: catalog.loaded, error: catalog.error, ids: ALPHA.slice() };
     out.fonts = { available: LOOK_VALUES.font.slice(), loaded: Object.keys(fontMetrics).filter(function (id) { return !fontMetrics[id].fallback; }), baselineFallback: !!(fontMetrics.manrope && fontMetrics.manrope.fallback), error: S.lookError && S.lookError.type === 'font' ? S.lookError : null };
@@ -2273,5 +2481,6 @@
   initialise();
   setLook({}, { transient: true, startup: true });
   window.CleanFrameDaily.onChange(function () { render(); });
+  window.FrameWeather.onChange(function () { render(); });
   norm(); render(); fit(); focusStage(); updateClock(); syncRotation();
 })();

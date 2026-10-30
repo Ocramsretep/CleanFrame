@@ -24,10 +24,10 @@
         </div>
 
         <div class="home" id="home">
-          <div id="dailyDetails" class="daily-details" hidden></div>
+          <div id="dailyDetails" class="ui-popup daily-details" hidden role="dialog" aria-label="Picture info"><div class="ui-popup-material" aria-hidden="true"></div><div class="ui-popup-content"><div class="daily-details-head" id="dailyDetailsHead"></div><div class="daily-details-body" id="dailyDetailsContent"></div></div></div>
           <div id="dailyCredit" class="daily-credit" hidden></div>
           <div class="caption" id="caption"></div>
-          <nav class="utils" id="utils" aria-label="Home controls"></nav>
+          <nav class="utils" id="utils" aria-label="Action Bar"></nav>
           <div class="util-focus-label" id="utilFocusLabel" aria-hidden="true"></div>
           <div class="app-focus-name" id="appFocusName" aria-hidden="true"></div>
           <div class="ph-plate ut-lens" id="utLens" aria-hidden="true">
@@ -51,9 +51,13 @@
           <div class="cue" id="cueL" aria-hidden="true"></div>
           <div class="cue" id="cueR" aria-hidden="true"></div>
           <div class="dock-action" id="dockAction" role="button"></div>
-          <div class="source-menu" id="sourceMenu" hidden role="menu" aria-label="Sources">
-            <div class="source-menu-material" aria-hidden="true"><img id="sourceMenuImage" alt=""><div class="source-menu-veil"></div></div>
-            <div class="source-menu-content" id="sourceMenuContent"></div>
+          <div class="ui-popup source-menu" id="sourceMenu" hidden role="menu" aria-label="Sources">
+            <div class="ui-popup-material" aria-hidden="true"><img id="sourceMenuImage" alt=""><div class="ui-popup-veil"></div></div>
+            <div class="ui-popup-content source-menu-content" id="sourceMenuContent"></div>
+          </div>
+          <div class="ui-popup weather-menu" id="weatherMenu" hidden role="dialog" aria-label="Weather forecast">
+            <div class="ui-popup-material" aria-hidden="true"><img id="weatherMenuImage" alt=""><div class="ui-popup-veil"></div></div>
+            <div class="ui-popup-content weather-menu-content" id="weatherMenuContent"></div>
           </div>
 
           <div class="ph-scene" id="phScene">
@@ -100,9 +104,11 @@
 <script src="assets/adaptive-ink.js"></script>
 <script src="assets/font-catalog.js"></script>
 <script src="sources.js"></script>
+<script src="weather.js"></script>
 <script src="daily-config.js"></script>
 <script src="daily-providers.js"></script>
 <script src="daily.js"></script>
+<script src="ui.js"></script>
 <script src="main.js"></script>
 </body>
 </html>

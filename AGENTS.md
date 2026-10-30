@@ -12,13 +12,23 @@ changes, run the browser preview and `CLEANFRAME_PUBLIC_FONTS=1 npm run check:br
 need proprietary fonts. Run `npm run check:public` and `npm run export:public` before preparing a public download.
 Follow `CONTRIBUTING.md` and retain third-party notices.
 
+On this Windows workstation, Playwright's Chromium is installed at
+`C:\Users\marco\AppData\Local\ms-playwright` (including `chromium-1248` and `chromium_headless_shell-1248`).
+The Codex sandbox can redirect `LOCALAPPDATA`, so set `PLAYWRIGHT_BROWSERS_PATH` to that absolute directory when
+running browser checks if Playwright reports that Chromium is missing. This is a local setup note, not a path for
+other contributors.
+Python 3.13.17 is installed for this user at `C:\Users\marco\AppData\Local\Programs\Python\Python313\python.exe`.
+For scripts that call `python3` on Windows, prepend the ignored `.local/bin` directory to `PATH`; its `python3.cmd`
+wrapper invokes that installation. Set `CLEANFRAME_PYTHON` to the absolute Python executable for `check:browser`.
+
 Browser/repository tasks do not authorise device access. Read `docs/tv-status.md` before compatibility claims and
 `docs/agent-tv-setup-guide.md` before a new TV setup. An explicit device task is required even for queries that stage a
 helper. Announce any installation, app launch or restart; confirm visible results with the owner. Treat native
 Home/startup writes as a separate task with explicit authority and an exact-value recovery baseline.
 
-On the maintainer's TV, preserve the stable package/application identity, author certificate and existing native Home
-assignment. For an independent user's signed build, create their own SDK-generated identity and certificates, then
+On this fork's UE49NU8079, preserve the owner's existing package/application identity and author certificate; its
+physical Home button still opens Samsung Home. The upstream LS03D has a separate native Home assignment documented in
+`docs/upstream-tv-status.md`. For an independent user's signed build, create their own SDK-generated identity and certificates, then
 select them in ignored `.local/signing.json` using `signing.example.json`; read the signing section in
 `docs/development.md`. The generated manifest and install/launch tools use that identity; the runtime reads its own ID.
 Keep the source identity guards intact. Native Home targets and firmware guards need separate review and authority. The

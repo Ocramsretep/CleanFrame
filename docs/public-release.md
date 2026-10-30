@@ -30,4 +30,4 @@ This route avoids relying on a force-push to erase earlier hosted objects. [GitH
 
 At the GitHub inventory check, the repository was private, with one main branch, no tags, no releases, no Actions runs and no Actions artifacts. Recheck that inventory before changing visibility. Verify the remote source and unauthenticated public view after the approved visibility change. The private backup must remain private.
 
-Keep public downloads to the unsigned public-font export with its notices. Personal signed packages can contain proprietary fonts. Reference-device installation results are recorded in [TV status](tv-status.md); the public-source review did not contact or change the TV.
+Keep public downloads to the unsigned public-font export with its notices. Personal signed packages can contain proprietary fonts. This fork's installation results are recorded in [TV status](tv-status.md); upstream reference results are [separate](upstream-tv-status.md). The public-source review did not contact or change the TV.

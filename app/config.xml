@@ -18,6 +18,8 @@
   <access origin="https://esawebb.org" subdomains="true"/>
   <access origin="https://esahubble.org" subdomains="true"/>
   <access origin="https://www.bing.com"/>
+  <access origin="https://api.open-meteo.com"/>
+  <access origin="https://geocoding-api.open-meteo.com"/>
   <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
   <tizen:privilege name="http://tizen.org/privilege/application.info"/>
   <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>

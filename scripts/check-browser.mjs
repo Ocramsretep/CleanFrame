@@ -203,7 +203,7 @@ const wallpaperListGeometry = () => current.evaluate(() => {
   });
   return { fullyVisible, partlyVisible, clippedParts, focus: ShoreQA.state().focusAction, bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }, top: ShoreQA.state().wallpaperPicker.top };
 });
-async function editor() { await scene('settings'); await act('settings.editor'); await current.waitForFunction(() => document.querySelector('[data-action^="editor.move."]')); await current.waitForFunction(() => !ShoreQA.state().catalog.loading); }
+async function editor() { await group('dock'); await act('dock.apps'); await current.waitForFunction(() => document.querySelector('[data-action^="editor.move."]')); await current.waitForFunction(() => !ShoreQA.state().catalog.loading); }
 async function remove(id) { await act('editor.move.' + id); await nav('back', 'right', 'ok'); }
 async function library() { await scene('home'); await act('util.apps'); await current.waitForFunction(() => !ShoreQA.state().catalog.loading); }
 async function noLiveFilters() {
@@ -419,6 +419,9 @@ try {
     await current.evaluate(() => window.dispatchEvent(new Event('focus'))); await group('samsung'); await act('samsung.settings');
     await current.waitForFunction(() => __tv.calls.length === 5);
     check('TV settings keeps installed target', (await current.evaluate(() => __tv.calls.at(-1))).id === 'com.samsung.tv.coba.setting');
+    await current.evaluate(() => FrameDevice.openUrl('https://science.nasa.gov/apod/', function () {}));
+    const browserLink = await current.evaluate(() => __tv.calls.at(-1));
+    check('Picture links request the TV browser with their HTTPS URL', browserLink.method === 'launchAppControl' && browserLink.id === null && browserLink.control.operation === 'http://tizen.org/appcontrol/operation/view' && browserLink.control.uri === 'https://science.nasa.gov/apod/', browserLink);
     await current.evaluate(() => { window.dispatchEvent(new Event('focus')); __tv.launchFailure = true; });
     await scene('home'); await act('home.app.netflix'); await current.waitForFunction(() => ShoreQA.where().view === 'message');
     check('Launch failure is shown', /could not|unavailable|try again/i.test(await current.locator('#stage').innerText()));
@@ -594,13 +597,15 @@ try {
   });
   await run('Settings overview and visible choices', async () => {
     await page(); await scene('settings');
-    const expected = ['settings.group.background', 'settings.group.layout', 'settings.group.typography', 'settings.group.focus', 'settings.editor', 'settings.group.icons', 'settings.group.sources', 'settings.group.samsung'];
+    const expected = ['settings.group.background', 'settings.group.dock', 'settings.group.actionbar', 'settings.group.widgets', 'settings.group.design', 'settings.group.typography', 'settings.group.icons', 'settings.group.samsung'];
     check('Overview has all eight settings groups', same((await call('actions')).sort(), expected.slice().sort()));
     const specs = {
       background: { bg: ['photo', 'daily'] },
-      layout: { layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], controls: ['icons', 'both', 'text'] },
+      dock: { layout: ['list', 'dock'], apps: ['icons', 'both', 'text'] },
+      actionbar: { controls: ['icons', 'both', 'text'] },
       typography: { font: (await state()).fonts.available },
-      focus: { focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] }
+      design: { focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] },
+      widgets: { clockFormat: ['12', '24'] }
     };
     for (const [name, axes] of Object.entries(specs)) {
       await group(name);
@@ -622,9 +627,119 @@ try {
     check('All five rotation modes are visible together', same(rotationRows.map(r => r.action).sort(), ['fixed', 'open', '5', '15', '60'].map(v => 'rotation.' + v).sort()), rotationRows);
     await nav('back');
     check('Rotation Back restores its Background row', (await state()).settingsGroup === 'local' && (await state()).focusAction === 'background.rotation', await call('where'));
+    await scene('settings'); await group('dock');
+    const dockActions = await call('actions');
+    check('Dock contains app arrangement and vertical position', dockActions.includes('dock.apps') && dockActions.includes('dock.position'), dockActions);
+    await act('dock.apps');
+    check('Apps editor opens from Dock', (await state()).view === 'editor');
+    await nav('back');
+    check('Apps editor returns to Dock', (await state()).settingsGroup === 'dock');
+    await nav('back'); await group('actionbar');
+    const actionBarActions = await call('actions');
+    check('Action Bar contains Sources', actionBarActions.includes('actionbar.sources'), actionBarActions);
+    await act('actionbar.sources');
+    check('Sources opens from Action Bar', (await state()).view === 'sources');
+    await nav('back');
+    check('Sources returns to Action Bar', (await state()).settingsGroup === 'actionbar');
+    await scene('settings'); await group('widgets');
+    await act('choice.clockFormat.24');
+    check('24-hour clock choice is saved', (await state()).committed.clockFormat === '24');
+    await current.reload(); await ready();
+    check('24-hour clock choice survives restart', (await state()).committed.clockFormat === '24');
     await group('samsung');
     const samsungActions = await call('actions');
     check('Samsung group shows both native actions', samsungActions.includes('samsung.home') && samsungActions.includes('samsung.settings'));
+  });
+  await run('Dock position previews, commits and restores', async () => {
+    await page(); await group('dock'); await act('dock.position');
+    check('Existing preferences keep the original Dock position', (await state()).look.dockOffset === 0 && await current.locator('.dock').evaluate(el => getComputedStyle(el).top) === '676px');
+    const before = await settingsSnapshot();
+    await nav('left');
+    check('Dock moves in the live preview without saving', await current.locator('.dock').evaluate(el => getComputedStyle(el).top) === '656px' && (await state()).look.dockOffset === 0 && same(await settingsSnapshot(), before));
+    await current.setViewportSize({ width: 1280, height: 720 });
+    await current.screenshot({ path: out + 'dock-position-preview-1280.png' });
+    await nav('ok');
+    check('OK saves the Dock position', (await state()).look.dockOffset === -20 && await current.locator('.dock').evaluate(el => getComputedStyle(el).top) === '656px');
+    await current.reload(); await ready(); await group('dock'); await act('dock.position');
+    check('Dock position survives restart', (await state()).look.dockOffset === -20 && await current.locator('#dockPositionInput').inputValue() === '-20');
+    await nav('right', 'back');
+    await scene('home');
+    check('Back discards a new Dock position draft', (await state()).look.dockOffset === -20 && await current.locator('.dock').evaluate(el => getComputedStyle(el).top) === '656px');
+  });
+  await run('Weather opt-in, forecast and cached Home widget', async () => {
+    const now = new Date(); now.setMinutes(0, 0, 0);
+    const hours = Array.from({ length: 12 }, (_, i) => new Date(now.getTime() + i * 3600000).toISOString().slice(0, 16));
+    const dates = Array.from({ length: 3 }, (_, i) => new Date(now.getTime() + i * 86400000).toISOString().slice(0, 10));
+    let forecastCalls = 0;
+    await page({}, async p => {
+      await p.route('https://geocoding-api.open-meteo.com/**', route => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ results: [{ name: 'Berlin', admin1: 'Berlin', country: 'Germany', latitude: 52.52, longitude: 13.405 }] }) }));
+      await p.route('https://api.open-meteo.com/**', route => {
+        forecastCalls++;
+        return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({
+          current: { temperature_2m: 9.4, weather_code: 3, is_day: 1 },
+          hourly: { time: hours, temperature_2m: hours.map(() => 9), weather_code: hours.map(() => 3), is_day: hours.map(() => 1) },
+          daily: { time: dates, temperature_2m_min: [4, 5, 6], temperature_2m_max: [12, 13, 14], weather_code: [3, 2, 1] }
+        }) });
+      });
+    });
+    check('Weather is off until a location is chosen', !(await state()).weather.enabled && !(await call('actions')).includes('home.weather'));
+    await group('widgets'); await act('weather.location');
+    await current.keyboard.press('ArrowRight');
+    check('Remote moves from location input to Search', (await state()).focusAction === 'weather.location.search');
+    await current.waitForTimeout(200);
+    await current.screenshot({ path: out + 'weather-location-1920.png' });
+    await current.keyboard.press('ArrowLeft');
+    check('Remote moves from Search back to location input', (await state()).focusAction === 'weather.location.input');
+    await current.keyboard.press('Enter');
+    check('Remote OK focuses the text input', await current.evaluate(() => document.activeElement.id === 'weatherLocationInput'));
+    await current.keyboard.press('Enter');
+    check('Input Enter stays available to the TV keyboard', await current.evaluate(() => document.activeElement.id === 'weatherLocationInput' && document.querySelector('.weather-location-status').textContent === 'Search for a city or postal code.'));
+    await current.locator('#weatherLocationInput').fill('Berlin'); await act('weather.location.search');
+    await current.waitForFunction(() => ShoreQA.actions().includes('weather.location.result.0'));
+    await act('weather.location.result.0');
+    await current.waitForFunction(() => !!ShoreQA.state().weather.data);
+    check('Weather choice saves and returns to Widgets', (await state()).settingsGroup === 'widgets' && (await state()).weather.location.name === 'Berlin');
+    await scene('home'); await act('home.weather');
+    check('Weather menu shows four three-hour groups and two days', (await state()).view === 'weatherMenu' && await current.locator('.weather-hour').count() === 4 && await current.locator('.weather-day').count() === 2 && await current.locator('.weather-now,.weather-menu-actions').count() === 0);
+    const creditEdge = await current.evaluate(() => {
+      const credit = document.querySelector('.weather-menu-credit').getBoundingClientRect();
+      const day = document.querySelector('.weather-day:last-child').getBoundingClientRect();
+      return Math.abs(credit.right - day.right);
+    });
+    check('Open-Meteo credit ends at the last day tile', creditEdge <= 1.5, creditEdge);
+    await nav('back'); await current.reload(); await ready();
+    check('Cached weather survives reload without another forecast call', (await state()).weather.data.current.temp === 9.4 && forecastCalls === 1);
+    for (const width of [1920, 1280]) for (const layout of ['dock', 'list']) {
+      await current.setViewportSize({ width, height: width * 9 / 16 }); await look({ layout }); await scene('home'); await act('home.weather');
+      const geometry = await current.evaluate(() => {
+        const stage = document.getElementById('stage').getBoundingClientRect(), menu = document.getElementById('weatherMenu').getBoundingClientRect();
+        return { inside: menu.left >= stage.left && menu.right <= stage.right && menu.top >= stage.top && menu.bottom <= stage.bottom,
+          hours: document.querySelectorAll('.weather-hour').length, days: document.querySelectorAll('.weather-day').length };
+      });
+      check('Weather menu fits ' + layout + ' at ' + width, geometry.inside && geometry.hours === 4 && geometry.days === 2, geometry);
+      if (width === 1280) await current.screenshot({ path: out + 'weather-' + layout + '-1280.png' });
+      await nav('back');
+    }
+    await current.setViewportSize({ width: 1280, height: 720 });
+    for (const bg of ['dark', 'light']) {
+      await look({ bg, layout: 'dock' }); await scene('home'); await act('home.weather');
+      await current.screenshot({ path: out + 'weather-' + bg + '-1280.png' }); await nav('back');
+    }
+    await current.setViewportSize({ width: 1920, height: 1080 }); await look({ bg: 'photo', layout: 'dock' }); await scene('home');
+    await nav('up', 'left');
+    check('Remote reaches weather from Sources', (await state()).focusAction === 'home.weather');
+    const focusedWeather = await current.locator('.weather-chip').evaluate(el => ({ focused: el.classList.contains('is-focus'), background: getComputedStyle(el).backgroundImage }));
+    check('Weather chip has its open-panel highlight on remote focus', focusedWeather.focused && focusedWeather.background !== 'none', focusedWeather);
+    await nav('ok'); check('Remote opens weather submenu', (await state()).view === 'weatherMenu');
+    await look({ dockOpacity: 55 });
+    check('Weather panel inherits panel opacity', await current.locator('.weather-menu .ui-popup-material').evaluate(el => getComputedStyle(el).opacity) === '0.55');
+    await current.screenshot({ path: out + 'weather-panel-opacity-1920.png' });
+    await nav('back'); await act('util.sources');
+    check('Sources panel inherits panel opacity', await current.locator('.source-menu:not(.weather-menu) .ui-popup-material').evaluate(el => getComputedStyle(el).opacity) === '0.55');
+    await current.screenshot({ path: out + 'sources-panel-opacity-1920.png' });
+    await nav('back'); await scene('settings'); await group('widgets'); await act('weather.toggle'); await nav('back', 'back');
+    check('Weather can be switched off without losing Home focus', !(await state()).weather.enabled && !(await call('actions')).includes('home.weather') && (await call('where')).focusCount === 1);
   });
   await run('Settings preview matches Home app focus', async () => {
     await page();
@@ -649,7 +764,7 @@ try {
         await look({ layout, focus, apps, highlight, wall: 'summit', material: 'tint' }); await scene('home');
         await current.waitForTimeout(230);
         const home = await appearance();
-        await group('focus'); await current.waitForTimeout(230);
+        await group('design'); await current.waitForTimeout(230);
         const preview = await appearance(), label = [width, layout, focus, apps, highlight].join('/');
         check('Home and preview render identical app focus ' + label, same(home, preview), { home, preview });
         check('Preview retains one interactive Settings focus ' + label, (await call('where')).focusCount === 1 && await current.locator('.home .is-focus[data-action]').count() === 0);
@@ -674,10 +789,10 @@ try {
     await current.waitForFunction(() => !document.querySelector('.dock .has-highlight') && Array.from(document.querySelectorAll('.dock .mark-glow')).every(mark => getComputedStyle(mark).opacity === '0'), null, { timeout: 1500 });
     check('Glow leaves the app when focus moves to controls', await current.locator('.dock .has-highlight').count() === 0 && await current.locator('.dock .mark-glow').evaluateAll(marks => marks.every(mark => getComputedStyle(mark).opacity === '0')));
   });
-  await run('App highlights and dock opacity', async () => {
+  await run('App highlights and panel opacity', async () => {
     await page();
     check('Existing preferences retain standard highlight and full material opacity', (await state()).look.highlight === 'standard' && (await state()).look.dockOpacity === 100);
-    await group('focus');
+    await group('design');
     const options = (await radios()).filter(row => row.action.startsWith('choice.highlight.'));
     check('All four app highlights are visible', same(options.map(row => row.action), ['standard', 'glow', 'underline', 'tile'].map(value => 'choice.highlight.' + value)));
     const before = await settingsSnapshot();
@@ -725,51 +840,51 @@ try {
         }
       }
       await look({ layout: 'dock', bg: 'photo', apps: 'icons', highlight: 'glow' });
-      await group('focus');
+      await group('design');
       check('Focus options fit on screen at ' + width, await current.locator('.section-highlight').evaluate(el => el.getBoundingClientRect().bottom < innerHeight * .9));
       await current.screenshot({ path: out + 'highlight-settings-' + width + '.png' });
-      await group('layout');
-      check('Opacity setting fits on screen at ' + width, await current.locator('.section-dockOpacity').evaluate(el => el.getBoundingClientRect().bottom < innerHeight * .9));
+      await group('design');
+      check('Opacity setting fits on screen at ' + width, await current.locator('.section-panelOpacity').evaluate(el => el.getBoundingClientRect().bottom < innerHeight * .9));
       await current.screenshot({ path: out + 'opacity-settings-' + width + '.png' });
     }
-    await act('dock.opacity');
+    await act('panel.opacity');
     let snapshot = await settingsSnapshot();
     await nav('left');
-    check('Opacity draft moves by five without changing Home', await current.locator('#dockOpacityInput').inputValue() === '95' && same(await settingsSnapshot(), snapshot));
+    check('Opacity draft moves by five without changing Home', await current.locator('#panelOpacityInput').inputValue() === '95' && same(await settingsSnapshot(), snapshot));
     await nav('ok');
-    check('OK commits opacity only to the dock background', (await state()).look.dockOpacity === 95 && await current.locator('.dock>.mat').evaluate(el => getComputedStyle(el).opacity) === '0.95' && await current.locator('.dock').evaluate(el => getComputedStyle(el).opacity) === '1');
+    check('OK commits shared panel opacity without fading Dock content', (await state()).look.dockOpacity === 95 && await current.locator('.dock>.mat').evaluate(el => getComputedStyle(el).opacity) === '0.95' && await current.locator('.dock').evaluate(el => getComputedStyle(el).opacity) === '1');
     snapshot = await settingsSnapshot(); await nav('ok');
     check('Repeated OK does not write', same(await settingsSnapshot(), snapshot));
     await nav(...Array(30).fill('left')); await nav('ok');
     check('Opacity clamps at zero', (await state()).look.dockOpacity === 0);
     await nav(...Array(30).fill('right')); await nav('ok');
     check('Opacity clamps at one hundred', (await state()).look.dockOpacity === 100);
-    await nav('left', 'back'); await group('layout'); await act('dock.opacity');
-    check('Back discards unsaved opacity', await current.locator('#dockOpacityInput').inputValue() === '100');
-    await nav('up', 'up', 'up', 'up');
+    await nav('left', 'back'); await group('design'); await act('panel.opacity');
+    check('Back discards unsaved opacity', await current.locator('#panelOpacityInput').inputValue() === '100');
+    await nav(...Array(12).fill('up'));
     check('Back button owns focus before dragging', (await state()).focusAction === 'settings.back');
-    const range = await current.locator('#dockOpacityInput').boundingBox();
+    const range = await current.locator('#panelOpacityInput').boundingBox();
     await current.mouse.move(range.x + range.width - 8, range.y + range.height / 2);
     await current.mouse.down();
     await current.mouse.move(range.x + range.width * .55, range.y + range.height / 2, { steps: 5 });
-    check('Dragging transfers focus from Back to slider', (await call('where')).focusCount === 1 && (await state()).focusAction === 'dock.opacity');
+    check('Dragging transfers focus from Back to slider', (await call('where')).focusCount === 1 && (await state()).focusAction === 'panel.opacity');
     await current.mouse.up();
-    await current.locator('#dockOpacityInput').evaluate(el => { el.value = '55'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await current.locator('#panelOpacityInput').evaluate(el => { el.value = '55'; el.dispatchEvent(new Event('input', { bubbles: true })); });
     check('Native slider leaves a five-percent draft', await current.locator('.opacity-value').textContent() === '55%' && (await state()).look.dockOpacity === 100);
     await current.evaluate(() => { __failWrites = true; }); await nav('ok');
     check('Failed opacity save retains committed value and offers retry', (await state()).look.dockOpacity === 100 && (await call('actions')).includes('settings.retry'));
     await current.evaluate(() => { __failWrites = false; }); await act('settings.retry');
     check('Retry saves the requested opacity', (await state()).look.dockOpacity === 55);
     await look({ layout: 'list' });
-    check('List keeps opacity preference and disables slider', (await state()).look.dockOpacity === 55 && await current.locator('#dockOpacityInput').isDisabled());
+    check('List keeps the panel opacity slider available', (await state()).look.dockOpacity === 55 && !(await current.locator('#panelOpacityInput').isDisabled()));
     await look({ layout: 'dock', bg: 'light' });
-    check('Flat background disables the material slider', await current.locator('#dockOpacityInput').isDisabled());
+    check('Flat background keeps the panel opacity slider available', !(await current.locator('#panelOpacityInput').isDisabled()));
     await look({ bg: 'photo' }); await current.reload(); await ready();
     check('Highlight and opacity survive reload', (await state()).look.highlight === 'glow' && (await state()).look.dockOpacity === 55);
     for (const [saved, expected] of [['indicator', 'glow'], ['glow', 'glow'], ['tile', 'tile']]) {
       await closePage(); await page({ seed: baseline({ look: { layout: 'list', highlight: saved, dockOpacity: 45 } }) });
       check('Saved highlight normalizes safely: ' + saved, (await state()).look.highlight === expected && (await state()).look.layout === 'list' && (await state()).look.dockOpacity === 45);
-      await group('focus');
+      await group('design');
       check('Migrated highlight has one checked option: ' + saved, (await radios()).filter(row => row.action.startsWith('choice.highlight.') && row.checked === 'true').map(row => row.action).join() === 'choice.highlight.' + expected);
       await look({ font: 'geist' }); await current.reload(); await ready();
       check('Migrated highlight survives subsequent saves: ' + saved, (await state()).look.highlight === expected && (await state()).look.dockOpacity === 45);
@@ -781,7 +896,7 @@ try {
   });
   await run('Settings focus never changes the applied Home', async () => {
     await page();
-    for (const name of ['background', 'layout', 'typography', 'focus', 'samsung']) {
+    for (const name of ['background', 'actionbar', 'widgets', 'design', 'typography', 'samsung']) {
       await group(name); const before = await settingsSnapshot();
       const visited = new Set();
       for (const direction of ['right', 'right', 'down', 'left', 'left', 'down', 'right', 'right', 'down', 'left', 'up', 'up', 'up', 'right']) {
@@ -806,26 +921,26 @@ try {
     await nav('back'); check('Unconfirmed Rotation choice is cancelled', same(await settingsSnapshot(), before) && (await state()).settingsGroup === 'local');
   });
   await run('Settings on-screen Back preserves choice focus', async () => {
-    await page(); await group('layout'); const before = await settingsSnapshot();
+    await page(); await group('dock'); const before = await settingsSnapshot();
     const candidate = await unselectedChoice();
     await act('settings.back');
-    check('On-screen Back returns to the matching overview category', (await state()).view === 'settings' && (await state()).focusAction === 'settings.group.layout');
+    check('On-screen Back returns to the matching overview category', (await state()).view === 'settings' && (await state()).focusAction === 'settings.group.dock');
     check('On-screen Back keeps unconfirmed choice unapplied', same(await settingsSnapshot(), before));
-    await act('settings.group.layout');
+    await act('settings.group.dock');
     check('Reopening restores the last real choice after on-screen Back', (await state()).focusAction === candidate.action, { expected: candidate.action, actual: (await state()).focusAction });
-    await nav('back'); await act('settings.group.layout');
+    await nav('back'); await act('settings.group.dock');
     check('Physical Back also preserves the last real choice', (await state()).focusAction === candidate.action);
   });
   await run('Settings OK applies explicit choices atomically', async () => {
     await page();
     const specs = [
       ['background', 'bg', ['daily', 'photo']],
-      ['layout', 'layout', ['list', 'dock']],
-      ['layout', 'apps', ['icons', 'text', 'both']],
-      ['layout', 'controls', ['text', 'both', 'icons']],
+      ['dock', 'layout', ['list', 'dock']],
+      ['dock', 'apps', ['icons', 'text', 'both']],
+      ['actionbar', 'controls', ['text', 'both', 'icons']],
       ['typography', 'font', (await state()).fonts.available],
-      ['focus', 'focus', ['type', 'glass']],
-      ['focus', 'material', ['frost', 'tint', 'soft']]
+      ['design', 'focus', ['type', 'glass']],
+      ['design', 'material', ['frost', 'tint', 'soft']]
     ];
     for (const [name, axis, values] of specs) {
       await group(name);
@@ -850,19 +965,20 @@ try {
       const before = await settingsSnapshot(); await act('rotation.' + value);
       check('Rotation OK applies ' + value + ' once', (await state()).mode === value && (await stored()).mode === value && (await state()).writes === before.writes + 1 && (await radios()).some(r => r.action === 'rotation.' + value && r.checked === 'true'));
     }
-    await group('layout'); const before = await settingsSnapshot(), candidate = await unselectedChoice();
+    await group('dock'); const before = await settingsSnapshot(); await nav('left'); const candidate = await focusedChoice();
+    check('Remote reaches an unselected Dock choice', candidate?.checked === 'false');
     const [, axis, value] = candidate.action.split('.');
     await current.keyboard.down('Enter'); await current.keyboard.down('Enter'); await ready();
     check('Held physical OK applies the focused choice once', (await state()).committed[axis] === value && (await state()).writes === before.writes + 1);
     await current.keyboard.up('Enter');
     await current.keyboard.down('Escape'); await current.keyboard.down('Escape');
-    check('Held physical Back closes one settings layer', (await state()).view === 'settings' && (await state()).focusAction === 'settings.group.layout');
+    check('Held physical Back closes one settings layer', (await state()).view === 'settings' && (await state()).focusAction === 'settings.group.dock');
     await current.keyboard.up('Escape');
   });
   await run('Settings inactive Material retains its choice', async () => {
     await page(); await look({ material: 'tint' });
     for (const patch of [{ bg: 'dark' }, { bg: 'light' }, { bg: 'photo', layout: 'list', focus: 'type' }]) {
-      await look(patch); await group('focus'); const before = await settingsSnapshot();
+      await look(patch); await group('design'); const before = await settingsSnapshot();
       const materials = (await radios()).filter(r => r.action.startsWith('choice.material.'));
       check('Material stays visible but inactive for ' + JSON.stringify(patch), materials.length === 3 && materials.every(r => r.disabled) && materials.some(r => r.action === 'choice.material.tint' && r.checked === 'true'), materials);
       const focusBefore = (await state()).focusAction;
@@ -873,7 +989,7 @@ try {
       const reason = await current.locator('.setting-reason:visible').allTextContents();
       check('Inactive Material has a visible explanation', reason.some(text => /material/i.test(text) && text.length > 20), reason);
     }
-    await look({ bg: 'photo', layout: 'dock', focus: 'glass' }); await group('focus');
+    await look({ bg: 'photo', layout: 'dock', focus: 'glass' }); await group('design');
     const materials = (await radios()).filter(r => r.action.startsWith('choice.material.'));
     check('Applicable Material restores the remembered selection', materials.every(r => !r.disabled) && materials.some(r => r.action === 'choice.material.tint' && r.checked === 'true'));
   });
@@ -891,7 +1007,7 @@ try {
     }
   });
   await run('Settings Back cancels pending assets and late callbacks', async () => {
-    await page(); await group('focus'); const before = await settingsSnapshot();
+    await page(); await group('design'); const before = await settingsSnapshot();
     const held = [], pattern = '**/*-field-frost.jpg';
     let releaseImages;
     const blocked = new Promise(resolve => { releaseImages = resolve; });
@@ -900,7 +1016,7 @@ try {
       await choice('material', 'frost'); await current.waitForFunction(() => !!ShoreQA.state().pending);
       check('Pending choice keeps the committed Home and storage', same(await settingsSnapshot(), before));
       await nav('back'); await ready();
-      check('Back cancels pending choice and restores category focus', same(await settingsSnapshot(), before) && (await state()).view === 'settings' && (await state()).focusAction === 'settings.group.focus');
+      check('Back cancels pending choice and restores category focus', same(await settingsSnapshot(), before) && (await state()).view === 'settings' && (await state()).focusAction === 'settings.group.design');
       releaseImages();
       await current.waitForLoadState('networkidle');
       check('Late image completion cannot commit a cancelled choice', held.length > 0 && same(await settingsSnapshot(), before) && !(await state()).pending);
@@ -924,7 +1040,7 @@ try {
     } finally { releaseFont(); await current.unroute(pattern); }
   });
   await run('Settings choice failure and explicit retry', async () => {
-    await page(); await group('focus'); const original = await settingsSnapshot();
+    await page(); await group('design'); const original = await settingsSnapshot();
     current.__expectedFailures.push('-field-frost.jpg');
     await current.route('**/*-field-frost.jpg', route => route.abort('failed'));
     await choice('material', 'frost'); await current.waitForFunction(() => !ShoreQA.state().pending);
@@ -945,7 +1061,7 @@ try {
     for (const width of [1920, 1280]) {
       await current.setViewportSize({ width, height: width * 9 / 16 });
       await current.waitForFunction(w => Math.abs(document.getElementById('stage').getBoundingClientRect().width - w) < 1, width);
-      for (const name of ['background', 'layout', 'typography', 'focus', 'samsung', 'rotation']) {
+      for (const name of ['background', 'dock', 'actionbar', 'widgets', 'design', 'typography', 'samsung', 'rotation']) {
         await group(name === 'rotation' ? 'background' : name);
         if (name === 'rotation') await act('background.rotation');
         const geometry = await current.evaluate(() => {
@@ -1176,8 +1292,10 @@ try {
     check('Held OK restores once without removing again', (await state()).dock.includes('netflix') && (await state()).dock.length === 9);
     await current.keyboard.up('Enter');
     await current.keyboard.down('Escape'); await current.keyboard.down('Escape');
-    check('Held Back closes one layer only', (await call('where')).view === 'settings' && (await state()).focusAction === 'settings.editor');
+    check('Held Back closes one layer only', (await call('where')).settingsGroup === 'dock' && (await state()).focusAction === 'dock.apps');
     await current.keyboard.up('Escape'); await current.keyboard.press('Escape');
+    check('Second Back reaches Settings', (await call('where')).view === 'settings');
+    await current.keyboard.press('Escape');
     check('Released Back reaches Home', (await call('where')).view === 'home');
   });
   await run('Rotation pauses and warm return', async () => {

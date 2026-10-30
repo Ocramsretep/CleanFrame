@@ -77,7 +77,7 @@ try {
   });
   await page.evaluate(() => ShoreQA.look({ bg: 'daily' })); await ready();
   await page.waitForFunction(() => CleanFrameDaily.view().current && CleanFrameDaily.view().count >= 5);
-  assert.equal(await page.locator('#dailySkip').isVisible(), true);
+  assert.equal(await page.locator('#dailySkip').isVisible(), false, 'Skip is inside Picture info');
   assert.ok(!(await page.evaluate(() => window.__dailyCalls)).includes('bing'));
   assert.ok(!await page.evaluate(() => CleanFrameDaily.providers.some(p => p.id === 'earth')));
   const cachedSources = await page.evaluate(() => new Promise(resolve => {
@@ -87,8 +87,11 @@ try {
   assert.ok(!cachedSources.includes('earth'), 'Retired USGS current and queued blobs are removed from persistent storage');
   const before = await state();
   await page.evaluate(() => ShoreQA.nav('up', 'right', 'right', 'right'));
-  assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
+  assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.info');
   assert.equal((await page.evaluate(() => ShoreQA.where())).focusCount, 1);
+  await page.evaluate(() => ShoreQA.nav('ok'));
+  assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
+  assert.equal(await page.locator('#dailySkip').isVisible(), true);
   await page.evaluate(() => ShoreQA.nav('ok'));
   await page.waitForFunction(id => CleanFrameDaily.view().current.id !== id, before.current);
   assert.notEqual((await state()).theme, before.theme, 'Skip alternates available themes');
@@ -97,19 +100,51 @@ try {
   assert.equal((await state()).current, skippedTo, 'Same calendar day keeps the picture');
   assert.equal(await page.locator('#dailyCredit').isVisible(), false);
   assert.equal(await page.locator('#dailyCredit unsafe').count(), 0);
-  await page.evaluate(() => ShoreQA.nav('right', 'ok'));
   assert.equal(await page.locator('#dailyDetails').isVisible(), true);
   assert.match(await page.locator('#dailyDetails').innerText(), /Test photographer/);
+  assert.deepEqual(await page.locator('.daily-info-link').allInnerTexts(), ['Picture Page']);
+  assert.equal((await page.locator('#dailyDetailsContent').innerText()).includes('https://'), false, 'Full URLs are not shown');
+  await page.evaluate(() => { window.__openedPictureUrl = ''; window.__realOpenUrl = FrameDevice.openUrl; FrameDevice.openUrl = (url, done) => { window.__openedPictureUrl = url; done(null); }; ShoreQA.nav('down'); });
+  assert.ok(await page.locator('[data-action="daily.link.page"]').evaluate(el => el.classList.contains('is-focus')), 'Picture Page visibly receives focus');
+  await page.evaluate(() => ShoreQA.nav('ok'));
+  assert.equal(await page.evaluate(() => window.__openedPictureUrl), 'https://science.nasa.gov/apod/', 'Picture page opens through the browser adapter');
   await page.evaluate(() => {
     const c = CleanFrameDaily.view().current;
-    window.__sourcePage = c.page;
-    c.page = 'https://science.nasa.gov/' + 'long-source-path-'.repeat(120);
-    ShoreQA.nav('ok', 'ok');
+    window.__licenseOriginal = c.licenseURL;
+    c.licenseURL = 'https://creativecommons.org/licenses/by/4.0/';
+    ShoreQA.nav('down');
+  });
+  assert.deepEqual(await page.locator('.daily-info-link').allInnerTexts(), ['Picture Page', 'License']);
+  assert.ok(await page.locator('[data-action="daily.link.license"]').evaluate(el => el.classList.contains('is-focus')), 'License visibly receives focus');
+  assert.ok((await page.locator('[data-action="daily.link.license"]').boundingBox()).width <= 280, 'Link focus stays compact');
+  const pageLinkBounds = await page.locator('[data-action="daily.link.page"]').boundingBox();
+  const licenseLinkBounds = await page.locator('[data-action="daily.link.license"]').boundingBox();
+  assert.ok(licenseLinkBounds.x > pageLinkBounds.x && Math.abs(licenseLinkBounds.y - pageLinkBounds.y) < 2, 'Picture Page and License share a row');
+  const panelBounds = await page.locator('#dailyDetails').boundingBox();
+  const anchorBounds = await page.locator('#dailyInfo').boundingBox();
+  assert.ok(Math.abs(panelBounds.y - anchorBounds.y - anchorBounds.height - 18) < 2, 'Picture info uses the same anchor spacing as Sources');
+  await page.evaluate(() => ShoreQA.nav('left'));
+  assert.ok(await page.locator('[data-action="daily.link.page"]').evaluate(el => el.classList.contains('is-focus')), 'Left moves focus to Picture Page');
+  await page.evaluate(() => ShoreQA.nav('right'));
+  assert.ok(await page.locator('[data-action="daily.link.license"]').evaluate(el => el.classList.contains('is-focus')), 'Right moves focus to License');
+  await page.screenshot({ path: root + '.local/qa/picture-info-link-focus.png' });
+  await page.evaluate(() => ShoreQA.nav('up', 'up'));
+  assert.ok(await page.locator('#dailySkip').evaluate(el => el.classList.contains('is-focus')), 'Up returns focus to Skip');
+  await page.screenshot({ path: root + '.local/qa/picture-info-skip-focus.png' });
+  await page.evaluate(() => ShoreQA.nav('down', 'down'));
+  await page.evaluate(() => ShoreQA.nav('ok'));
+  assert.equal(await page.evaluate(() => window.__openedPictureUrl), 'https://creativecommons.org/licenses/by/4.0/', 'License link opens through the browser adapter');
+  await page.evaluate(() => { CleanFrameDaily.view().current.licenseURL = window.__licenseOriginal; });
+  await page.evaluate(() => { FrameDevice.openUrl = window.__realOpenUrl; ShoreQA.nav('back', 'ok'); });
+  await page.evaluate(() => {
+    const c = CleanFrameDaily.view().current;
+    window.__sourceCredit = c.credit;
+    c.credit = 'Long source credit '.repeat(120);
+    ShoreQA.nav('down', 'down', 'down');
   });
   assert.ok((await page.locator('#dailyDetails').boundingBox()).height <= 610);
-  await page.evaluate(() => ShoreQA.nav('down'));
-  assert.ok(await page.locator('#dailyDetails').evaluate(el => el.scrollTop > 0), 'Long attribution details scroll with the remote');
-  await page.evaluate(() => { CleanFrameDaily.view().current.page = window.__sourcePage; });
+  assert.ok(await page.locator('#dailyDetailsContent').evaluate(el => el.scrollTop > 0), 'Long attribution details scroll with the remote');
+  await page.evaluate(() => { CleanFrameDaily.view().current.credit = window.__sourceCredit; });
   await page.evaluate(() => ShoreQA.nav('back'));
   assert.equal(await page.locator('#dailyDetails').isVisible(), false);
   assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.info');
@@ -143,8 +178,9 @@ try {
   assert.equal((await state()).options.fit, 'contain');
   assert.equal((await state()).options.sources.bing, false);
   const offline = (await state()).current;
-  await act('daily.skip');
+  await act('daily.info'); await act('daily.skip');
   await page.waitForFunction(id => CleanFrameDaily.view().current.id !== id, offline);
+  await page.evaluate(() => ShoreQA.nav('back'));
   const priorDay = (await state()).current;
   await page.clock.install({ time: new Date() });
   await page.clock.setSystemTime(new Date(Date.now() + 24 * 60 * 60 * 1000));
@@ -167,10 +203,10 @@ try {
   for (const layout of ['dock', 'list']) {
     await page.evaluate(layout => ShoreQA.look({ layout }), layout); await ready();
     await page.evaluate(() => ShoreQA.scene('home'));
-    await act('daily.skip');
+    await act('daily.info'); await act('daily.skip');
     assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
     const buttons = await page.locator('.utils .u').evaluateAll(es => es.map(e => e.getBoundingClientRect().top));
-    assert.equal(buttons.length, 5); assert.ok(buttons.every(y => Math.abs(y - buttons[0]) < 1));
+    assert.equal(buttons.length, 4); assert.ok(buttons.every(y => Math.abs(y - buttons[0]) < 1));
     for (const width of [1920, 1280]) {
       await page.setViewportSize({ width, height: width * 9 / 16 });
       mkdirSync(root + '.local/qa', { recursive: true });
