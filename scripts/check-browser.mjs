@@ -645,7 +645,7 @@ try {
     });
     for (const width of [1920, 1280]) {
       await current.setViewportSize({ width, height: width * 9 / 16 });
-      for (const layout of ['dock', 'list']) for (const focus of ['type', 'glass']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'glow', 'underline']) {
+      for (const layout of ['dock', 'list']) for (const focus of ['type', 'glass']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'glow', 'underline', 'tile']) {
         await look({ layout, focus, apps, highlight, wall: 'summit', material: 'tint' }); await scene('home');
         await current.waitForTimeout(230);
         const home = await appearance();
@@ -653,7 +653,7 @@ try {
         const preview = await appearance(), label = [width, layout, focus, apps, highlight].join('/');
         check('Home and preview render identical app focus ' + label, same(home, preview), { home, preview });
         check('Preview retains one interactive Settings focus ' + label, (await call('where')).focusCount === 1 && await current.locator('.home .is-focus[data-action]').count() === 0);
-        if (width === 1920 && layout === 'dock' && focus === 'type' && apps === 'both' && ['standard', 'glow'].includes(highlight)) {
+        if (width === 1920 && layout === 'dock' && focus === 'type' && apps === 'both' && ['standard', 'glow', 'tile'].includes(highlight)) {
           await current.screenshot({ path: out + 'matched-preview-' + highlight + '.png' });
           await scene('home'); await current.waitForTimeout(230);
           await current.screenshot({ path: out + 'matched-home-' + highlight + '.png' });
@@ -679,7 +679,7 @@ try {
     check('Existing preferences retain standard highlight and full material opacity', (await state()).look.highlight === 'standard' && (await state()).look.dockOpacity === 100);
     await group('focus');
     const options = (await radios()).filter(row => row.action.startsWith('choice.highlight.'));
-    check('Only the three supported app highlights are visible', same(options.map(row => row.action), ['standard', 'glow', 'underline'].map(value => 'choice.highlight.' + value)));
+    check('All four app highlights are visible', same(options.map(row => row.action), ['standard', 'glow', 'underline', 'tile'].map(value => 'choice.highlight.' + value)));
     const before = await settingsSnapshot();
     await nav('down', 'down', 'right');
     check('Browsing highlight choices does not save or preview', same(await settingsSnapshot(), before));
@@ -687,7 +687,7 @@ try {
     check('Glow is applied with one checked option', (await state()).look.highlight === 'glow' && (await radios()).filter(row => row.action.startsWith('choice.highlight.') && row.checked === 'true').length === 1);
     for (const width of [1920, 1280]) {
       await current.setViewportSize({ width, height: width * 9 / 16 });
-      for (const layout of ['dock', 'list']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'glow', 'underline']) {
+      for (const layout of ['dock', 'list']) for (const apps of ['icons', 'both', 'text']) for (const highlight of ['standard', 'glow', 'underline', 'tile']) {
         await look({ layout, apps, highlight }); await scene('home');
         check('One highlighted app ' + [width, layout, apps, highlight].join('/'), await current.locator((layout === 'dock' ? '.dock' : '.ph-scene') + ' .has-highlight').count() === 1 && (await call('where')).focusCount === 1);
         check('No runtime blur for ' + highlight, await current.locator('.home .has-highlight, .home .has-highlight *').evaluateAll(elements => elements.every(el => getComputedStyle(el).filter === 'none' && (!getComputedStyle(el).backdropFilter || getComputedStyle(el).backdropFilter === 'none'))));
@@ -701,6 +701,23 @@ try {
           await nav(layout === 'dock' ? 'up' : 'right'); await current.waitForTimeout(180);
           check('No app glow on controls ' + [width, layout, apps].join('/'), await markerCount() === 0);
           await nav('back'); await current.waitForTimeout(180);
+        }
+        if (highlight === 'tile') {
+          await current.waitForFunction(layout => {
+            const selected = document.querySelector(layout === 'dock' ? '.dock .has-highlight' : '.ph-scene .has-highlight');
+            return getComputedStyle(selected, layout === 'dock' ? '::before' : '::after').opacity === '1';
+          }, layout);
+          const tile = await current.locator(layout === 'dock' ? '.dock .has-highlight' : '.ph-scene .has-highlight').evaluate((el, layout) => {
+            const fill = getComputedStyle(el, layout === 'dock' ? '::before' : '::after');
+            const ink = getComputedStyle(el.querySelector('.label, .ph-name') || el.querySelector('.mark'));
+            const plate = document.querySelector(layout === 'dock' ? '.dock .plate' : '.ph-scene .ph-plate.is-current');
+            return { fill: fill.backgroundColor, radius: fill.borderRadius, width: parseFloat(fill.width), shadow: fill.boxShadow, ink: ink.color, plate: getComputedStyle(plate).opacity };
+          }, layout);
+          check('Light tile is translucent with no duplicate plate ' + [width, layout, apps].join('/'), tile.fill === 'rgba(246, 241, 231, 0.14)' && tile.radius === (layout === 'dock' ? '32px' : '38px') && tile.width > 0 && tile.width < 1200 && tile.shadow === 'none' && tile.plate === '0', tile);
+          await nav(layout === 'dock' ? 'up' : 'right');
+          await current.waitForFunction(layout => Array.from(document.querySelectorAll(layout === 'dock' ? '.dock .tile' : '.ph-scene .ph-row')).every(el => getComputedStyle(el, layout === 'dock' ? '::before' : '::after').opacity === '0'), layout);
+          check('Light tile clears when focus leaves apps ' + [width, layout, apps].join('/'), await current.locator((layout === 'dock' ? '.dock' : '.ph-scene') + ' .has-highlight').count() === 0);
+          await nav('back'); await current.waitForTimeout(220);
         }
         if (apps === 'icons' && width === 1920) {
           await current.waitForTimeout(220);
@@ -749,9 +766,9 @@ try {
     check('Flat background disables the material slider', await current.locator('#dockOpacityInput').isDisabled());
     await look({ bg: 'photo' }); await current.reload(); await ready();
     check('Highlight and opacity survive reload', (await state()).look.highlight === 'glow' && (await state()).look.dockOpacity === 55);
-    for (const [saved, expected] of [['indicator', 'glow'], ['glow', 'glow'], ['tile', 'standard']]) {
+    for (const [saved, expected] of [['indicator', 'glow'], ['glow', 'glow'], ['tile', 'tile']]) {
       await closePage(); await page({ seed: baseline({ look: { layout: 'list', highlight: saved, dockOpacity: 45 } }) });
-      check('Retired highlight migrates safely: ' + saved, (await state()).look.highlight === expected && (await state()).look.layout === 'list' && (await state()).look.dockOpacity === 45);
+      check('Saved highlight normalizes safely: ' + saved, (await state()).look.highlight === expected && (await state()).look.layout === 'list' && (await state()).look.dockOpacity === 45);
       await group('focus');
       check('Migrated highlight has one checked option: ' + saved, (await radios()).filter(row => row.action.startsWith('choice.highlight.') && row.checked === 'true').map(row => row.action).join() === 'choice.highlight.' + expected);
       await look({ font: 'geist' }); await current.reload(); await ready();

@@ -603,6 +603,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .h-underline .has-highlight .label-ink,.h-underline .has-highlight .ph-name,.h-underline .app-focus-name.is-on{text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:8px}
 .h-glow .has-highlight .tile-content,.h-glow .has-highlight .ph-group,.h-underline .has-highlight .tile-content,.h-underline .has-highlight .ph-group{opacity:1}
 .h-glow .dock .plate,.h-underline .dock .plate,.h-glow .ph-scene .ph-plate,.h-underline .ph-scene .ph-plate{opacity:0}
+/* A translucent app tile, independent of Type/Glass and the dock's opacity. */
+.h-tile .tile::before,.h-tile .ph-row::after{content:"";position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:32px;background:rgba(246,241,231,.14);opacity:0;pointer-events:none;transition:opacity 160ms linear}
+.h-tile .ph-row::after{width:var(--highlight-width);border-radius:38px;z-index:-1}
+.h-tile .ph-list.is-compact .ph-row::after{border-radius:28px}
+.bg-light.h-tile .tile::before,.bg-light.h-tile .ph-row::after{background:rgba(32,42,45,.10)}
+.h-tile .tile.has-highlight::before,.h-tile .ph-row.has-highlight::after{opacity:1}
+.h-tile .has-highlight .tile-content,.h-tile .has-highlight .ph-group{opacity:1}
+.h-tile .dock .plate,.h-tile .ph-scene .ph-plate{opacity:0}
 .detail-layout .setting-section+.setting-section,.detail-focus .setting-section+.setting-section{margin-top:28px}
 .detail-layout .is-horizontal .setting-choice{min-height:78px}
 .is-grid .setting-options{flex-direction:row;flex-wrap:wrap}

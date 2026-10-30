@@ -45,10 +45,10 @@
   };
   var PRIVATE_FONTS = window.CleanFramePrivateFontIDs || [], fontMetrics = {}, unavailableFonts = {}, widthCache = {}, fontRevision = 0, fontsReady = false;
   var LOOK_VALUES = { bg: ['dark', 'light', 'photo'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
-  LOOK_VALUES.highlight = ['standard', 'glow', 'underline'];
+  LOOK_VALUES.highlight = ['standard', 'glow', 'underline', 'tile'];
   var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material', highlight: 'App highlight', dockOpacity: 'Dock opacity' };
   var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
-  VALUE_NAMES.standard = 'Standard'; VALUE_NAMES.glow = 'Glow'; VALUE_NAMES.underline = 'Underline';
+  VALUE_NAMES.standard = 'Standard'; VALUE_NAMES.glow = 'Glow'; VALUE_NAMES.underline = 'Underline'; VALUE_NAMES.tile = 'Light tile';
   var UTIL = { sources: ['Sources', 'hdmi'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
   var MSG = {
     leave: { title: 'Leave Home?', line: 'Open Samsung Home?', note: '', actions: [['stay', 'Stay'], ['samsung', 'Samsung Home']] }
@@ -1565,6 +1565,7 @@
         + (lifted && i === 0 ? ' no-up' : '') + (lifted && i === n - 1 ? ' no-down' : '')
         + (it.kind === 'app' && S.press === it.id ? ' is-press' : '');
       if (focus || hs.zone === 'preview' && i === anchor) row.className += ' has-highlight';
+      row.style.setProperty('--highlight-width', listPlateWidth(it.id, compact) + 'px');
       row.style.width = (compact ? listPlateWidth(it.id, compact) : 1200) + 'px'; row.style.height = pitch + 'px';
       row.style.transform = 'translate3d(0,' + (i * pitch) + 'px,0)';
       row.setAttribute('role', 'button'); row.setAttribute('aria-label', app(it.id).name);
