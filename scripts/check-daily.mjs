@@ -61,10 +61,30 @@ try {
   await page.screenshot({path:root + '.local/qa/background-types.png'});
   await page.evaluate(() => ShoreQA.scene('home'));
 
+  await page.evaluate(async () => {
+    const blob = await (await fetch('/home/assets/wallpapers/misty.jpg')).blob();
+    await new Promise((resolve, reject) => {
+      const request = indexedDB.open('cleanframe.daily.v1', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('cache');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result, tx = db.transaction('cache', 'readwrite');
+        const poster = {id:'earth:poster',source:'earth',theme:'earth',url:'https://upload.wikimedia.org/poster.jpg',page:'https://commons.wikimedia.org/wiki/File:Poster.jpg',title:'Old poster',credit:'USGS',blob};
+        tx.objectStore('cache').put({queue:[{...poster,id:'earth:queued'}],current:poster,date:'2000-1-1',history:[],cursors:{}}, 'state');
+        tx.oncomplete = () => {db.close();resolve();}; tx.onerror = () => reject(tx.error);
+      };
+    });
+  });
   await page.evaluate(() => ShoreQA.look({ bg: 'daily' })); await ready();
   await page.waitForFunction(() => CleanFrameDaily.view().current && CleanFrameDaily.view().count >= 5);
   assert.equal(await page.locator('#dailySkip').isVisible(), true);
   assert.ok(!(await page.evaluate(() => window.__dailyCalls)).includes('bing'));
+  assert.ok(!await page.evaluate(() => CleanFrameDaily.providers.some(p => p.id === 'earth')));
+  const cachedSources = await page.evaluate(() => new Promise(resolve => {
+    const request = indexedDB.open('cleanframe.daily.v1', 1);
+    request.onsuccess = () => { const db=request.result; const read=db.transaction('cache').objectStore('cache').get('state'); read.onsuccess=()=>{const s=read.result; db.close();resolve([s.current].concat(s.queue).filter(Boolean).map(x=>x.source));}; };
+  }));
+  assert.ok(!cachedSources.includes('earth'), 'Retired USGS current and queued blobs are removed from persistent storage');
   const before = await state();
   await page.evaluate(() => ShoreQA.nav('up', 'right', 'right', 'right'));
   assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
@@ -165,6 +185,10 @@ try {
   });
   assert.ok((await state()).current, 'An empty queue keeps the current picture');
   assert.equal((await state()).count, 0, 'Disabled sources are removed from the queue');
+  await page.waitForFunction(async () => await new Promise(resolve => {
+    const request=indexedDB.open('cleanframe.daily.v1',1);
+    request.onsuccess=()=>{const db=request.result;const read=db.transaction('cache').objectStore('cache').get('state');read.onsuccess=()=>{db.close();resolve(read.result.queue.length===0);};};
+  }));
   // Confirm the actual rendered crop never distorts image proportions.
   await page.setViewportSize({ width: 1920, height: 1080 });
   for (const [width, height] of [[1600, 2400], [2000, 2000], [2400, 1000]]) {

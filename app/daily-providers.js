@@ -6,7 +6,6 @@
     { id: 'nature', name: 'Commons · Landscapes', theme: 'nature', categories: ['landscapes', 'mountains', 'coasts', 'forests'] },
     { id: 'architecture', name: 'Commons · Architecture', theme: 'architecture', categories: ['cityscapes', 'buildings', 'architecture'] },
     { id: 'pixabay', name: 'Pixabay · Nature & architecture', theme: 'nature', available: !!pixabayKey },
-    { id: 'earth', name: 'USGS · Earth As Art', theme: 'earth' },
     { id: 'apod', name: 'NASA · APOD', theme: 'space' },
     { id: 'webb', name: 'ESA · Webb', theme: 'space', host: 'esawebb.org' },
     { id: 'hubble', name: 'ESA · Hubble', theme: 'space', host: 'esahubble.org' },
@@ -31,8 +30,7 @@
   }
   function commons(p, cursor, request, done) {
     var category = cursor.category || 0, params;
-    if (p.id === 'earth') params = 'generator=search&gsrnamespace=6&gsrsearch=' + encodeURIComponent('"Earth as Art" USGS filetype:bitmap') + '&gsrlimit=30&gsroffset=' + (cursor.offset || 0);
-    else params = 'generator=categorymembers&gcmtitle=' + encodeURIComponent('Category:Featured pictures of ' + p.categories[category % p.categories.length]) + '&gcmtype=file&gcmlimit=40' + (cursor.next ? '&gcmcontinue=' + encodeURIComponent(cursor.next) : '');
+    params = 'generator=categorymembers&gcmtitle=' + encodeURIComponent('Category:Featured pictures of ' + p.categories[category % p.categories.length]) + '&gcmtype=file&gcmlimit=40' + (cursor.next ? '&gcmcontinue=' + encodeURIComponent(cursor.next) : '');
     request('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&' + params + '&prop=imageinfo&iiprop=url%7Csize%7Cextmetadata&iiurlwidth=1920', false, function (err, text) {
       if (err) { done(err); return; }
       try {
@@ -46,7 +44,7 @@
           if (r) out.push(r);
         });
         var cont = data.continue || {};
-        done(null, out, p.id === 'earth' ? { offset: cont.gsroffset || 0 } : { category: cont.gcmcontinue ? category : category + 1, next: cont.gcmcontinue || '' });
+        done(null, out, { category: cont.gcmcontinue ? category : category + 1, next: cont.gcmcontinue || '' });
       } catch (e) { done(new Error('Invalid gallery response')); }
     });
   }
@@ -113,7 +111,7 @@
     if (!p) { done(new Error('Unknown source')); return; }
     cursor = cursor || {};
     if (id === 'pixabay') { pixabay(p, request, done); return; }
-    if (p.categories || id === 'earth') { commons(p, cursor, request, done); return; }
+    if (p.categories) { commons(p, cursor, request, done); return; }
     if (p.host) { esa(p, cursor, request, done); return; }
     var url = id === 'bing' ? 'https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=de-DE' : 'https://science.nasa.gov/wp-json/wp/v2/apod-basic/?count=25';
     request(url, false, function (err, text) {

@@ -17,7 +17,6 @@ replacement the previous picture stays, or the bundled photo on first use.
 | Wikimedia Commons landscapes | On | Featured landscape, mountain, coast and forest photographs |
 | Wikimedia Commons architecture | On | Featured cityscape, building and architecture photographs |
 | Pixabay | On when the owner's build has a key | Editor's Choice, horizontal photos; nature and buildings alternate between daily metadata batches |
-| USGS Earth As Art | On | Earth As Art images distributed through Commons, with individual credits and public-domain/CC checks |
 | NASA APOD | On | Recent still images with their actual photographer credits; videos skipped |
 | ESA/Webb and ESA/Hubble | On | Nebula and galaxy galleries; diagram/illustration titles excluded |
 | Bing | Off; explicit opt-in | Download-enabled daily-image records from the unofficial homepage feed |
@@ -98,3 +97,10 @@ Daily browser tests use synthetic metadata and an existing bundled picture,
 not APIs or credentials. They cover offline use, opt-in, calendar changes,
 failed writes, remote focus and portrait/square/wide sizing. Tooling tests cover
 private/public key injection and proxy restrictions.
+
+USGS Earth As Art was removed because the broad Commons search also returned
+posters with embedded text and logos. Legacy cached entries from that provider
+are removed and the cleaned cache is persisted on the next Online pictures load.
+Disabling a source also persists removal of its queued images. The current image
+is kept until a replacement is ready; changing background mode retains the
+offline cache for later use. Only IDs, not image blobs, remain in shown history.

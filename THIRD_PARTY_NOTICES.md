@@ -46,9 +46,7 @@ or widget. These images are not covered by CleanFrame's MIT licence. The app
 retains their image-page links, supplied credits and rights labels.
 
 - Wikimedia Commons: individual file licences, limited here to supported CC BY,
-  CC BY-SA, CC0 and public-domain labels. Earth As Art images are discovered via
-  Commons and credited to their recorded author and USGS source. See
-  [USGS Earth As Art](https://www.usgs.gov/centers/eros/earth-art).
+  CC BY-SA, CC0 and public-domain labels.
 - [ESA/Webb](https://esawebb.org/copyright/) and
   [ESA/Hubble](https://esahubble.org/copyright/): CC BY 4.0 with complete visible
   credits. Individual exceptions still apply.

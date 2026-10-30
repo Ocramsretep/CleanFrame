@@ -13,6 +13,7 @@
     return o;
   }
   var opt = options(), state = { queue: [], current: null, date: '', history: [], cursors: {}, theme: '', source: '' };
+  var cleanupPending = false;
   var db = null, opened = false, opening = false, active = false, canAdvance = false, filling = false, saving = false, advancing = false;
   var generation = 0, xhrs = [], timer = 0, retryAt = 0, displayURL = '', displayImage = null, status = '', errors = {}, listener = function () {};
   function changed() { listener(); }
@@ -25,6 +26,7 @@
     state.history = Array.isArray(data.history) ? data.history.filter(function (id) { return typeof id === 'string'; }).slice(-500) : [];
     state.cursors = data.cursors && typeof data.cursors === 'object' ? data.cursors : {};
     state.theme = data.theme || ''; state.source = data.source || '';
+    cleanupPending = data.queue.length !== state.queue.length || !!data.current && !state.current;
   }
   function snapshot() { return { queue: state.queue.slice(), current: state.current, date: state.date, history: state.history.slice(), cursors: state.cursors, theme: state.theme, source: state.source }; }
   function save(data, done) {
@@ -190,7 +192,17 @@
     }
     changed(); nextSource();
   }
-  function tick() { if (!active) return; if (!opened) { open(); return; } advance(false); fill(); }
+  function tick() {
+    if (!active) return;
+    if (!opened) { open(); return; }
+    if (cleanupPending) {
+      if (saving || advancing) return;
+      cleanupPending = false;
+      save(snapshot(), function (ok) { if (!ok) cleanupPending = true; else tick(); });
+      return;
+    }
+    advance(false); fill();
+  }
   function prune() { state.queue = state.queue.filter(function (i) { return opt.sources[i.source]; }); }
   function configure(id, value) {
     if (value && P.list.some(function (p) { return p.id === id && p.available === false; })) return false;
@@ -200,7 +212,7 @@
     else return false;
     try { localStorage.setItem(OPTIONS, JSON.stringify(copy)); } catch (e) { status = 'Could not save this setting. Try again.'; changed(); return false; }
     opt = copy; stop(); retryAt = 0;
-    prune();
+    prune(); cleanupPending = true;
     changed(); timer = setTimeout(tick, 0); return true;
   }
   window.CleanFrameDaily = {
