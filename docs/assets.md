@@ -1,5 +1,11 @@
 # Asset generation
 
+Optional [daily online pictures](daily-pictures.md) are cached only on the owner's
+device, with per-image credits and rights. They are not bundled assets. Use
+proportional cover/contain rendering and fixed translucent surfaces; do not put
+a bundled photo's material image over an unrelated online picture or add live
+blur/pixel analysis.
+
 The app includes all runtime JPEGs, thumbnails, registered material fields, public fonts and icons. A clone can preview the current app without the original Downloads folder or any generation step. Keep photo and icon credits and third-party licences with the assets. The private Pangram overlay is described in [development](development.md).
 
 ## Current List and Dock materials

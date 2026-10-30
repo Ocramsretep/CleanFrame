@@ -8,6 +8,7 @@ import zipfile
 from font_assets import ROOT, write_widget_archive
 from local_config import validate_identity
 from private_files import check_widget
+from online_assets import online_overlay
 
 
 def load_config(path):
@@ -97,7 +98,7 @@ def adapt(files, selection, sources=None):
     return files
 
 
-def build(config_path, root=ROOT):
+def build(config_path, root=ROOT, include_online_keys=False):
     identity, selection, sources = load_config(config_path)
     local = root / '.local'
     local.mkdir(exist_ok=True)
@@ -107,6 +108,8 @@ def build(config_path, root=ROOT):
     write_widget_archive(baseline, root=root, include_private=False, identity=identity)
     with zipfile.ZipFile(baseline) as archive:
         files = adapt({name: archive.read(name) for name in archive.namelist()}, selection, sources)
+    if include_online_keys:
+        files.update(online_overlay(root, include_private=True))
     for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):
         files[name] = (root / name).read_bytes()
     stage, target = output / 'stage', output / 'CleanFrame-NU8000-unsigned.wgt'
@@ -127,5 +130,6 @@ def build(config_path, root=ROOT):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, default=ROOT / '.local/nu8000.json')
+    parser.add_argument('--with-online-keys', action='store_true', help='Include local picture API keys in this private build')
     args = parser.parse_args()
-    print(json.dumps(build(args.config), indent=2))
+    print(json.dumps(build(args.config, include_online_keys=args.with_online_keys), indent=2))

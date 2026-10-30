@@ -708,3 +708,33 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .source-name input{width:100%;padding:22px 24px;border:2px solid var(--mute);border-radius:16px;font:40px Manrope;color:var(--ink);background:transparent}
 .source-name input.is-focus,.source-name input:focus{border-color:var(--ink);outline:none}
 .source-name .btn{margin:40px 20px 0 0;position:relative}
+/* Daily downloads use neutral surfaces, never mismatched baked photo materials. */
+.daily-photo{position:absolute;left:0;top:0;width:1920px;height:1080px;object-fit:cover;object-position:50% 50%;background:#101418}
+.daily-skip,.daily-info-button{position:absolute;right:136px;top:164px;min-height:60px;padding:12px 20px;border-radius:20px;background:rgba(12,16,20,.85);color:#fff;font-family:Manrope,Arial,sans-serif;font-size:25px;line-height:34px;z-index:5}
+.daily-skip{right:382px}
+.daily-skip.is-focus,.daily-info-button.is-focus{background:#f4f4f1;color:#141618;box-shadow:0 0 0 3px rgba(255,255,255,.45)}
+.l-list .daily-skip,.l-list .daily-info-button{top:210px}
+.daily-details{position:absolute;top:242px;right:136px;width:760px;max-height:610px;overflow-y:auto;padding:28px;background:#151b22;color:#fff;border-radius:20px;font:24px/1.4 Manrope,Arial,sans-serif;z-index:6;overflow-wrap:break-word}
+.l-list .daily-details{top:288px}
+.daily-details h2{font-size:30px;margin:0 0 16px}
+.daily-details p{margin:12px 0}
+.daily-details a{color:inherit}
+.daily-credit{position:absolute;left:140px;right:140px;bottom:14px;padding:8px 12px;border-radius:8px;background:rgba(8,12,16,.8);color:#fff;font-family:Manrope,Arial,sans-serif;font-size:18px;line-height:23px;z-index:4;overflow-wrap:break-word}
+.daily-credit a{color:inherit;text-decoration:underline}
+.daily-ready .mat-img,.daily-ready .mat-scrim,.daily-ready .ph-field,.daily-ready .sheet-bg,.daily-ready .source-menu-material img{visibility:hidden}
+.daily-ready .mat,.daily-ready .ph-plate,.daily-ready .source-menu-material{background:rgba(20,25,30,.76)}
+.daily-ready .sheet-veil{background:#171c22;opacity:1}
+.daily-ready .home{--ink:#fff;--ph-ink:#fff;--home-app-ink:#fff;color:#fff}
+.daily-ready{--tr-ink:#fff;--br-ink:#fff;--tr-rest-ink:#fff;--br-rest-ink:#fff;--tr-peer-ink:#fff;--br-peer-ink:#fff;--clock-ink:#fff;--dock-clock-ink:#fff}
+.daily-ready .caption .clock{color:#fff;text-shadow:0 2px 6px #000}
+.daily-ready .bg>.shade{display:block;background:linear-gradient(to bottom,rgba(0,0,0,.5),rgba(0,0,0,0));height:300px}
+.daily-ready.l-list .bg>.ph-col{display:block;background:linear-gradient(to right,rgba(0,0,0,.7),rgba(0,0,0,.3) 600px,transparent 1200px)}
+.detail-background .setting-choice{min-height:68px;padding-top:8px;padding-bottom:8px;font-size:32px;line-height:44px}
+.detail-background .setting-swatch{height:50px}
+.detail-daily .appearance-rows{top:236px}
+.detail-daily .setting-choice{min-height:48px;padding:7px 18px;font-size:26px;line-height:34px}
+.detail-daily .setting-section{margin-bottom:12px}
+.detail-daily .setting-section+.setting-section{margin-top:16px}
+.detail-daily .setting-label{font-size:23px;line-height:28px;margin-bottom:8px}
+.detail-daily .setting-reason{font-size:22px;line-height:28px}
+.detail-daily .setting-tick{margin-left:auto}

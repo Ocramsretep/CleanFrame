@@ -17,7 +17,7 @@ Settings opens a grouped overview: Background, Layout, Typography, Focus, Apps o
 
 | Group | Choices |
 | --- | --- |
-| Background | Photo, Light, Dark; Wallpaper and Rotation when Photo is active |
+| Background | Photo, Daily pictures, Light, Dark; Wallpaper and Rotation for Photo; Online picture settings for Daily pictures |
 | Layout | List or Dock; independent Text, Icons or Both choices for apps and Home controls; Dock background opacity |
 | Typography | Manrope, Neue Montreal, Mori, Pangram Sans, Geist and Newsreader, when available |
 | Focus | Type or Glass; Soft, Frost or Clear tint material; Standard, Glow, Underline or Light tile app highlight |
@@ -37,6 +37,14 @@ Layout's Dock background opacity slider ranges from 0% to 100% in 5% steps; 100%
 A font or photo change applies only after its resources are ready and storage succeeds. A load or storage failure keeps the previous appearance and checkmark, with a Try again action. Back cancels a pending change, leaves the group and keeps completed changes. Late load callbacks cannot apply a cancelled choice. There is no Save button. Returning to a group restores its last choice focus; returning to Settings restores its category focus. Rotation is nested within Background, and Back returns to its Rotation row.
 
 The selected font applies to Home app names, the clock and Home controls, including Newsreader. Settings, All apps, the Home editor and status text retain Manrope. The preview shows the committed Home appearance and its clock continues to update. Pangram faces are available in Nathan's private build when the local files are present; their binaries are not included in the public source. An unavailable optional face is omitted. If the baseline font is slow or missing, Home remains usable with a local fallback and can recover when the font loads.
+
+Daily pictures has its own [calendar rotation, source switches, sizing, credits
+and Home buttons](daily-pictures.md). Next picture and Picture info appear only
+on Home with this background active. Up above utility controls (or the first
+List app) reaches Next picture; Right reaches Picture info. Back closes its
+details first. Daily changes wait while panels or details are open. Online
+pictures use neutral translucent materials instead of pre-rendered glass.
+Dock opacity also applies to this mode.
 
 ## Streaming apps
 

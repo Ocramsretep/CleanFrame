@@ -12,6 +12,11 @@ All UI assets, public fonts and the fifteen wallpapers are bundled. This private
 
 ## Runtime map and compatibility
 
+- [Daily online pictures](daily-pictures.md) use `daily-config.js`, `daily-providers.js`
+  and `daily.js`. Local API keys are injected from ignored `.local/daily-pictures.json`;
+  public-font preview and public export omit them. Downloads stay in the owner's
+  IndexedDB cache, outside the source and widget.
+
 - `app/index.html` loads the device adapter, gallery/font/palette catalogues, `assets/icons/metrics.js` and `main.js`, with `style.css`.
 - `main.js` owns the List and Dock layouts, panel stack, focus, preferences and wallpaper timers. `device.js` owns installed-app discovery and Tizen calls. Keep device details in that adapter.
 - `app-icons.js` holds the bundled icon catalogue, public app-ID aliases and override validation. `appIcons` preferences map native app IDs to allowlisted icon names; ordinary appearance and Home writes preserve this map. `main.js` owns the icon picker and invalidates cached marks only after a successful write.

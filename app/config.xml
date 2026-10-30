@@ -6,6 +6,18 @@
   <icon src="icon.png"/>
   <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"/>
   <tizen:profile name="tv-samsung"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <access origin="https://commons.wikimedia.org"/>
+  <access origin="https://upload.wikimedia.org"/>
+  <access origin="https://thumb.wikimedia.org"/>
+  <access origin="https://pixabay.com"/>
+  <access origin="https://cdn.pixabay.com"/>
+  <access origin="https://science.nasa.gov"/>
+  <access origin="https://assets.science.nasa.gov"/>
+  <access origin="https://apod.nasa.gov"/>
+  <access origin="https://esawebb.org" subdomains="true"/>
+  <access origin="https://esahubble.org" subdomains="true"/>
+  <access origin="https://www.bing.com"/>
   <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
   <tizen:privilege name="http://tizen.org/privilege/application.info"/>
   <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>

@@ -39,6 +39,7 @@ class NU8000Tests(unittest.TestCase):
         self.assertFalse(any(name.startswith('assets/private-fonts/') for name in self.files))
         self.assertNotIn('author-signature.xml', self.files)
         self.assertNotIn('config.json', self.files)
+        self.assertIn(b'"pixabayKey": ""', self.files['daily-config.js'])
         self.assertIn(b'org.tizen.tv-viewer', self.files['device.js'])
         self.assertIn(b'evKhCgZelL.AmazonIgnitionLauncher2', self.files['main.js'])
         self.assertIn(b'org.tizen.menu', self.files['device.js'])

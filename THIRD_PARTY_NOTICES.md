@@ -39,6 +39,34 @@ The fifteen photo pages were individually checked on 20 October 2026. Each displ
 
 Photographers retain their rights. Wallpapers, thumbnails, panel backgrounds and material fields derive from the credited photographs and retain their terms. The Unsplash licence permits copying, modification and distribution subject to its restrictions, including on selling unmodified images and building a competing image service.
 
+## Optional online photographs
+
+Daily pictures downloads to the owner's local cache, not the source repository
+or widget. These images are not covered by CleanFrame's MIT licence. The app
+retains their image-page links, supplied credits and rights labels.
+
+- Wikimedia Commons: individual file licences, limited here to supported CC BY,
+  CC BY-SA, CC0 and public-domain labels. Earth As Art images are discovered via
+  Commons and credited to their recorded author and USGS source. See
+  [USGS Earth As Art](https://www.usgs.gov/centers/eros/earth-art).
+- [ESA/Webb](https://esawebb.org/copyright/) and
+  [ESA/Hubble](https://esahubble.org/copyright/): CC BY 4.0 with complete visible
+  credits. Individual exceptions still apply.
+- [NASA APOD](https://science.nasa.gov/apod/): includes third-party copyrighted
+  photographs. A NASA-hosted image is not automatically public domain. The app
+  shows the original credit and links the individual page.
+- [Pixabay Content License](https://pixabay.com/service/license-summary/) and
+  [API conditions](https://pixabay.com/api/docs/): own key required; contributor
+  and Pixabay attribution displayed; metadata cached for 24 hours.
+- Bing: disabled by default. [Homepage help](https://support.microsoft.com/de-de/bing/explore-the-homepage)
+  describes downloads for eligible images. The unofficial feed and its download
+  flag do not establish a general API or redistribution licence.
+  [Microsoft's terms](https://www.microsoft.com/servicesagreement) and individual
+  image rights still apply; local opt-in is not independent legal clearance.
+
+Do not publish the downloaded cache. A personal widget can contain its owner's
+extractable Pixabay key; public export always injects an empty configuration.
+
 ## Development dependencies and exports
 
 Development dependencies retain the licences in their npm packages. They are not copied into the TV JavaScript runtime.

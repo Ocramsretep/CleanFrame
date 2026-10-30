@@ -44,10 +44,11 @@
     newsreader: { name: 'Newsreader', family: 'Study Newsreader', display: 400, ui: 400, clock: 400 }
   };
   var PRIVATE_FONTS = window.CleanFramePrivateFontIDs || [], fontMetrics = {}, unavailableFonts = {}, widthCache = {}, fontRevision = 0, fontsReady = false;
-  var LOOK_VALUES = { bg: ['dark', 'light', 'photo'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
+  var LOOK_VALUES = { bg: ['dark', 'light', 'photo', 'daily'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
   LOOK_VALUES.highlight = ['standard', 'glow', 'underline', 'tile'];
   var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material', highlight: 'App highlight', dockOpacity: 'Dock opacity' };
   var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
+  VALUE_NAMES.daily = 'Daily pictures';
   VALUE_NAMES.standard = 'Standard'; VALUE_NAMES.glow = 'Glow'; VALUE_NAMES.underline = 'Underline'; VALUE_NAMES.tile = 'Light tile';
   var UTIL = { sources: ['Sources', 'hdmi'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
   var MSG = {
@@ -92,8 +93,9 @@
   }
   function lookOf(c) { return { bg: c.bg, wall: c.wall, layout: c.layout, apps: c.apps, font: c.font, controls: c.controls, focus: c.focus, material: c.material, highlight: c.highlight, dockOpacity: c.dockOpacity }; }
   function cleanOpacity(value) { return typeof value === 'number' && isFinite(value) ? clamp(Math.round(value / 5) * 5, 0, 100) : 100; }
-  function dockOpacityApplies() { return S.c.layout === 'dock' && S.c.bg === 'photo'; }
-  function materialApplies(c) { c = c || S.c; return c.bg === 'photo' && (c.layout === 'dock' || c.focus === 'glass'); }
+  function photographic(c) { return c.bg === 'photo' || c.bg === 'daily'; }
+  function dockOpacityApplies() { return S.c.layout === 'dock' && photographic(S.c); }
+  function materialApplies(c) { c = c || S.c; return photographic(c) && (c.layout === 'dock' || c.focus === 'glass'); }
 
   /* ---------- Helpers ---------- */
   function app(id) { for (var i = 0; i < APPS.length; i++) if (APPS[i].id === id) return APPS[i]; return null; }
@@ -373,7 +375,7 @@
     var saved = load(), initial; S.c = clean(saved); initial = next(S.c.home.slice(), S.c.recent.slice());
     S.stack = [{ id: 'home', f: { zone: 'apps', u: 0 } }];
     S.sel = S.c.lastApp; S.selIdx = S.c.home.indexOf(S.sel);
-    if (saved && initial.mode === 'open') initial.wall = WALLS[(wallIndex(initial.wall) + 1) % WALLS.length].id;
+    if (saved && initial.mode === 'open' && initial.bg === 'photo') initial.wall = WALLS[(wallIndex(initial.wall) + 1) % WALLS.length].id;
     // Keep the old schema keys alongside the builder values for in-place updates.
     try { localStorage.setItem(KEY, JSON.stringify(serialise(initial))); S.c = initial; storageOk = true; } catch (e) { storageOk = false; }
   }
@@ -548,6 +550,18 @@
   V.home = {
     key: function (t, k) {
       var f = t.f, h = S.c.home, U = utils(), x = axes(), i = ensureSel();
+      if (S.c.bg === 'daily') {
+        if (f.zone === 'daily') {
+          if (f.info && (k === 'up' || k === 'down')) { $('dailyDetails').scrollTop += k === 'down' ? 100 : -100; return; }
+          if (k === 'ok') { if (f.d === 1) f.info = !f.info; else window.CleanFrameDaily.skip(); }
+          else if (k === 'right') f.d = 1;
+          else if (k === 'left' && f.d === 1) { f.d = 0; f.info = false; }
+          else if (k === 'down' || k === 'left') { f.zone = 'util'; f.u = S.lastUtil; f.info = false; }
+          else if (k === 'back') { if (f.info) f.info = false; else f.zone = 'apps'; }
+          return;
+        }
+        if (k === 'up' && (f.zone === 'util' && (S.c.layout === 'dock' || f.u === 0) || S.c.layout === 'list' && f.zone === 'apps' && i === 0)) { f.zone = 'daily'; f.d = 0; return; }
+      }
       if (S.c.layout === 'list') { listHomeKey(t, k, i, U); return; }
       if (f.zone === 'util') {
         f.u = clamp(f.u, 0, U.length - 1);
@@ -567,6 +581,7 @@
       else if (k === 'ok') launch(S.sel);
     },
     point: function (t, z, i) {
+      if (z === 'daily' && S.c.bg === 'daily') { t.f.zone = 'daily'; t.f.d = i; this.key(t, 'ok'); return; }
       if (z === 'util') { t.f.zone = 'util'; t.f.u = i; S.lastUtil = i; }
       else if (z === 'app') { t.f.zone = 'apps'; setSel(S.c.home[i]); }
       else if (z === 'empty') t.f.zone = 'apps';
@@ -1027,7 +1042,7 @@
     },
     point: function (t, z, i) { t.f.i = i; this.key(t, 'ok'); }
   };
-  var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', samsung: 'Samsung' };
+  var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', daily: 'Online pictures', samsung: 'Samsung' };
   function choice(axis, value, disabled) {
     if (axis === 'dockOpacity') return { action: 'dock.opacity', label: 'Dock opacity', slider: true, disabled: !!disabled };
     return { action: axis === 'mode' ? 'rotation.' + value : 'choice.' + axis + '.' + value, axis: axis, value: value, disabled: !!disabled,
@@ -1036,10 +1051,21 @@
   function detailSections(t) {
     var flat = S.c.bg !== 'photo', inactive = !materialApplies();
     function options(axis, values, disabled) { return values.map(function (value) { return choice(axis, value, disabled); }); }
+    if (t.group === 'daily') {
+      var daily = window.CleanFrameDaily.view();
+      return [{ id: 'fit', title: 'Picture size', horizontal: true, items: [
+        { action: 'daily.fit.cover', label: 'Fill screen', toggle: daily.options.fit === 'cover' },
+        { action: 'daily.fit.contain', label: 'Whole picture', toggle: daily.options.fit === 'contain' }
+      ] }, { id: 'providers', title: 'Image sources', items: window.CleanFrameDaily.providers.map(function (p) {
+        return { action: 'daily.source.' + p.id, label: p.available === false ? 'Pixabay · build key required' : p.name, toggle: daily.options.sources[p.id], disabled: p.available === false };
+      }) }, { id: 'download', title: '', items: [{ action: 'daily.retry', label: 'Download / retry' }],
+        reason: daily.status || (daily.loading ? 'Downloading pictures… ' : '') + daily.count + ' pictures ready. Themes alternate each day.' }];
+    }
     if (t.group === 'background') return [
-      { id: 'bg', title: 'Background type', items: options('bg', ['photo', 'light', 'dark']) },
+      { id: 'bg', title: 'Background type', items: options('bg', ['photo', 'daily', 'light', 'dark']) },
       { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true, disabled: flat }] },
-      { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name, disabled: flat }], reason: flat ? 'Choose Photo to use wallpaper and rotation.' : '' }
+      { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name, disabled: flat }], reason: flat ? (S.c.bg === 'daily' ? 'Daily pictures change by calendar day.' : 'Choose Photo to use wallpaper and rotation.') : '' },
+      { id: 'online', title: '', items: [{ action: 'background.daily', label: 'Online picture settings', disabled: S.c.bg !== 'daily' }] }
     ];
     if (t.group === 'layout') return [
       { id: 'layout', title: 'Layout', horizontal: true, items: options('layout', ['list', 'dock']) },
@@ -1063,7 +1089,7 @@
     ] }];
   }
   function detailRows(t) {
-    var rows = [[{ action: 'settings.back', label: t.group === 'rotation' ? 'Background' : 'Settings' }]];
+    var rows = [[{ action: 'settings.back', label: (t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings' }]];
     detailSections(t).forEach(function (section) {
       var enabled = section.items.filter(function (item) { return !item.disabled; });
       if (section.columns) { for (var i = 0; i < enabled.length; i += section.columns) rows.push(enabled.slice(i, i + section.columns)); }
@@ -1093,7 +1119,7 @@
     c = next(S.c.home.slice(), S.c.recent.slice()); c.mode = value;
     if (!write(c, 'Wallpaper rotation')) S.lookError = { type: 'save', patch: { mode: value }, row: 'mode', transient: false };
   }
-  function detailBack() { cancelLook(); S.err = null; pop(); }
+  function detailBack() { var daily = top().group === 'daily'; cancelLook(); S.err = null; pop(); if (daily && top().id === 'appearance') top().f.action = 'background.daily'; }
   function detailOk(t, item) {
     var patch = {}, error = S.lookError;
     if (item.action === 'settings.back') { detailBack(); return; }
@@ -1103,7 +1129,13 @@
       if (error && error.patch[error.row] !== undefined) detailFocus(t, choice(error.row, error.patch[error.row]), 0);
       if (error && error.row === 'mode') applyRotation(error.patch.mode);
       else if (error) setLook(error.patch, { row: error.row });
-    } else if (item.axis === 'mode') applyRotation(item.value);
+    } else if (item.action.indexOf('daily.source.') === 0) {
+      var sourceId = item.action.slice(13), dailyView = window.CleanFrameDaily.view();
+      window.CleanFrameDaily.configure(sourceId, !dailyView.options.sources[sourceId]);
+    } else if (item.action.indexOf('daily.fit.') === 0) window.CleanFrameDaily.configure('fit', item.action.slice(10));
+    else if (item.action === 'daily.retry') window.CleanFrameDaily.retry();
+    else if (item.action === 'background.daily') openAppearance('daily');
+    else if (item.axis === 'mode') applyRotation(item.value);
     else if (item.axis) { patch[item.axis] = item.value; setLook(patch, { row: item.axis }); }
     else if (item.action === 'background.wallpaper') openWallpaper();
     else if (item.action === 'background.rotation') openAppearance('rotation');
@@ -1212,12 +1244,13 @@
   function render() {
     var t = top(), sheet = !!V[t.id].sheet, shown = wall(S.shown ? S.shown.wall : S.c.wall), palette = ADAPTIVE_INK[shown.id];
     var adaptive = applyAdaptiveInk(palette), tr = adaptive && palette.tr ? palette.tr.pol : shown.ut.tr, br = adaptive && palette.br ? palette.br.pol : shown.ut.br;
-    stage.className = 'stage bg-' + S.c.bg + ' l-' + S.c.layout + ' v-' + S.variant + ' m-' + (materialApplies() ? S.c.material : 'none') + ' f-' + S.c.focus + ' a-' + S.c.apps + ' u-' + S.c.controls + ' g-' + S.geom + ' tone-' + shown.tone + ' tr-' + tr + ' br-' + br + wallClasses(shown) + inkRungClasses(palette, adaptive) + ' at-' + t.id + ' font-' + homeFont() + (homeFont() !== 'manrope' ? ' font-custom' : '') + (S.fontSwitch ? ' is-font-switch' : '') + (adaptive ? ' has-adaptive-ink adaptive-tl-' + palette.tl.pol : '') + (!adaptive && shown.clockInk ? ' has-clock-ink' : '') + (!adaptive && shown.dockClockInk ? ' has-dock-clock-ink' : '') + (registeredMaterial(shown.id) ? ' registered-material' : '') + (sheet ? ' is-sheet' : '') + (S.reflow ? ' is-reflow' : '');
-    stage.className += ' h-' + S.c.highlight;
+    stage.className = 'stage bg-' + (S.c.bg === 'daily' ? 'photo' : S.c.bg) + ' l-' + S.c.layout + ' v-' + S.variant + ' m-' + (materialApplies() ? S.c.material : 'none') + ' f-' + S.c.focus + ' a-' + S.c.apps + ' u-' + S.c.controls + ' g-' + S.geom + ' tone-' + shown.tone + ' tr-' + tr + ' br-' + br + wallClasses(shown) + inkRungClasses(palette, adaptive) + ' at-' + t.id + ' font-' + homeFont() + (homeFont() !== 'manrope' ? ' font-custom' : '') + (S.fontSwitch ? ' is-font-switch' : '') + (adaptive ? ' has-adaptive-ink adaptive-tl-' + palette.tl.pol : '') + (!adaptive && shown.clockInk ? ' has-clock-ink' : '') + (!adaptive && shown.dockClockInk ? ' has-dock-clock-ink' : '') + (registeredMaterial(shown.id) ? ' registered-material' : '') + (sheet ? ' is-sheet' : '') + (S.reflow ? ' is-reflow' : '');
+    stage.className += ' h-' + S.c.highlight + (S.c.bg === 'daily' ? ' is-daily' : '');
+    renderDaily(t);
     stage.style.setProperty('--dock-opacity', String(S.c.dockOpacity / 100));
-    if (!adaptive && shown.clockInk) stage.style.setProperty('--clock-ink', shown.clockInk);
+    if (!adaptive && S.c.bg !== 'daily' && shown.clockInk) stage.style.setProperty('--clock-ink', shown.clockInk);
     else stage.style.removeProperty('--clock-ink');
-    if (!adaptive && shown.dockClockInk) stage.style.setProperty('--dock-clock-ink', shown.dockClockInk);
+    if (!adaptive && S.c.bg !== 'daily' && shown.dockClockInk) stage.style.setProperty('--dock-clock-ink', shown.dockClockInk);
     else stage.style.removeProperty('--dock-clock-ink');
     applyHomeFont();
     if (!sheet) renderHome(t);
@@ -1225,6 +1258,33 @@
     renderSources(t);
     renderAppearance(t);
     renderFocusStatus(t);
+  }
+
+  function renderDaily(t) {
+    var daily = window.CleanFrameDaily.view(), enabled = S.c.bg === 'daily', image = $('dailyPhoto'), skip = $('dailySkip'), credit = $('dailyCredit');
+    var info = $('dailyInfo'), details = $('dailyDetails'), expanded = enabled && t.id === 'home' && t.f.zone === 'daily' && !!t.f.info;
+    window.CleanFrameDaily.setActive(enabled && !document.hidden, t.id === 'home' && !S.pending && !expanded);
+    image.hidden = !enabled || !daily.url;
+    if (enabled && daily.url && image.getAttribute('src') !== daily.url) image.src = daily.url;
+    image.style.objectFit = daily.options.fit;
+    skip.hidden = !enabled || t.id !== 'home';
+    skip.className = 'daily-skip' + (t.id === 'home' && t.f.zone === 'daily' && t.f.d !== 1 ? ' is-focus' : '');
+    skip.setAttribute('aria-busy', String(daily.loading)); skip.title = daily.status || 'Next picture';
+    var skipLabel = daily.count ? 'Next picture' : daily.loading ? 'Loading…' : 'No next picture';
+    skip.querySelector('span').textContent = skipLabel; skip.setAttribute('aria-label', skipLabel);
+    info.hidden = skip.hidden;
+    info.className = 'daily-info-button' + (t.id === 'home' && t.f.zone === 'daily' && t.f.d === 1 ? ' is-focus' : '');
+    info.setAttribute('aria-expanded', String(expanded)); details.hidden = !expanded;
+    credit.hidden = !enabled;
+    if (enabled && daily.current && daily.url) {
+      stage.className += ' daily-ready';
+      var c = daily.current;
+      var provider = window.CleanFrameDaily.providers.filter(function (p) { return p.id === c.source; })[0];
+      var licenseURL = /^https:\/\/(creativecommons\.org|www\.nasa\.gov|pixabay\.com)\//.test(c.licenseURL || '') ? c.licenseURL : '';
+      var attribution = esc(c.credit) + ' · ' + esc(provider ? provider.name : c.source) + ' · ' + esc(c.license);
+      setHTML(credit, '<a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(c.page) + '">' + esc(c.title) + '</a> · ' + attribution + (daily.options.fit === 'cover' ? ' · Cropped to screen' : ''));
+      setHTML(details, '<h2>' + esc(c.title) + '</h2><p>' + attribution + '</p><p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(c.page) + '">' + esc(c.page) + '</a></p>' + (licenseURL ? '<p><a tabindex="-1" target="_blank" rel="noopener noreferrer" href="' + esc(licenseURL) + '">' + esc(licenseURL) + '</a></p>' : '') + '<p>' + (daily.options.fit === 'cover' ? 'Scaled and cropped to fill the screen.' : 'Whole picture, with borders when needed.') + '</p><p>' + esc(daily.status || daily.count + ' pictures ready.') + '</p><p>Up / Down scrolls. Back closes picture info.</p>');
+    } else { credit.textContent = daily.status || 'Preparing daily pictures… Your saved photo stays visible until a picture is ready.'; details.textContent = credit.textContent; }
   }
 
   function applyHomeFont() {
@@ -1616,14 +1676,14 @@
     appearanceTitle.textContent = DETAIL_NAMES[t.group];
     var at = detailLocation(t), selected = at.item, error = S.lookError, status = '', hint;
     function command(item, inner, cls) {
-      var applied = item.axis && S.c[item.axis] === item.value;
+      var applied = item.toggle !== undefined ? item.toggle : item.axis && S.c[item.axis] === item.value;
       var loading = !!(item.axis && S.pending && S.pending.target[item.axis] === item.value && S.pending.row === item.axis);
       return '<button type="button" tabindex="-1" class="setting-choice' + (cls ? ' ' + cls : '') + (t.f.action === item.action ? ' is-focus' : '') + (item.disabled ? ' is-disabled' : '') + (applied ? ' is-applied' : '') + (loading ? ' is-loading' : '') + '"'
-        + (item.axis ? ' role="radio" aria-checked="' + !!applied + '"' : '') + ' aria-label="' + esc(item.axis && item.value === 'both' ? 'Icons and text' : item.label) + '" aria-disabled="' + !!item.disabled + '" aria-busy="' + loading + '"'
+        + (item.toggle !== undefined ? ' aria-pressed="' + !!item.toggle + '"' : '') + (item.axis ? ' role="radio" aria-checked="' + !!applied + '"' : '') + ' aria-label="' + esc(item.axis && item.value === 'both' ? 'Icons and text' : item.label) + '" aria-disabled="' + !!item.disabled + '" aria-busy="' + loading + '"'
         + ' data-z="detail" data-i="0" data-id="' + item.action + '" data-action="' + item.action + '">' + inner
-        + (item.axis ? '<span class="setting-tick" aria-hidden="true">' + (applied ? icon('check') : '') + '</span>' : '') + '</button>';
+        + (item.axis || item.toggle !== undefined ? '<span class="setting-tick" aria-hidden="true">' + (applied ? icon('check') : '') + '</span>' : '') + '</button>';
     }
-    setHTML(appearanceBack, command({ action: 'settings.back', label: t.group === 'rotation' ? 'Background' : 'Settings' }, icon('left') + '<span>' + (t.group === 'rotation' ? 'Background' : 'Settings') + '</span>', 'setting-back'));
+    setHTML(appearanceBack, command({ action: 'settings.back', label: (t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings' }, icon('left') + '<span>' + ((t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings') + '</span>', 'setting-back'));
     setHTML(appearanceRows, detailSections(t).map(function (section) {
       return '<section class="setting-section' + (section.horizontal ? ' is-horizontal' : '') + (section.columns ? ' is-grid' : '') + ' section-' + section.id + '">'
         + (section.title ? '<h3 class="setting-label" id="setting-' + section.id + '">' + section.title + '</h3>' : '')
@@ -1641,7 +1701,7 @@
             : '<img class="setting-swatch" src="' + WP + S.c.wall + '-thumb.jpg" alt="">';
           body += '<span class="setting-copy"><span class="setting-name">' + esc(item.label) + '</span>'
             + (item.description ? '<span class="setting-description">' + esc(item.description) + '</span>' : '') + '</span>';
-          if (!item.axis) body += icon('right', 'setting-forward');
+          if (!item.axis && item.toggle === undefined) body += icon('right', 'setting-forward');
           return command(item, body, item.description ? 'has-description' : '');
         }).join('') + '</div>'
         + (section.reason ? '<p class="setting-reason">' + esc(section.reason) + '</p>' : '') + '</section>';
@@ -1652,7 +1712,8 @@
         + command({ action: 'settings.retry', label: 'Try again' }, '<span>Try again</span>', 'setting-retry');
     }
     setHTML(appearanceStatus, status);
-    hint = selected.disabled ? '' : selected.action === 'settings.back' ? 'Return to ' + (t.group === 'rotation' ? 'Background' : 'Settings') : selected.action === 'settings.retry' ? 'Retry this change' : selected.axis ? 'Apply selected setting' : selected.action === 'background.wallpaper' ? 'Choose a wallpaper' : selected.action === 'background.rotation' ? 'Choose a rotation interval' : 'Open on the TV';
+    hint = selected.disabled ? '' : selected.action === 'settings.back' ? 'Return to ' + ((t.group === 'rotation' || t.group === 'daily') ? 'Background' : 'Settings') : selected.action === 'settings.retry' ? 'Retry this change' : selected.axis ? 'Apply selected setting' : selected.action === 'background.wallpaper' ? 'Choose a wallpaper' : selected.action === 'background.rotation' ? 'Choose a rotation interval' : 'Open on the TV';
+    if (t.group === 'daily') hint = selected.action === 'settings.back' ? 'Return to Background' : selected.action === 'daily.retry' ? 'Retry downloads' : 'Apply setting';
     if (selected.slider) hint = 'Apply selected opacity';
     setHTML(appearanceDesc, hint ? '<span class="remote-key">OK</span><span>' + esc(hint) + '</span>' : '');
   }
@@ -2006,7 +2067,7 @@
       if (document.hidden) { finish(loadedBundle); return; }
       window.requestAnimationFrame(function () { if (!failed && token === wallToken) finish(loadedBundle); });
     }
-    needs = target.bg === 'photo' && S.bundleKey !== bundleKey(target) && (!S.shown || S.shown.bg !== 'photo' || target.wall !== S.c.wall || materialApplies(target));
+    needs = photographic(target) && S.bundleKey !== bundleKey(target) && (!S.shown || S.shown.bg !== 'photo' || target.wall !== S.c.wall || materialApplies(target));
     needsFont = !fontMetrics[target.font]; imageDone = !needs; fontDone = !needsFont;
     if (!needs && !needsFont) { finish(null); return; }
     S.pending = { patch: changes, target: target, row: opts.row || (needsFont ? 'font' : S.appearanceFocus), transient: !!opts.transient, preview: false };
@@ -2037,8 +2098,8 @@
   }
   function restoreLook() {
     cancelLook(); S.previewBundle = null;
-    if (S.c.bg === 'photo' && committedBundle && committedBundle.key === bundleKey(S.c)) installBundle(committedBundle, S.c);
-    else if (S.c.bg !== 'photo' || S.bundleKey === bundleKey(S.c)) installBundle(null, S.c);
+    if (photographic(S.c) && committedBundle && committedBundle.key === bundleKey(S.c)) installBundle(committedBundle, S.c);
+    else if (!photographic(S.c) || S.bundleKey === bundleKey(S.c)) installBundle(null, S.c);
     else setLook({}, { transient: true });
   }
 
@@ -2065,6 +2126,7 @@
     clearTimeout(clockTimer);
     if (document.hidden) return;
     if (top().id === 'home' || isSettingsDetail(top())) renderCaption(top(), homeState(top()));
+    window.CleanFrameDaily.tick();
     clockTimer = setTimeout(updateClock, 60000 - (Date.now() % 60000) + 30);
   }
   function focusStage() { try { stage.focus({ preventScroll: true }); } catch (e) { stage.focus(); } }
@@ -2163,10 +2225,10 @@
   window.addEventListener('focus', function () { release(); focusStage(); after(); updateClock(); });
   document.addEventListener('visibilitychange', function () {
     heldKeys = {};
-    if (document.hidden) { pauseRotation(); clearTimeout(clockTimer); }
+    if (document.hidden) { window.CleanFrameDaily.setActive(false, false); pauseRotation(); clearTimeout(clockTimer); }
     else {
       release();
-      if (S.c.bg === 'photo' && !S.pending && !S.previewBundle && (!committedBundle || S.bundleKey !== bundleKey(S.c))) setLook({}, { transient: true, startup: true });
+      if (photographic(S.c) && !S.pending && !S.previewBundle && (!committedBundle || S.bundleKey !== bundleKey(S.c))) setLook({}, { transient: true, startup: true });
       after(); updateClock(); focusStage();
     }
   });
@@ -2207,5 +2269,6 @@
   cueL.innerHTML = icon('left'); cueR.innerHTML = icon('right');
   initialise();
   setLook({}, { transient: true, startup: true });
+  window.CleanFrameDaily.onChange(function () { render(); });
   norm(); render(); fit(); focusStage(); updateClock(); syncRotation();
 })();

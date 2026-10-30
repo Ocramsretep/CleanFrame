@@ -10,6 +10,7 @@ import re
 import zipfile
 from local_config import override_identity
 from private_files import check_widget, private_path, secret_content
+from online_assets import online_overlay
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_FONT_IDS = ['geist', 'newsreader']
@@ -70,6 +71,7 @@ def write_widget_archive(output, root=ROOT, include_private=True, identity=None)
     """Create an unsigned archive without reading signing or device settings."""
     app = root / 'app'
     overlay = font_overlay(root, include_private)
+    overlay.update(online_overlay(root, include_private))
     if identity is not None:
         overlay['config.xml'] = override_identity((app / 'config.xml').read_bytes(), identity)
     with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED, allowZip64=False) as package:
