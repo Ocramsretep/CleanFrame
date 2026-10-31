@@ -2,6 +2,9 @@
 
 `app/` is the current packaged UI. Read `docs/development.md` and `docs/interaction-behaviour.md` before app changes.
 For a new contributor or a separate TV installation, also read `docs/for-agents.md`.
+Keep `README.md`'s fork feature overview and screenshots current whenever user-visible features or confirmed TV behaviour
+change. Say which results were observed on the TV and which images or checks come from the browser preview; update the
+linked detailed docs at the same time.
 
 Use simple HTML, CSS and ES5-compatible JavaScript for the TV. Node tooling can use modern JavaScript. Preserve remote
 focus/navigation, preference migrations and cached rendering. Read `docs/assets.md` before changing images, glass
