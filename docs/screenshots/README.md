@@ -1,5 +1,15 @@
 # Browser evidence
 
+`weather-dock-720.png` was captured on 31 October 2026 with the weather section
+of the public-font browser checks at 1280 × 720. It shows the weather chip beside
+the clock and the open forecast panel in Dock layout, using bundled public fonts,
+wallpaper and icons. Berlin location and forecast responses are synthetic test
+fixtures, not live weather; installed apps are also synthetic. All 21 checks in
+this targeted run passed, including forecast geometry in Dock and List at
+1920 × 1080 and 1280 × 720. This is a desktop Chromium capture, not a TV result.
+To regenerate, run `CLEANFRAME_PUBLIC_FONTS=1 CHECK_SECTION=weather npm run check:browser`
+and copy `.local/qa/weather-dock-1280.png` to `docs/screenshots/weather-dock-720.png`.
+
 `app-icons-720.png` was captured on 30 October 2026 with the public-font browser
 checks at 1280 × 720. It shows Settings > App icons with the framed CleanFrame F
 selected as a test override for Netflix. The checks also cover 1920 × 1080,
