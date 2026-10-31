@@ -1,0 +1,14 @@
+{
+  "package_id": "YOUR_SDK_GENERATED_SERVICE_PACKAGE",
+  "service_app_id": "YOUR_SDK_GENERATED_SERVICE_APP_ID",
+  "target_app_id": "YOUR_EXISTING_CLEANFRAME_APP_ID",
+  "package_version": "1.0.4",
+  "sdk_path": "PATH_TO_TIZEN_SDK",
+  "signing_profile": "YOUR_EXISTING_PARTNER_PROFILE",
+  "references_dir": "PATH_TO_LOCAL_TIZEN4_DOTNET_REFERENCE_DLLS",
+  "tizen_system_dll": "PATH_TO_LOCAL_TIZEN4_SYSTEM_DLL",
+  "icon_png": "PATH_TO_LOCAL_ICON_PNG",
+  "receiver_host": "YOUR_OPTIONAL_DIAGNOSTIC_PC_IP",
+  "receiver_port": 47965,
+  "receiver_token": "YOUR_PRIVATE_RANDOM_DIAGNOSTIC_TOKEN"
+}

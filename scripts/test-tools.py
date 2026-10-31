@@ -237,7 +237,7 @@ with zipfile.ZipFile(target, 'a') as archive:
             self.assertEqual(manifest_identity(archive.read('config.xml')), identity)
 
     def test_public_check_reads_index_and_history(self):
-        for name in ['scripts/check-public.py', 'scripts/font_assets.py', 'scripts/local_config.py', 'scripts/private_files.py',
+        for name in ['scripts/check-public.py', 'scripts/font_assets.py', 'scripts/local_config.py', 'scripts/online_assets.py', 'scripts/private_files.py',
                      'app/assets/fonts/SOURCES.json', 'app/assets/manrope.woff2', 'app/assets/manrope-OFL.txt',
                      'app/assets/fonts/geist/OFL.txt', 'app/assets/fonts/newsreader/OFL.txt']:
             target = self.root / name

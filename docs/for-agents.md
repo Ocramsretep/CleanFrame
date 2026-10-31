@@ -35,6 +35,14 @@ The setup guide supplies the stage-by-stage instructions and completion criteria
 
 ## Native Home and startup
 
+For this fork's **UE49NU8079 startup service**, start with
+[`native-wake.md`](native-wake.md) and
+[`scripts/native-wake/README.md`](../scripts/native-wake/README.md). The
+working boot/standby service and its offline rebuild are separate from the
+upstream LS03D native Home assignment below. Source is tracked; private
+identities, certificates, Tizen 4 references, signed TPKs and exact recovery
+artifacts remain ignored. Do not infer Home remapping from successful startup.
+
 This is an optional, undocumented firmware-specific experiment. Read the native section of the setup guide and `scripts/native-home/README.md`. Check the actual model, firmware, API capability, user permissions and original values. Query/inspect also stages temporary files, so it is a device operation. The helper has hard-coded guards for the reference TV and requires private compiled output and a recovery baseline.
 
 Prepare exact-value apply and restore commands for the owner's own app ID before requesting authority to execute them. Test rollback, confirm the physical Home destination and keep unknown power-on/Art Mode behaviour marked unknown. The guide's native-stage prompt is the separate authorisation point. A successful launch callback or settings readback is insufficient proof.

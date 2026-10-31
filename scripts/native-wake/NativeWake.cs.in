@@ -1,0 +1,105 @@
+using System;
+using System.IO;
+using System.Text;
+using System.Diagnostics;
+using System.Threading;
+using System.Net;
+using System.Net.Sockets;
+using Tizen.Applications;
+using Tizen.System;
+
+// Launch once on boot and on each observed standby-to-normal display transition.
+sealed class NativeProbe : ServiceApplication
+{
+    static readonly Stopwatch clock = Stopwatch.StartNew();
+    static readonly string run = Guid.NewGuid().ToString("N");
+    static readonly string mainUtc = DateTime.UtcNow.ToString("o");
+    static readonly object gate = new object();
+    static string path;
+    static string memory = "";
+    bool attempted;
+    bool sawOff;
+    void DisplayChanged(object sender, DisplayStateChangedEventArgs e)
+    {
+        string state = e.State.ToString();
+        Log("display_state", state);
+        if (state == "-1") { sawOff = true; Log("wake_armed", "display -1"); Export(); return; }
+        if (state == "Normal" && sawOff) {
+            sawOff = false;
+            Log("wake_launch_begin", "CleanFrame");
+            try { LaunchCleanFrame(); Log("wake_launch_returned", "No synchronous exception; visibility not verified"); }
+            catch (Exception error) { Log("wake_launch_error", error.GetType().Name + ": " + error.Message); }
+        }
+        Export();
+    }
+    static string Q(string s) { return "\"" + (s ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t") + "\""; }
+    static string ReadSmall(string p)
+    {
+        try { string s = File.ReadAllText(p).Trim(); return s.Length > 100 ? s.Substring(0, 100) : s; }
+        catch (Exception e) { return "unavailable:" + e.GetType().Name; }
+    }
+    static void Log(string name, string detail)
+    {
+        try {
+            lock (gate) {
+                string line = "{\"run\":" + Q(run) + ",\"utc\":" + Q(DateTime.UtcNow.ToString("o")) + ",\"ms\":" + clock.ElapsedMilliseconds + ",\"event\":" + Q(name) + ",\"detail\":" + Q(detail) + "}\n";
+                memory += line;
+                if (memory.Length > 44000) { int cut = memory.IndexOf('\n', memory.Length / 2); memory = cut < 0 ? line : memory.Substring(cut + 1); }
+                if (path != null) {
+                    if (File.Exists(path) && new FileInfo(path).Length > 36000) {
+                        string prior = File.ReadAllText(path);
+                        int start = prior.IndexOf('\n', prior.Length / 2);
+                        File.WriteAllText(path, start < 0 ? "" : prior.Substring(start + 1));
+                    }
+                    File.AppendAllText(path, line);
+                }
+            }
+        } catch (Exception e) { Console.WriteLine("CF_LOG_WRITE " + e.GetType().Name); }
+    }
+    static void Export()
+    {
+        // Best-effort datagram only; never wait for the PC or retry the launch.
+        try {
+            string journal;
+            lock (gate) { journal = path != null && File.Exists(path) ? File.ReadAllText(path) : memory; }
+            if (journal.Length > 44000) { int start = journal.IndexOf('\n', journal.Length - 44000); journal = start < 0 ? memory : journal.Substring(start + 1); }
+            byte[] data = Encoding.UTF8.GetBytes("CFBOOT1 __RECEIVER_TOKEN__\n" + journal);
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)) {
+                socket.Blocking = false;
+                socket.SendTo(data, new IPEndPoint(IPAddress.Parse("__RECEIVER_HOST__"), __RECEIVER_PORT__));
+            }
+        } catch (Exception e) { Log("export_error", e.GetType().Name); }
+    }
+    protected override void OnCreate()
+    {
+        base.OnCreate();
+        try { path = Path.Combine(Application.Current.DirectoryInfo.Data, "startup-diagnostic.jsonl"); }
+        catch (Exception e) { Log("data_path_error", e.GetType().Name); }
+        Log("create", "main_utc=" + mainUtc + ";uptime=" + ReadSmall("/proc/uptime") + ";boot_id=" + ReadSmall("/proc/sys/kernel/random/boot_id"));
+        try { Display.StateChanged += DisplayChanged; Log("display_subscribed", "ok"); } catch (Exception error) { Log("display_subscribe_error", error.GetType().Name + ": " + error.Message); }
+
+    }
+    static void LaunchCleanFrame()
+    {
+        var request = new AppControl();
+        request.ApplicationId = "__TARGET_APP__";
+        request.Operation = "http://tizen.org/appcontrol/operation/default";
+        AppControl.SendLaunchRequest(request);
+    }
+    protected override void OnAppControlReceived(AppControlReceivedEventArgs e)
+    {
+        base.OnAppControlReceived(e);
+        Log("app_control", "received");
+        if (attempted) { Log("duplicate_ignored", ""); return; }
+        attempted = true;
+        try {
+            Log("launch_begin", "CleanFrame");
+            LaunchCleanFrame();
+            Log("launch_returned", "No synchronous exception; visibility not verified");
+        } catch (Exception error) { Log("launch_error", error.GetType().Name + ": " + error.Message); }
+        finally {
+            Log("launch_attempt_done", "resident for standby wake"); Export();
+        }
+    }
+    static void Main(string[] args) { new NativeProbe().Run(args); }
+}
