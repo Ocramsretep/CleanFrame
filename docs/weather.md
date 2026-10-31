@@ -1,5 +1,9 @@
 # Weather widget
 
+![Public-font browser preview of the weather widget and open forecast panel in Dock layout](screenshots/weather-dock-720.png)
+
+*The widget beside the clock opens a forecast with four three-hour periods and the following two days. This 1280 × 720 Chromium capture uses the bundled public fonts and synthetic Berlin weather data; it is not a TV capture or a live forecast. See [screenshot provenance](screenshots/README.md).*
+
 Weather is optional and off until the owner chooses a location in Settings → Widgets. No device location permission is requested. Searching sends the typed city or postal code to the [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api). Selecting a result stores its name and coordinates locally, enables weather, and requests the [Open-Meteo Forecast API](https://open-meteo.com/en/docs).
 
 In the location sheet, Left/Right moves between the text field and Search. OK on the field hands Enter to the TV's on-screen keyboard; its Done key or the separate Search button starts the lookup. Back leaves the sheet. The Search button uses the same focused pill treatment as other Settings buttons.
