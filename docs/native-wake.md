@@ -1,6 +1,6 @@
 # CleanFrame startup on this NU8000
 
-**Current confirmed state (31 October 2026):** This fork's UE49NU8079 has a
+**Current confirmed state (through 1 November 2026):** This fork's UE49NU8079 has a
 separate Partner-signed normal `.NET` service, version `1.0.4`, installed via
 Samsung's `vd_appinstall`. It starts CleanFrame on a real system boot. While
 resident, it also starts CleanFrame after the observed display transition
@@ -16,6 +16,11 @@ service journal showed one wake launch request for each tested standby cycle.
 An app-ID inventory after the full restart matched the pre-update list. Public
 developer device permission was restored. Longer retention and firmware-update
 survival remain untested.
+
+After the 1 November web-widget update for the Online pictures preview, the
+owner performed another full Samsung-logo restart. CleanFrame again started
+automatically, with the online image staying visually steady. The native
+startup service package was not changed for this check.
 
 For a new coding agent on this workstation:
 

@@ -97,6 +97,10 @@ try {
   });
   await page.evaluate(() => ShoreQA.look({ bg: 'daily' })); await ready();
   await page.waitForFunction(() => CleanFrameDaily.view().current && CleanFrameDaily.view().count >= 5);
+  await page.waitForFunction(() => {
+    const preview = JSON.parse(localStorage.getItem('cleanframe.daily.preview.v1') || 'null');
+    return preview && preview.id === CleanFrameDaily.view().current.id && /^data:image\/jpeg;base64,/.test(preview.url);
+  });
   assert.equal(await page.locator('#dailySkip').isVisible(), false, 'Skip is inside Picture info');
   assert.ok(!(await page.evaluate(() => window.__dailyCalls)).includes('bing'));
   assert.ok(!await page.evaluate(() => CleanFrameDaily.providers.some(p => p.id === 'earth')));
@@ -192,7 +196,16 @@ try {
   assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'background.daily');
   await page.evaluate(() => ShoreQA.scene('home'));
   failNetwork = true;
+  await page.waitForFunction(() => {
+    const preview = JSON.parse(localStorage.getItem('cleanframe.daily.preview.v1') || 'null');
+    return preview && preview.id === CleanFrameDaily.view().current.id;
+  });
+  await context.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+    window.__startupDailySrc = document.getElementById('dailyPhoto').getAttribute('src');
+  }));
   await page.reload(); await ready();
+  assert.match(await page.evaluate(() => window.__startupDailySrc), /^data:image\/jpeg;base64,/,
+    'The saved online preview is attached before the asynchronous image cache opens');
   await page.waitForFunction(() => CleanFrameDaily.view().url);
   assert.equal((await state()).current, skippedTo, 'Current blob and date survive an offline reload');
   assert.equal((await state()).options.fit, 'contain');

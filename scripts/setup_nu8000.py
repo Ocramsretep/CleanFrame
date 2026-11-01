@@ -14,6 +14,7 @@ import sys
 import time
 import urllib.request
 import zipfile
+import xml.etree.ElementTree as ET
 
 from private_files import check_signed_widget
 from prepare_nu8000 import build as build_widget
@@ -29,10 +30,11 @@ WAKE_CONFIG = LOCAL / 'native-wake.json'
 APP_CONFIG = LOCAL / 'nu8000.json'
 PERMIT = LOCAL / 'partner-certificate-test/permit-recovery/change-permit.py'
 SETUP_STATE = LOCAL / 'setup-nu8000-state.json'
+SETUP_CONFIG = LOCAL / 'setup-nu8000.json'
 LOGS = LOCAL / 'setup-nu8000-logs'
 
-DEVICE_ACTIONS = {'install-app', 'launch-app', 'install-startup', 'assign-home',
-                  'verify-home', 'restore-home'}
+DEVICE_ACTIONS = {'install-app', 'update-app', 'restore-app', 'launch-app',
+                  'install-startup', 'assign-home', 'verify-home', 'restore-home'}
 
 
 def read_json(path):
@@ -48,6 +50,30 @@ def checked_package(path, expected_hash):
     if digest(package) != expected_hash:
         raise ValueError('Signed package hash differs from the private record')
     return package
+
+
+def signing_certs(widget):
+    with zipfile.ZipFile(widget) as archive:
+        certificates = []
+        for name in ('author-signature.xml', 'signature1.xml'):
+            xml = ET.fromstring(archive.read(name))
+            certificates.append(tuple(''.join(c.text.split()) for c in
+                                      xml.findall('.//{http://www.w3.org/2000/09/xmldsig#}X509Certificate')
+                                      if c.text))
+        return tuple(certificates)
+
+
+def previous_app(app):
+    signing = read_json(SETUP_CONFIG)
+    if (not isinstance(signing.get('existing_app_widget'), str)
+            or not re.fullmatch(r'[0-9a-f]{64}', str(signing.get('existing_app_sha256')))):
+        raise ValueError('Set the exact previous signed widget and SHA-256 in ignored .local/setup-nu8000.json')
+    previous = checked_package(signing['existing_app_widget'], signing['existing_app_sha256'])
+    check_signed_widget(previous, {'package_id': app['package_id'], 'app_id': app['app_id']})
+    certs = signing_certs(previous)
+    if not certs[0] or not certs[1]:
+        raise ValueError('Previous app signing certificates are missing')
+    return previous
 
 
 def local_settings():
@@ -138,22 +164,54 @@ def install_new(sdb, serial, app_id, package, existing, label):
     print(label + ' installed; Public device permission restored. Confirm visible TV behavior.')
 
 
-def build_app(app, wake, cli, online_keys):
+def build_app(app, cli, online_keys):
+    signing = read_json(SETUP_CONFIG)
+    profile = signing.get('app_signing_profile')
+    if not isinstance(profile, str) or not re.fullmatch(r'[A-Za-z0-9_. -]{1,80}', profile):
+        raise ValueError('Set an existing app_signing_profile in ignored .local/setup-nu8000.json')
     report = build_widget(APP_CONFIG, include_online_keys=online_keys)
     signed_dir = Path(report['stage']).parent / 'signed'
     signed_dir.mkdir()
-    command([cli, 'package', '-t', 'wgt', '-s', wake['signing_profile'],
+    command([cli, 'package', '-t', 'wgt', '-s', profile,
              '-o', signed_dir, '--', report['stage']], 'sign-app', 120)
     candidates = list(signed_dir.glob('*.wgt'))
     if len(candidates) != 1:
         raise RuntimeError('Expected exactly one freshly signed widget')
     signed = candidates[0]
     check_signed_widget(signed, {'package_id': app['package_id'], 'app_id': app['app_id']})
+    with zipfile.ZipFile(signed) as signed_archive, zipfile.ZipFile(report['widget']) as prepared:
+        for name in prepared.namelist():
+            if signed_archive.read(name) != prepared.read(name):
+                raise ValueError('Signed widget payload differs from the prepared build')
+    if signing.get('existing_app_widget'):
+        if signing_certs(signed) != signing_certs(previous_app(app)):
+            raise ValueError('App signing certificates differ from the existing installed build')
     state = read_json(SETUP_STATE) if SETUP_STATE.exists() else {}
     state['app'] = {'package': str(signed), 'sha256': digest(signed),
                     'app_id': app['app_id'], 'package_id': app['package_id']}
     save_state(state)
     print('Signed NU8000 widget built and validated under .local/. No TV change.')
+
+
+def replace_app(sdb, serial, app, package, label):
+    before = inventory(sdb, serial)
+    if app['app_id'] not in before:
+        raise ValueError('Existing CleanFrame installation is missing')
+    if not HOME_STATE.exists() or read_json(HOME_STATE).get('phase') != 'both':
+        raise ValueError('Expected active Home recovery baseline is missing')
+    run_home('verify')
+    remote = '/home/owner/share/tmp/sdk_tools/cf-' + label + '-' + str(time.time_ns()) + '.wgt'
+    pushed = command([sdb, '-s', serial, 'push', package, remote], 'push-' + label, 60)
+    if '1 file(s) pushed' not in pushed or 'failed' in pushed.lower():
+        raise RuntimeError('Widget transfer was not acknowledged')
+    result = command([sdb, '-s', serial, 'shell', '0', 'vd_appinstall', app['app_id'], remote],
+                     'install-' + label, 120)
+    if 'install completed' not in result.lower() or 'install failed' in result.lower():
+        raise RuntimeError('TV did not acknowledge the app update; inspect before retrying')
+    if inventory(sdb, serial) != before:
+        raise RuntimeError('App inventory changed during update; inspect before retrying')
+    run_home('verify')
+    print('App update and Home database verified. Confirm CleanFrame and physical Home on the TV.')
 
 
 def run_home(phase):
@@ -163,7 +221,7 @@ def run_home(phase):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['plan', 'build-app', 'build-startup',
-                        'install-app', 'launch-app', 'install-startup', 'assign-home',
+                        'install-app', 'update-app', 'restore-app', 'launch-app', 'install-startup', 'assign-home',
                         'verify-home', 'restore-home'])
     parser.add_argument('--apply', action='store_true', help='Required for every TV operation')
     parser.add_argument('--with-online-keys', action='store_true',
@@ -178,13 +236,13 @@ def main():
         parser.error('--with-online-keys applies only to build-app')
     app, wake, installed_wake, signed_wake, serial, sdb, cli = local_settings()
     if args.action == 'plan':
-        print('Reference UE49NU8079 workflow: build-app, build-startup, install-app, launch-app, '
+        print('Reference UE49NU8079 workflow: build-app, build-startup, install-app/update-app, launch-app, '
               'install-startup, assign-home, verify-home. Device steps require --apply. '
-              'restore-home uses the exact private baseline. Existing packages are not replaced.')
+              'restore-home uses the exact private baseline. update-app/restore-app require the exact previous widget.')
         print('Home assignment state: ' + ('present' if HOME_STATE.exists() else 'absent'))
         return
     if args.action == 'build-app':
-        build_app(app, wake, cli, args.with_online_keys)
+        build_app(app, cli, args.with_online_keys)
         return
     if args.action == 'build-startup':
         command([sys.executable, ROOT / 'scripts/native-wake/build.py'], 'build-startup', 240)
@@ -202,6 +260,25 @@ def main():
         package = checked_package(item['package'], item['sha256'])
         check_signed_widget(package, {'package_id': app['package_id'], 'app_id': app['app_id']})
         install_new(sdb, serial, app['app_id'], package, set(), 'CleanFrame')
+    elif args.action in ('update-app', 'restore-app'):
+        old = previous_app(app)
+        if args.action == 'restore-app':
+            package = old
+        else:
+            item = read_json(SETUP_STATE)['app']
+            if item['app_id'] != app['app_id'] or item['package_id'] != app['package_id']:
+                raise ValueError('Built app identity differs from the current installation')
+            package = checked_package(item['package'], item['sha256'])
+            check_signed_widget(package, {'package_id': app['package_id'], 'app_id': app['app_id']})
+            if signing_certs(package) != signing_certs(old):
+                raise ValueError('App signing certificates differ from the previous installed widget')
+        replace_app(sdb, serial, app, package, args.action)
+        if SETUP_STATE.exists():
+            state = read_json(SETUP_STATE)
+            if 'app' in state:
+                state['app']['device_installed'] = args.action == 'update-app'
+                state['app']['device_checked_at'] = time.strftime('%Y-%m-%dT%H:%M:%S%z')
+                save_state(state)
     elif args.action == 'launch-app':
         if app['app_id'] not in inventory(sdb, serial):
             raise ValueError('CleanFrame is not installed')

@@ -45,6 +45,25 @@ class Nu8000SetupTests(unittest.TestCase):
                                                  Path('signed.wgt'), set(), 'CleanFrame')
         self.assertEqual(calls[-1], 'permit-public')
 
+    def test_update_verifies_home_before_and_after_same_inventory(self):
+        calls = []
+
+        def fake_command(args, label, timeout=90):
+            calls.append(label)
+            return {'push-update-app': '1 file(s) pushed',
+                    'install-update-app': 'install completed'}.get(label, '')
+
+        with patch.object(setup_nu8000, 'inventory', return_value={'Example.App'}):
+            with patch.object(setup_nu8000, 'HOME_STATE') as state:
+                state.exists.return_value = True
+                with patch.object(setup_nu8000, 'read_json', return_value={'phase': 'both'}):
+                    with patch.object(setup_nu8000, 'run_home', side_effect=lambda phase: calls.append('home-' + phase)):
+                        with patch.object(setup_nu8000, 'command', side_effect=fake_command):
+                            with contextlib.redirect_stdout(io.StringIO()):
+                                setup_nu8000.replace_app('sdb', 'tv:26101',
+                                                         {'app_id': 'Example.App'}, Path('signed.wgt'), 'update-app')
+        self.assertEqual(calls, ['home-verify', 'push-update-app', 'install-update-app', 'home-verify'])
+
 
 if __name__ == '__main__':
     unittest.main()

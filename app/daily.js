@@ -1,8 +1,9 @@
 /* Bounded offline image queue. No image data is kept in preferences or the widget. */
 (function () {
   'use strict';
-  var P = window.CleanFrameDailyProviders, OPTIONS = 'cleanframe.daily.options.v1';
+  var P = window.CleanFrameDailyProviders, OPTIONS = 'cleanframe.daily.options.v1', PREVIEW = 'cleanframe.daily.preview.v1';
   var LIMIT = 10, MAX_IMAGE = 8 * 1024 * 1024, MAX_TOTAL = 32 * 1024 * 1024;
+  var MAX_PREVIEW = 250000;
   function day() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
   function defaults() { var o = { fit: 'cover', sources: {} }; P.list.forEach(function (p) { o.sources[p.id] = !p.optIn && p.available !== false; }); return o; }
   function options() {
@@ -12,10 +13,19 @@
     if (saved && saved.fit === 'contain') o.fit = 'contain';
     return o;
   }
+  function savedPreview() {
+    try {
+      var value = JSON.parse(localStorage.getItem(PREVIEW));
+      if (value && typeof value.id === 'string' && typeof value.url === 'string' &&
+          value.url.length <= MAX_PREVIEW && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(value.url)) return value;
+    } catch (e) {}
+    return null;
+  }
   var opt = options(), state = { queue: [], current: null, date: '', history: [], cursors: {}, theme: '', source: '' };
   var cleanupPending = false;
   var db = null, opened = false, opening = false, active = false, canAdvance = false, filling = false, saving = false, advancing = false;
-  var generation = 0, xhrs = [], timer = 0, retryAt = 0, displayURL = '', displayImage = null, status = '', errors = {}, listener = function () {};
+  var preview = savedPreview();
+  var generation = 0, xhrs = [], timer = 0, previewTimer = 0, retryAt = 0, displayURL = preview ? preview.url : '', displayImage = null, status = '', errors = {}, listener = function () {};
   function changed() { listener(); }
   function valid(item) { return item && typeof item.id === 'string' && P.list.some(function (p) { return item.source === p.id; }) && P.safeURL(item.url) && P.safeURL(item.page) && item.blob instanceof window.Blob && item.blob.size <= MAX_IMAGE; }
   function clean(data) {
@@ -57,11 +67,33 @@
       done(result);
     });
   }
+  function rememberPreview(result) {
+    var item = state.current;
+    clearTimeout(previewTimer);
+    if (!item || preview && preview.id === item.id) return;
+    previewTimer = setTimeout(function () {
+      if (state.current !== item || displayURL !== result.url) return;
+      try {
+        var image = result.image, canvas = document.createElement('canvas');
+        var scale = Math.min(1, 960 / Math.max(image.naturalWidth, image.naturalHeight));
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        var context = canvas.getContext('2d');
+        context.fillStyle = '#000'; context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        var url = canvas.toDataURL('image/jpeg', .68);
+        if (url.length > MAX_PREVIEW) return;
+        localStorage.setItem(PREVIEW, JSON.stringify({ id: item.id, url: url }));
+        preview = { id: item.id, url: url };
+      } catch (e) { /* A full-size cached image still works without a preview. */ }
+    }, 1200);
+  }
   function install(result) {
     var old = displayURL;
     displayURL = result.url; displayImage = result.image;
     changed();
-    if (old) window.URL.revokeObjectURL(old);
+    if (old && old.indexOf('blob:') === 0) window.URL.revokeObjectURL(old);
+    rememberPreview(result);
   }
   function open() {
     if (opening || opened) return;

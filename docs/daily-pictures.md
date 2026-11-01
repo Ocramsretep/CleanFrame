@@ -9,7 +9,12 @@ selects one new picture per day, including after standby or an offline restart.
 A change waits while a panel or picture info is open. Downloads run only while
 the app is running and visible; they do not wake a powered-off TV. Without a
 replacement the previous online picture stays. Before the first picture is ready,
-Home uses a dark background instead of briefly showing a bundled local photo.
+Home uses a dark background instead of briefly showing a bundled local photo. The owner
+confirmed this behavior after the in-place update on the UE49NU8079.
+On later starts, a small saved preview of the last online image appears while
+IndexedDB restores the full image. The owner confirmed a steady image after Home return and a full TV restart
+on the UE49NU8079. If no preview exists or it
+cannot be saved, the dark first-use background remains the fallback.
 
 ## Sources
 
@@ -71,7 +76,10 @@ image symbol until the first download is ready.
 ## Storage and networking
 
 `cleanframe.daily.options.v1` stores source switches and fit in localStorage;
-`cleanframe.pixabay.metadata.v1` stores metadata without the API key. IndexedDB
+`cleanframe.daily.preview.v1` stores one bounded JPEG preview (at most 250,000
+characters) of the last displayed online image. It is generated once after
+the image settles, outside the animation frame. No provider key is stored
+there. `cleanframe.pixabay.metadata.v1` stores metadata without the API key. IndexedDB
 `cleanframe.daily.v1` stores the current image, up to ten queued images, cursors,
 the date and the last 500 shown IDs. Limits: 8 MiB per image, 32 MiB total and
 32 million decoded pixels; minimum dimensions are 1280 × 720. Selection is

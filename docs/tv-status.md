@@ -11,8 +11,9 @@ Repository work alone does not authorise a TV connection.
 | Model and firmware | Samsung UE49NU8079, T-KTM2DEUC-1360.0 |
 | Platform | Tizen 4.0, ARMv7 |
 | CleanFrame | The separate NU8000 build is installed under the owner's existing identity; rendering and remote navigation were confirmed. |
+| Online pictures startup | The current web widget keeps a bounded preview of the last online image while restoring the full cache. The owner saw a steady image after Home return and a full Samsung-logo restart; CleanFrame started automatically. Without a preview, first use stays dark. |
 | Startup | A Partner-signed normal `.NET` service starts CleanFrame after a full restart and the observed standby wake. The TV does not need a running PC. Samsung's “start last app” option is off. |
-| Physical Home now | **CleanFrame.** The owner confirmed one Home press from another screen after the current installation. |
+| Physical Home now | **CleanFrame.** The owner confirmed Home from another app after the current installation and again after a full Samsung-logo restart. |
 | Physical Home recovery | Two separate package-declared registrations were removed in a previous rollback test; exact database and app-inventory baselines and Samsung Home were restored. Both packages are now installed again with a new saved baseline. |
 
 ## Home result and current state
