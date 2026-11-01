@@ -23,7 +23,9 @@ Compared with [upstream CleanFrame](https://github.com/nthnclrk/CleanFrame), thi
 | Physical Home on the NU8000 | Two separate, Partner-signed app-context packages register CleanFrame and route `XF86Home` to its full application ID. Home currently opens CleanFrame on the tested UE49NU8079, including after a full restart. An earlier test confirmed standby and exact rollback to Samsung Home; the current installation has its own saved rollback baseline. This is separate from upstream's LS03D native Home helper. [Home assignment and recovery](docs/nu8000.md#temporary-physical-home-mapping). |
 | Sources | Remote-operated Live TV and HDMI shortcuts with editable names, icons, order and HDMI assignments. [Behaviour and TV checks](docs/sources.md). |
 | Backgrounds and widgets | Optional daily online pictures with picture information and credits, a saved small preview during cache restoration, local wallpaper rotation, an optional weather forecast, and a 12/24-hour clock choice. First use stays dark until an image is ready. The owner confirmed a steady image after Home return and a full TV restart on the UE49NU8079. [Pictures](docs/daily-pictures.md) · [Weather](docs/weather.md). |
-| Personalisation | Per-app white icon overrides, additional app focus styles, panel opacity and Dock position controls, with previews in Settings. [Interaction guide](docs/interaction-behaviour.md). |
+| Sleep timer on the NU8000 | A small panel anchored to the Home clock selects the TV's native Off, 30, 60, 120 or 180 minute timer without opening Samsung Settings. A bed badge shows the TV-reported remaining minutes. The owner confirmed a 30-minute choice, a decreasing badge, Samsung's final countdown and automatic standby. The optional [native timer bridge](scripts/native-timer/README.md) is a separately signed service. |
+| Personalisation | Per-app white icon overrides, additional app focus styles, shared opacity for Dock, Home focus tiles and popup panels, and Dock position controls, with previews in Settings. [Interaction guide](docs/interaction-behaviour.md). |
+| Home app layout | Up to 64 apps can be ordered in the scrollable Dock editor. The Dock and List scroll past the visible apps; the Online pictures List places its horizontal Action Bar at the lower right, opens its panels above it, and fades its left shade smoothly into the image. [Interaction guide](docs/interaction-behaviour.md). |
 | Reproducibility | Public-font browser preview, regression checks, public export and agent-oriented setup notes. [Development guide](docs/development.md) · [Agent guide](docs/for-agents.md). |
 
 The startup service was confirmed on this fork's UE49NU8079 for a full restart, a short standby cycle and a standby cycle after several minutes of operation. A full boot took more than ten seconds to show CleanFrame in an earlier test. Long-term survival and other firmware versions remain unverified. The physical Home button currently opens CleanFrame through two separate signed packages. The owner confirmed the current assignment after a full restart; the same packages also passed a short standby cycle and exact rollback in an earlier temporary test. The service's certificate, installation and recovery steps are device-specific; it is not an unattended installer for other TVs.
@@ -31,6 +33,10 @@ The startup service was confirmed on this fork's UE49NU8079 for a full restart, 
 ![Public-font desktop browser preview of the per-app icon picker, with a CleanFrame icon selected for Netflix](docs/screenshots/app-icons-720.png)
 
 *App icon picker in a 1280 × 720 Chromium preview with synthetic installed apps. This is a browser capture, not a TV photo; see the [screenshot provenance](docs/screenshots/README.md).*
+
+![Public-font browser preview of the compact sleep timer panel and bed badge](docs/screenshots/sleep-panel-1080.png)
+
+*The timer values and 27-minute badge in this browser preview are synthetic. The panel layout and real native timer were checked separately on the UE49NU8079; see [TV status](docs/tv-status.md).*
 
 ## Try the interface
 

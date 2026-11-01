@@ -5,15 +5,16 @@ This describes the source UI and its intended interactions. Device-specific resu
 ## Home
 
 - Dock: Left/Right scrolls the apps without wrapping. Up enters the top-right controls, starting with Sources or the last selected control. Left/Right moves between Sources, All apps and Settings. Down or Back returns to the selected app. The clock is at the top left.
-- List: Up/Down scrolls the apps without wrapping. Right enters the bottom-right controls, aligned with the clock above. Up/Down moves between Sources, All apps and Settings. Left or Back returns to the selected app. The list fades at both ends as it scrolls.
+- List: Up/Down scrolls the apps without wrapping. Right enters the horizontal Action Bar at the lower right. Left/Right moves between Sources, All apps, Settings and Picture info when online pictures are active. Its panels open above the bar. Up reaches weather or the clock; Down or Back returns to the selected app. The list fades at both ends as it scrolls.
 - OK opens the selected item. Focus alone never launches an app.
 - Icons-only apps and controls reveal their names when focused. App presentation and control presentation are independent.
-- List and Dock share the same saved Home app order. In the broad Dock, Icons mode fits all nine possible apps at once; Icons and text uses wider tiles and scrolls to the remaining apps after about five visible tiles.
+- List and Dock share the same saved Home app order, with up to 64 apps. The Dock scrolls beyond the visible apps: Icons mode fits about nine, while Icons and text uses wider tiles and shows about five at once.
 - Back from the app list or Dock opens a choice to stay or open Samsung Home.
 - A panel keeps focus within its own controls. Back closes one panel at a time.
-- The icon group opposite the clock and widgets is the Action Bar. Its controls share one focus treatment; Sources, Weather and Picture info share one popup surface.
+- The icon group opposite the clock and widgets is the Action Bar. Its controls share one focus treatment; focused controls, clock and weather show a rounded dark tile on photographic Home in both Type and Glass focus, matching the Dock. Sources, Weather and Picture info share one popup surface.
 - This fork adds configurable [source shortcuts](sources.md): OK on Sources opens a submenu; Up/Down selects, OK switches, and Back/Left closes it. Its styling follows Home settings.
 - When weather is enabled, its icon and temperature appear beside the clock. In Dock, Left from Sources reaches it; in List, Up from Sources reaches it. OK opens a compact forecast panel with four three-hour periods and two days, separated visually. Back closes it.
+- The clock opens a compact Home popup for the native sleep timer. The five values are Off, 30, 60, 120 and 180 minutes. The selected value has a checkmark; setting it reports success or failure in the popup. When a timer is active, a separate bed badge beside the clock shows its TV-reported remaining minutes. The widget refreshes that value while visible.
 - Returning to the running launcher keeps the selected app or panel item. There is no auto-return timer. Held OK and Back keys act once until the key is released.
 
 ## Settings and appearance
@@ -39,7 +40,7 @@ App highlight is shared by Dock and List, including Text, Icons and Both. Standa
 
 Apps in Dock opens the existing membership and arrangement editor. Sources opens the existing shortcut editor for visibility, names, icons, order, HDMI assignment and connection queries. Back returns to Home Apps or Action Bar respectively. Widgets changes the Home clock between 12-hour and 24-hour display; existing preferences default to 12-hour. Weather is off until a location is chosen. See [weather](weather.md) for requests, cache and offline behaviour.
 
-Design's Panel opacity slider ranges from 0% to 100% in 5% steps. It controls the Dock material, Action Bar focus lens and Sources, Weather and Picture info panel backgrounds while keeping their text and controls fully opaque. The slider remains available in both layouts and on all backgrounds. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. The saved dockOpacity preference is retained across updates, layout changes and restart.
+Design's Panel opacity slider ranges from 0% to 100% in 5% steps. It controls the Dock material, the dark focus tiles for the clock, weather widget and Action Bar, the Action Bar focus lens, and Sources, Weather and Picture info panel backgrounds while keeping their text and controls fully opaque. The slider remains available in both layouts and on all backgrounds. Left/Right or dragging adjusts an unsaved value; OK applies it. Leaving the row or pressing Back discards an unconfirmed adjustment. Failed saves retain the previous appearance and offer Try again. The saved dockOpacity preference is retained across updates, layout changes and restart.
 
 Dock's vertical position slider appears only when Dock is the active app layout. It moves the Dock in 20px steps from 160px above to 80px below its original position. Left/Right and dragging update the Home preview immediately. OK saves; Back or leaving the row discards an unconfirmed position. Existing preferences keep the original position, including while List is active. The Dock's navigation cues and action button move with it.
 
@@ -66,18 +67,18 @@ The nine default apps keep their known native IDs. Other installed consumer apps
 
 The panel reads `tizen.application.getAppsInfo` on entry and shows the filtered consumer apps alphabetically. Samsung's visibility flag alone also exposes system utilities, so EP packages, background services, ad players, account utilities, placeholders and duplicates are omitted. Known brands use bundled white marks; other apps use a generic white symbol. A saved icon choice is shared with Home and the editor.
 
-The five-column grid scrolls with remote focus. OK launches an app; its On Home badge shows membership. Up from the first row reaches Apps in Dock, which opens the editor. An API failure shows a retry and keeps saved Home choices. Browser previews report that installed-app discovery and launching require the TV.
+The five-column grid scrolls with remote focus. The focused app has a rounded tile like the Dock, including in Type focus; its fill stays visible on photo, dark and light backgrounds. OK launches an app; its On Home badge shows membership. Up from the first row reaches Apps in Dock, which opens the editor. An API failure shows a retry and keeps saved Home choices. Browser previews report that installed-app discovery and launching require the TV.
 
 ## Apps in Dock
 
-Open the editor from Settings or All apps. On Home shows the current order on the left. Not on Home shows Recently removed first, followed by other installed apps on the right. Home holds one to nine apps.
+Open the editor from Settings or All apps. On Home shows the current order in a scrollable left column. Not on Home shows Recently removed first, followed by other installed apps on the right. Home holds one to 64 apps.
 
 - Reorder: OK on an app name picks it up. Up/Down moves it. OK places it and saves the order. Back puts an unplaced app back without saving that move.
 - Remove: Right from an app name reaches Remove from Home. OK saves the removal and moves focus to the same app in Recently removed. The app stays installed.
 - Add: OK on an app in Not on Home adds it and saves. A recently removed app returns to its previous position within the editing session; another app is added at the end. Focus follows the app to its Remove from Home control, so another OK can reverse the addition.
 - Undo reverses a completed addition, removal or reorder from the current editing session. Done or Back closes the editor and keeps completed changes. Undo history ends when the editor closes.
 
-Removing the last Home app or adding a tenth app is prevented. A failed storage write keeps the committed choices and order, with a retry message. Saved native app IDs and names survive a restart or a failed catalogue refresh.
+Removing the last Home app or adding a 65th app is prevented. A failed storage write keeps the committed choices and order, with a retry message. Saved native app IDs and names survive a restart or a failed catalogue refresh.
 
 ## App icons
 

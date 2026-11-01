@@ -329,13 +329,30 @@ try {
   });
   await run('Utility control geometry', async () => {
     await page();
+    for (const layout of ['dock', 'list']) {
+      await look({ bg: 'photo', layout, focus: 'type' }); await scene('home');
+      await nav(layout === 'dock' ? 'up' : 'right');
+      const tile = await current.locator('#utils .u.is-focus').evaluate(el => {
+        const style = getComputedStyle(el);
+        return { background: style.backgroundColor, radius: style.borderRadius };
+      });
+      check(layout + ' Action Bar has a dark rounded focus tile in Type mode', /^rgba?\((?:1[0-9]|2[0-8]),\s*(?:1[0-9]|2[0-8]),\s*(?:1[0-9]|2[0-8]),/.test(tile.background)
+        && tile.radius !== '0px', tile);
+      await look({ dockOpacity: 50 });
+      check(layout + ' Action Bar focus follows Panel opacity', await current.locator('#utils .u.is-focus').evaluate(el => getComputedStyle(el).backgroundColor === 'rgba(12, 22, 28, 0.37)'));
+      await look({ dockOpacity: 100 });
+      if (layout === 'dock') await current.screenshot({ path: out + 'dark-actionbar.png' });
+    }
+    await look({ bg: 'photo', layout: 'dock', focus: 'glass' }); await scene('home'); await nav('up');
+    await current.screenshot({ path: out + 'dark-actionbar-glass.png' });
     for (const width of [1920, 1280]) {
       await current.setViewportSize({ width, height: width * 9 / 16 });
       for (const layout of ['dock', 'list']) for (const controls of ['icons', 'both', 'text']) {
         await look({ bg: 'photo', layout, controls, focus: 'glass', font: 'manrope' }); await scene('home');
         if ((await call('where')).zone === 'util') await nav('back');
         await nav(layout === 'dock' ? 'up' : 'right');
-        await nav(...Array(3).fill(layout === 'dock' ? 'left' : 'up'));
+        for (let step = 0; step < 3 && (await state()).focusAction !== 'util.sources'; step++)
+          await nav('left');
         await current.waitForTimeout(180);
         const spacing = await current.evaluate(({ layout, controls }) => {
           const scale = document.getElementById('stage').getBoundingClientRect().width / 1920;
@@ -351,14 +368,12 @@ try {
           spacing.length === 3 && spacing.every(s => s.children === (controls === 'both' ? 2 : 1) && Math.abs(s.extraWidth - s.gap) < .5), spacing);
         const focused = [];
         for (let i = 0; i < 3; i++) {
-          if (i) await nav(layout === 'dock' ? 'right' : 'down');
+          if (i) await nav('right');
           focused.push(await current.evaluate(() => {
             const button = document.querySelector('#utils .u.is-focus'), lens = document.querySelector('.ut-lens.is-current');
             if (!button || !lens || ShoreQA.where().focusCount !== 1) return false;
             const bounds = lens.getBoundingClientRect();
             const content = [...button.querySelector('.u-content').children].filter(e => getComputedStyle(e).display !== 'none');
-            const caption = document.querySelector('.util-focus-label.is-on');
-            if (caption && ShoreQA.state().look.layout === 'list') content.push(caption);
             return content.every(e => { const r = e.getBoundingClientRect(); return r.left >= bounds.left - 1 && r.right <= bounds.right + 1 && r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1; });
           }));
         }
@@ -366,18 +381,40 @@ try {
       }
     }
   });
+  await run('Online List Action Bar and popup placement', async () => {
+    await page(); await look({ bg: 'daily', layout: 'list' }); await scene('home');
+    const layout = await current.evaluate(() => {
+      const stage = document.getElementById('stage').getBoundingClientRect();
+      const bar = document.querySelector('.quiet-utils').getBoundingClientRect();
+      const shade = document.querySelector('.bg>.ph-col');
+      return { barTop: bar.top - stage.top, barBottom: bar.bottom - stage.top, direction: getComputedStyle(document.querySelector('.quiet-utils')).flexDirection,
+        shadeWidth: getComputedStyle(shade).width, shadeGradient: getComputedStyle(shade).backgroundImage };
+    });
+    check('Online List Action Bar is horizontal near the lower right and gradient reaches its edge', layout.barTop > 700 && layout.barBottom <= 1050 && layout.direction === 'row'
+      && layout.shadeWidth === '1400px' && layout.shadeGradient.includes('1400px'), layout);
+    await act('util.sources');
+    const sourceAbove = await current.evaluate(() => document.querySelector('#sourceMenu').getBoundingClientRect().bottom <= document.querySelector('.quiet-utils [data-action="util.sources"]').getBoundingClientRect().top);
+    check('Sources panel opens above the lower Action Bar', sourceAbove);
+    await nav('back'); await act('daily.info');
+    const infoAbove = await current.evaluate(() => document.querySelector('#dailyDetails').getBoundingClientRect().bottom <= document.querySelector('.quiet-utils').getBoundingClientRect().top);
+    check('Picture info panel clears the entire lower Action Bar', infoAbove);
+    await nav('back'); await act('home.sleep');
+    const sleepClear = await current.evaluate(() => document.querySelector('#sleepMenu').getBoundingClientRect().bottom < document.querySelector('.quiet-utils').getBoundingClientRect().top);
+    check('Clock panel stays clear of the lower Action Bar', sleepClear);
+    await current.screenshot({ path: out + 'online-list-sleep-panel.png' });
+  });
   await run('Panel spacing geometry', async () => {
     await page();
     for (const width of [1920, 1280]) {
       await current.setViewportSize({ width, height: width * 9 / 16 });
       await look({ layout: 'dock', focus: 'glass' }); await editor();
-      const divider = await current.locator('.ed-order-break.is-on').evaluate(e => {
+      const columns = await current.evaluate(() => {
         const scale = document.getElementById('stage').getBoundingClientRect().width / 1920;
-        const text = document.createRange(); text.selectNodeContents(e);
-        const after = getComputedStyle(e, '::after');
-        return (e.getBoundingClientRect().right - text.getBoundingClientRect().right) / scale - parseFloat(after.width);
+        const home = document.querySelector('.ed-home-view').getBoundingClientRect();
+        const other = document.querySelector('.ed-other-view').getBoundingClientRect();
+        return { spacing: (other.left - home.right) / scale, homeWidth: home.width / scale };
       });
-      check('Editor divider separates its text and line at ' + width, Math.abs(divider - 16) < .5, divider);
+      check('Editor scroll columns retain their separation at ' + width, Math.abs(columns.spacing - 48) < .5 && Math.abs(columns.homeWidth - 880) < .5, columns);
       await scene('home'); await nav('back');
       const actions = await current.locator('.msg-acts>button').evaluateAll(elements => {
         const scale = document.getElementById('stage').getBoundingClientRect().width / 1920;
@@ -396,6 +433,21 @@ try {
         return (e.children[1].getBoundingClientRect().left - e.children[0].getBoundingClientRect().right) / scale;
       });
       check('Wallpaper name and count retain their separation at ' + width, Math.abs(caption - 24) < .5, caption);
+    }
+  });
+  await run('All apps focus tile', async () => {
+    for (const [focus, bg, material] of [['type', 'photo', 'soft'], ['glass', 'photo', 'soft'], ['type', 'photo', 'tint'], ['glass', 'photo', 'tint'], ['type', 'dark', 'soft'], ['glass', 'light', 'soft']]) {
+      await closePage(); await page();
+      await look({ bg, focus, material });
+      await library();
+      await nav('down');
+      await current.waitForTimeout(180);
+      const before = await current.locator('.gt.is-focus').evaluate(el => ({ image: getComputedStyle(el).backgroundImage, color: getComputedStyle(el).backgroundColor, radius: getComputedStyle(el).borderRadius }));
+      check('All apps ' + focus + '/' + bg + '/' + material + ' focus has a rounded Dock-style plate',
+        (before.image !== 'none' || !['rgba(0, 0, 0, 0)', 'transparent'].includes(before.color)) && before.radius === '32px' && (await call('where')).focusCount === 1, before);
+      if (bg === 'photo' && material === 'soft') await current.screenshot({ path: out + 'all-apps-focus-' + focus + '.png' });
+      await nav('right');
+      check('All apps ' + focus + '/' + bg + '/' + material + ' focus moves to one adjacent tile', await current.locator('.gt.is-focus').count() === 1 && (await call('where')).focusCount === 1);
     }
   });
   await run('Real catalogue and native launch boundary', async () => {
@@ -540,15 +592,36 @@ try {
     await act('editor.move.netflix'); await nav('down', 'ok');
     const moved = start.slice(); [moved[1], moved[2]] = [moved[2], moved[1]];
     check('Placed move persists immediately', same((await stored()).dock, moved));
-    await act('editor.add.' + EXTRA); check('Nine-app cap prevents addition', (await state()).dock.length === 9 && !(await state()).dock.includes(EXTRA));
-    await remove('stremio'); await act('editor.add.' + EXTRA);
-    check('Native app can be pinned with stable ID', (await stored()).dock.includes(EXTRA) && (await state()).dock.length === 9);
+    await act('editor.add.' + EXTRA);
+    check('Tenth app can be pinned with stable ID', (await stored()).dock.includes(EXTRA) && (await state()).dock.length === 10);
+    await remove('stremio'); await act('editor.add.stremio');
+    check('Editor restores a removed app beyond nine', (await state()).dock.length === 10 && (await state()).dock.includes('stremio'));
     check('Native pin retains readable metadata for failed discovery', (await stored()).appRecords.some(a => a.id === EXTRA && a.name === UNSAFE_NAME));
     await current.reload(); await ready(); check('Native pin survives reload', (await state()).dock.includes(EXTRA));
     await editor(); const ids = (await state()).dock;
     for (const id of ids.slice(1)) await remove(id);
     await remove(ids[0]); check('Last Home app cannot be removed', same((await state()).dock, [ids[0]]) && same((await stored()).dock, [ids[0]]));
     check('Editor has no Save action', !(await current.locator('#stage').innerText()).match(/\bSave\b/));
+  });
+  await run('Large Home order scrolls in editor and Dock', async () => {
+    const many = Array.from({ length: 65 }, (_, i) => 'Example' + String(i).padStart(3, '0') + '.Consumer');
+    const appRecords = many.map((id, i) => ({ id, appId: id, name: 'Example app ' + (i + 1) }));
+    await page({ seed: baseline({ dock: many, appRecords }), catalog: CATALOG.concat(appRecords.map(a => ({ id: a.id, name: a.name, show: true }))) });
+    check('Saved Home order keeps 64 distinct apps', (await state()).dock.length === 64 && (await stored()).dock.length === 64);
+    await editor();
+    await nav(...Array(12).fill('down'));
+    await current.waitForTimeout(250);
+    const visible = await current.locator('.ed-home .er.is-active').evaluate(row => {
+      const view = document.querySelector('.ed-home-view').getBoundingClientRect(), rect = row.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, viewTop: view.top, viewBottom: view.bottom, scroll: getComputedStyle(document.querySelector('.ed-home')).transform };
+    });
+    check('Editor scrolls focused Home app into view', visible.top >= visible.viewTop && visible.bottom <= visible.viewBottom && visible.scroll !== 'none', visible);
+    check('Editor count describes total membership without five-app divider', /64 apps/.test(await current.locator('.z-home').innerText()) && await current.locator('.ed-order-break').count() === 0);
+    await scene('home'); await look({ apps: 'icons' });
+    await nav(...Array(12).fill('right'));
+    check('Icons Dock reaches apps beyond the first nine', (await state()).focusAction === 'home.app.' + many[12] && (await call('where')).focusCount === 1);
+    await editor(); await act('editor.add.' + many[64]);
+    check('Editor refuses a 65th app while preserving all 64', (await state()).dock.length === 64 && !(await state()).dock.includes(many[64]) && /Home holds up to 64 apps/.test(await current.locator('.s-sub').innerText()));
   });
   await run('Actual storage failures are atomic', async () => {
     await page(); await editor(); const before = await stored();
@@ -739,8 +812,32 @@ try {
     await current.setViewportSize({ width: 1920, height: 1080 }); await look({ bg: 'photo', layout: 'dock' }); await scene('home');
     await nav('up', 'left');
     check('Remote reaches weather from Sources', (await state()).focusAction === 'home.weather');
-    const focusedWeather = await current.locator('.weather-chip').evaluate(el => ({ focused: el.classList.contains('is-focus'), background: getComputedStyle(el).backgroundImage }));
-    check('Weather chip has its open-panel highlight on remote focus', focusedWeather.focused && focusedWeather.background !== 'none', focusedWeather);
+    const focusedWeather = await current.locator('.weather-chip').evaluate(el => ({ focused: el.classList.contains('is-focus'), background: getComputedStyle(el).backgroundColor }));
+    check('Weather chip has a dark highlight on remote focus', focusedWeather.focused && focusedWeather.background === 'rgba(12, 22, 28, 0.74)', focusedWeather);
+    for (const opacity of [50, 0, 100]) {
+      await look({ dockOpacity: opacity });
+      await current.waitForTimeout(180);
+      const surfaces = await current.evaluate(() => {
+        const alpha = element => {
+          const value = getComputedStyle(element).backgroundColor;
+          const parts = value.match(/[\d.]+/g);
+          return parts && parts.length === 4 ? Number(parts[3]) : 1;
+        };
+        return {
+          dock: Number(getComputedStyle(document.querySelector('.dock>.mat')).opacity),
+          weather: alpha(document.querySelector('.weather-chip.is-focus')),
+          focusVariable: Number(document.getElementById('stage').style.getPropertyValue('--home-focus-alpha'))
+        };
+      });
+      const expected = Math.round(opacity * 0.74) / 100;
+      check('Panel opacity ' + opacity + '% also controls Home focus tiles',
+        Math.abs(surfaces.dock - opacity / 100) < 0.01
+        && Math.abs(surfaces.weather - expected) < 0.01
+        && Math.abs(surfaces.focusVariable - expected) < 0.01, surfaces);
+    }
+    await look({ focus: 'type' });
+    check('Weather widget keeps a dark focus tile in Type mode', await current.locator('.weather-chip.is-focus').evaluate(el => getComputedStyle(el).backgroundColor === 'rgba(12, 22, 28, 0.74)'));
+    await current.screenshot({ path: out + 'dark-weather.png' });
     await nav('ok'); check('Remote opens weather submenu', (await state()).view === 'weatherMenu');
     await look({ dockOpacity: 55 });
     check('Weather panel inherits panel opacity', await current.locator('.weather-menu .ui-popup-material').evaluate(el => getComputedStyle(el).opacity) === '0.55');
@@ -1342,6 +1439,37 @@ try {
     check('Browser launch honestly requires TV', /TV/.test(await current.locator('#stage').innerText()));
     await nav('back'); await library();
     check('Browser All Apps has no installed fixtures', /TV/.test(await current.locator('#stage').innerText()) && !(await current.locator('[data-action^="apps.open."]').count()));
+  });
+  await run('Sleep timer panel and clock badge', async () => {
+    await page();
+    await current.evaluate(() => {
+      window.CleanFrameTimerServiceId = 'Test123456.Timer';
+      window.__timerIndex = 1;
+      FrameDevice.timerRequest = (choice, done) => {
+        if (choice !== null) window.__timerIndex = choice;
+        const minutes = [0, 30, 60, 120, 180][window.__timerIndex];
+        done(null, { index: window.__timerIndex, minutes, remaining: minutes ? minutes - 3 : 0 });
+      };
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    check('Timer badge shares the clock focus tile with a smaller gap', await current.locator('.caption .clock-button .sleep-badge .ico').count() === 1
+      && await current.locator('.caption .sleep-badge').evaluate(el => parseInt(getComputedStyle(el).marginLeft, 10)) === 20);
+    await nav('up', 'left');
+    check('Clock focus includes the timer badge', await current.locator('.clock-button.is-focus .sleep-badge').count() === 1);
+    await look({ dockOpacity: 50 });
+    check('Clock focus follows Panel opacity with timer badge', await current.locator('.clock-button.is-focus').evaluate(el => getComputedStyle(el).backgroundColor === 'rgba(12, 22, 28, 0.37)'));
+    await look({ dockOpacity: 100 });
+    await current.screenshot({ path: out + 'sleep-focus.png' });
+    await act('home.sleep');
+    check('Clock opens small Home popup with five native choices', (await state()).view === 'sleep'
+      && await current.locator('.sleep-menu:not([hidden]) [data-action^="sleep.choose."]').count() === 5
+      && await current.locator('#sheet[hidden]').count() === 1
+      && await current.locator('.sleep-menu').evaluate(el => el.getBoundingClientRect().width < 400));
+    await current.screenshot({ path: out + 'sleep-panel.png' });
+    await act('sleep.choose.2');
+    check('Choice updates panel', /57 min left/.test(await current.locator('.sleep-menu-status').innerText()));
+    await nav('back');
+    check('Badge reflects updated remaining time', /57 min/.test(await current.locator('.caption .sleep-badge').innerText()));
   });
   section = 'Run integrity';
   report.sourceAfter = hashes();

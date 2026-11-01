@@ -1,5 +1,13 @@
 # Browser evidence
 
+`sleep-panel-1080.png` was captured on 1 November 2026 with the public-font
+browser check at 1920 × 1080. It shows the compact panel under the clock and
+the separate bed badge. The 30-minute selection and 27-minute remainder are
+synthetic test responses; they do not establish native timer behaviour. The
+owner separately confirmed a real 30-minute selection and decreasing badge on
+the TV. Regenerate with `CLEANFRAME_PUBLIC_FONTS=1 CHECK_SECTION='Sleep timer panel'
+npm run check:browser` and copy `.local/qa/sleep-panel.png` here.
+
 `weather-dock-720.png` was captured on 31 October 2026 with the weather section
 of the public-font browser checks at 1280 × 720. It shows the weather chip beside
 the clock and the open forecast panel in Dock layout, using bundled public fonts,

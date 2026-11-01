@@ -1,0 +1,10 @@
+{
+  "sdk_path": "C:/PATH/TO/TIZEN_SDK",
+  "signing_profile": "YOUR_EXISTING_PARTNER_PROFILE",
+  "references_dir": "C:/PATH/TO/TIZEN4_REFERENCES",
+  "icon_png": "C:/PATH/TO/ICON.png",
+  "target_app_id": "YOUR_CLEANFRAME_PACKAGE.YOUR_CLEANFRAME_APP",
+  "package_id": "YOUR_NEW_TIMER_PACKAGE",
+  "service_app_id": "YOUR_NEW_TIMER_PACKAGE.CleanFrameTimer",
+  "package_version": "1.0.0"
+}

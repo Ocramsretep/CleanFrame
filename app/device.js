@@ -68,6 +68,49 @@
       api().launchAppControl(control, null, function () { finish(null); }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
+  var timerReplyPort = null, timerSequence = 0, timerPending = Object.create(null);
+  function timerField(data, key) {
+    var i, value;
+    for (i = 0; i < data.length; i++) if (data[i].key === key) {
+      value = data[i].value;
+      return typeof value === 'string' ? value : value && value.length ? String(value[0]) : '';
+    }
+    return '';
+  }
+  function timerNumber(data, key) { var value = timerField(data, key); return value === '' ? NaN : Number(value); }
+  function timerRequest(index, done) {
+    var id = window.CleanFrameTimerServiceId, port, remote, request, number;
+    if (!window.tizen || !tizen.messageport || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+$/.test(id || '')) { unavailable(done); return; }
+    if (index !== null && (typeof index !== 'number' || index % 1 || index < 0 || index > 4)) { done({ message: 'Invalid timer choice.' }); return; }
+    try {
+      if (!timerReplyPort) {
+        timerReplyPort = tizen.messageport.requestLocalMessagePort('cleanframe.sleep.reply.v1');
+        timerReplyPort.addMessagePortListener(function (data, sender) {
+          var replyId = timerField(data, 'id'), pending = timerPending[replyId], status;
+          if (!/^[0-9]{1,20}$/.test(replyId) || !pending || sender && sender.appId !== id) return;
+          delete timerPending[replyId]; clearTimeout(pending.timer);
+          status = timerField(data, 'status');
+          if (status !== 'ok') pending.done({ message: 'The TV could not update the sleep timer.', detail: status || 'No confirmed result.' });
+          else pending.done(null, { index: timerNumber(data, 'index'), minutes: timerNumber(data, 'minutes'),
+            remaining: timerNumber(data, 'remaining') });
+        });
+      }
+      port = timerReplyPort;
+      remote = tizen.messageport.requestRemoteMessagePort(id, 'cleanframe.sleep.v1');
+      number = String(++timerSequence);
+      request = [{ key: 'id', value: number }, { key: 'command', value: index === null ? 'get' : 'set' }];
+      if (index !== null) request.push({ key: 'index', value: String(index) });
+      timerPending[number] = { done: done, timer: setTimeout(function () {
+        if (!timerPending[number]) return;
+        delete timerPending[number];
+        done({ message: 'The sleep timer did not respond. Please try again.' });
+      }, 6000) };
+      remote.sendMessage(request, port);
+    } catch (err) {
+      if (number && timerPending[number]) { clearTimeout(timerPending[number].timer); delete timerPending[number]; }
+      done({ message: 'The sleep timer is unavailable on this TV.', detail: err && (err.message || err.name) || '' });
+    }
+  }
   // Source discovery/viewer flow informed by scottheinrich91's CleanFrame PR #14.
   // Use reported source objects, synchronous getSource, and propagate failures.
   function videoSources(done) {
@@ -138,5 +181,5 @@
       }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
-  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, openUrl: openUrl, apps: apps, videoSources: videoSources, setSource: setSource };
+  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, openUrl: openUrl, apps: apps, videoSources: videoSources, setSource: setSource, timerRequest: timerRequest };
 }());

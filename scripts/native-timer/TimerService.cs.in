@@ -1,0 +1,123 @@
+using System;
+using System.Runtime.InteropServices;
+using Tizen.Applications;
+
+// Separate, resident TV service. Only the configured CleanFrame application
+// may issue requests; no network listener or external computer is involved.
+sealed class TimerService : ServiceApplication
+{
+    const string Port = "cleanframe.sleep.v1";
+    const string Caller = "__TARGET_APP__";
+    const string Save = "memory/menu/system/time/sleeptimer/savetime";
+    const string Time = "db/menu/system/time/sleeptimer/time_t";
+    static readonly int[] Minutes = { 0, 30, 60, 120, 180 };
+    static MessageCallback callback;
+    int portId = -1;
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    delegate void MessageCallback(int localPortId, IntPtr remoteAppId,
+        IntPtr remotePort, [MarshalAs(UnmanagedType.I1)] bool trusted,
+        IntPtr message, IntPtr userData);
+
+    [DllImport("libmessage-port.so.1")]
+    static extern int message_port_register_local_port(string name, MessageCallback cb, IntPtr data);
+    [DllImport("libmessage-port.so.1")]
+    static extern int message_port_unregister_local_port(int id);
+    [DllImport("libmessage-port.so.1")]
+    static extern int message_port_send_message(string appId, string name, IntPtr message);
+    [DllImport("libbundle.so.0")]
+    static extern IntPtr bundle_create();
+    [DllImport("libbundle.so.0")]
+    static extern void bundle_free(IntPtr bundle);
+    [DllImport("libbundle.so.0")]
+    static extern int bundle_add_str(IntPtr bundle, string key, string value);
+    [DllImport("libbundle.so.0")]
+    static extern int bundle_get_str(IntPtr bundle, string key, out IntPtr value);
+    [DllImport("libvconf.so.0")]
+    static extern int vconf_get_int(string key, out int value);
+    [DllImport("libvconf.so.0")]
+    static extern IntPtr vconf_get_str(string key);
+    [DllImport("libc.so.6")]
+    static extern void free(IntPtr value);
+    [DllImport("libsettings-datafw.so", EntryPoint = "_ZN20CSettingsItemInfoAPI23InitSettingsItemInfoAPIEv")]
+    static extern void InitSettingsItemInfoAPI();
+    [DllImport("libsettings-datafw.so", EntryPoint = "_ZN20CSettingsItemInfoAPI12SetItemValueEPKcS1_b")]
+    static extern int SetItemValue(string item, string value, [MarshalAs(UnmanagedType.I1)] bool flag);
+
+    static string Get(IntPtr bundle, string key)
+    {
+        IntPtr pointer;
+        return bundle_get_str(bundle, key, out pointer) == 0 && pointer != IntPtr.Zero
+            ? Marshal.PtrToStringAnsi(pointer) ?? "" : "";
+    }
+    static string ReadTime()
+    {
+        IntPtr pointer = vconf_get_str(Time);
+        if (pointer == IntPtr.Zero) return "";
+        try { return Marshal.PtrToStringAnsi(pointer) ?? ""; }
+        finally { free(pointer); }
+    }
+    static void Reply(string appId, string port, string id, string status, int index, string remaining)
+    {
+        if (String.IsNullOrEmpty(port)) return;
+        IntPtr bundle = bundle_create();
+        if (bundle == IntPtr.Zero) return;
+        try {
+            bundle_add_str(bundle, "id", id);
+            bundle_add_str(bundle, "status", status);
+            bundle_add_str(bundle, "index", index.ToString());
+            bundle_add_str(bundle, "minutes", index >= 0 && index < Minutes.Length ? Minutes[index].ToString() : "");
+            bundle_add_str(bundle, "remaining", remaining);
+            message_port_send_message(appId, port, bundle);
+        } finally { bundle_free(bundle); }
+    }
+    static void Handle(int localPortId, IntPtr remoteAppId, IntPtr remotePort,
+        bool trusted, IntPtr message, IntPtr userData)
+    {
+        string appId = Marshal.PtrToStringAnsi(remoteAppId) ?? "";
+        if (appId != Caller) return;
+        string port = Marshal.PtrToStringAnsi(remotePort) ?? "";
+        string id = Get(message, "id");
+        if (id.Length == 0 || id.Length > 20) return;
+        string status = "error";
+        int index = -1;
+        string remaining = "";
+        try {
+            string command = Get(message, "command");
+            if (command == "set") {
+                int requested;
+                if (!Int32.TryParse(Get(message, "index"), out requested) || requested < 0 || requested >= Minutes.Length) {
+                    status = "invalid";
+                } else {
+                    int result = SetItemValue("sleeptimer", requested.ToString(), false);
+                    status = result == 0 ? "ok" : "write-failed";
+                }
+            } else if (command == "get") status = "ok";
+            else status = "invalid";
+            int rc = vconf_get_int(Save, out index);
+            remaining = ReadTime();
+            if (rc != 0 || index < 0 || index >= Minutes.Length) status = "read-failed";
+            if (status == "ok" && command == "set" && index != Int32.Parse(Get(message, "index"))) status = "verify-failed";
+        } catch (Exception error) {
+            status = "error:" + error.GetType().Name;
+        }
+        try { Reply(appId, port, id, status, index, remaining); }
+        catch (Exception error) { Console.WriteLine("CF_TIMER_REPLY " + error.GetType().Name); }
+    }
+    protected override void OnCreate()
+    {
+        base.OnCreate();
+        try {
+            InitSettingsItemInfoAPI();
+            callback = Handle;
+            portId = message_port_register_local_port(Port, callback, IntPtr.Zero);
+            Console.WriteLine("CF_TIMER_PORT " + portId);
+        } catch (Exception error) { Console.WriteLine("CF_TIMER_START " + error.GetType().Name); }
+    }
+    protected override void OnTerminate()
+    {
+        if (portId >= 0) message_port_unregister_local_port(portId);
+        base.OnTerminate();
+    }
+    static void Main(string[] args) { new TimerService().Run(args); }
+}

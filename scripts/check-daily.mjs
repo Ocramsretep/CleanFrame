@@ -238,8 +238,14 @@ try {
     await page.evaluate(() => ShoreQA.scene('home'));
     await act('daily.info'); await act('daily.skip');
     assert.equal((await page.evaluate(() => ShoreQA.where())).focusAction, 'daily.skip');
-    const buttons = await page.locator('.utils .u').evaluateAll(es => es.map(e => e.getBoundingClientRect().top));
-    assert.equal(buttons.length, 4); assert.ok(buttons.every(y => Math.abs(y - buttons[0]) < 1));
+    const buttons = await page.locator('.utils .u').evaluateAll(es => es.map(e => ({ x: e.getBoundingClientRect().left, y: e.getBoundingClientRect().top })));
+    assert.equal(buttons.length, 4);
+    if (layout === 'list') {
+      assert.ok(buttons.every((button, i) => Math.abs(button.y - buttons[0].y) < 1 && (i === 0 || button.x > buttons[i - 1].x)));
+      const info = await page.locator('#dailyDetails').boundingBox();
+      assert.ok(info.y + info.height <= buttons[0].y,
+        'List Picture info opens above the lower Action Bar: ' + JSON.stringify({ info, buttons }));
+    } else assert.ok(buttons.every(button => Math.abs(button.y - buttons[0].y) < 1));
     for (const width of [1920, 1280]) {
       await page.setViewportSize({ width, height: width * 9 / 16 });
       mkdirSync(root + '.local/qa', { recursive: true });

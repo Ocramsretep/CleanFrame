@@ -23,7 +23,7 @@ class NU8000Tests(unittest.TestCase):
                                              selection=cls.selection)), encoding='utf-8')
         cls.before = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                       for p in (ROOT / 'app').iterdir() if p.is_file()}
-        cls.report = build(cls.config)
+        cls.report = build(cls.config, timer_config_path=False)
         with zipfile.ZipFile(cls.report['widget']) as archive:
             cls.files = {name: archive.read(name) for name in archive.namelist()}
 
@@ -46,6 +46,19 @@ class NU8000Tests(unittest.TestCase):
         self.assertIn(b"http://tizen.org/appcontrol/operation/setting", self.files['device.js'])
         self.assertIn(b"launchAppControl(control, 'org.tizen.menu'", self.files['device.js'])
         self.assertIn(b'Live TV', self.files['sources.js'])
+
+    def test_timer_service_id_is_private_and_matches_target_app(self):
+        timer = self.folder / 'timer.json'
+        timer.write_text(json.dumps({'target_app_id': 'Owner12345.Home',
+                                     'service_app_id': 'Timer12345.CleanFrameTimer'}), encoding='utf-8')
+        report = build(self.config, timer_config_path=timer)
+        with zipfile.ZipFile(report['widget']) as archive:
+            self.assertEqual(archive.read('timer-config.js'),
+                             b'window.CleanFrameTimerServiceId = "Timer12345.CleanFrameTimer";\n')
+        timer.write_text(json.dumps({'target_app_id': 'Wrong12345.Home',
+                                     'service_app_id': 'Timer12345.CleanFrameTimer'}), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'does not match'):
+            build(self.config, timer_config_path=timer)
 
     def test_seed_preserves_current_and_legacy_preferences(self):
         code = r"""
@@ -180,6 +193,16 @@ assert.equal(replies.length, 3);
             invalid.write_text(json.dumps(config), encoding='utf-8')
             with self.assertRaises(ValueError):
                 load_config(invalid)
+
+    def test_local_config_accepts_up_to_64_home_apps(self):
+        config_path = self.folder / 'large-selection.json'
+        base = {'package_id': 'Owner12345', 'app_id': 'Owner12345.Home'}
+        home = [f'Example{i:03d}.Consumer' for i in range(64)]
+        config_path.write_text(json.dumps({**base, 'selection': {'home': home}}), encoding='utf-8')
+        self.assertEqual(load_config(config_path)[1]['home'], home)
+        config_path.write_text(json.dumps({**base, 'selection': {'home': home + ['Example064.Consumer']}}), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'one to 64'):
+            load_config(config_path)
 
 
 if __name__ == '__main__':

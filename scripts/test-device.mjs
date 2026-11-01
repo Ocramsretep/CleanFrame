@@ -101,3 +101,25 @@ test('launch keeps its eight-second deadline independently of discovery', () => 
   h.launches[0].ok();
   assert.equal(results.length, 1);
 });
+
+test('sleep timer MessagePort accepts a native reply without a return port', () => {
+  let listener, sent;
+  const id = 'Owner12345.Timer';
+  const local = { addMessagePortListener(callback) { listener = callback; } };
+  const remote = { sendMessage(data, reply) { sent = { data, reply }; } };
+  const window = { CleanFrameTimerServiceId: id, tizen: {
+    application: { getCurrentApplication: () => ({ appInfo: { id: 'Owner12345.Home' } }) },
+    messageport: { requestLocalMessagePort: () => local, requestRemoteMessagePort(appId, name) {
+      assert.equal(appId, id); assert.equal(name, 'cleanframe.sleep.v1'); return remote;
+    } }
+  } };
+  vm.runInNewContext(source, { window, tizen: window.tizen, setTimeout: () => 1, clearTimeout: () => {} });
+  let result;
+  window.FrameDevice.timerRequest(1, (error, value) => { result = { error, value }; });
+  assert.equal(sent.reply, local);
+  assert.equal(sent.data.find(item => item.key === 'index').value, '1');
+  listener([{ key: 'id', value: sent.data[0].value }, { key: 'status', value: 'ok' },
+    { key: 'index', value: '1' }, { key: 'minutes', value: '30' }, { key: 'remaining', value: '29' }], null);
+  assert.equal(result.error, null);
+  assert.equal(result.value.remaining, 29);
+});

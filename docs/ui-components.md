@@ -23,16 +23,20 @@ className = 'source-button' + FrameUI.focusClass('surface', selected);
 ```
 
 The Action Bar uses the same Glass lens for every icon. In icon mode the lens
-has a rounded square shape. Type focus scales the selected icon and shows its
-caption. Picture info keeps Skip and browser links inside its popup. Sources
-rows and Picture info controls use the surface variant; sheet commands use the solid
+has a rounded square shape. On photographic Home, Action Bar controls, the clock
+and weather use a dark focus tile in both focus styles so they sit with the
+dark Dock. The tile fill follows the saved Panel opacity, using 74% dark alpha
+at the 100% setting and scaling down to transparent at 0%. Its edge stays visible
+for remote focus. Type focus also scales the selected icon and shows its caption.
+Picture info keeps Skip and browser links inside its popup. Sources
+rows, Sleep timer choices and Picture info controls use the surface variant; sheet commands use the solid
 variant. A popup that stays open may add `is-open` to its anchor.
 
 ## Popup API
 
 Use the `ui-popup` container with a `ui-popup-material` sibling before
 `ui-popup-content`. The material layer shares the saved Panel opacity; the
-content remains fully opaque. Sources, Weather and Picture info use this
+content remains fully opaque. Sources, Weather, Sleep timer and Picture info use this
 structure. `FrameUI.setPopupOpen(menu, open, anchor)` handles visibility and
 `aria-expanded`. `FrameUI.placePopup(menu, anchor, image, options)` positions
 anchored popups in the 1920 × 1080 logical stage and aligns a cached material

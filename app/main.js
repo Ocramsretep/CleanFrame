@@ -4,14 +4,14 @@
 
   /* ---------- Bundled data ---------- */
   var ASSETS = 'assets/', ICONS = ASSETS + 'icons/', WP = ASSETS + 'wallpapers/';
-  var CAP = 9, SCRIM_Y = 560;
+  var CAP = 64, SCRIM_Y = 560;
   var DOCK_MODES = { both: { tw: 288, th: 200, pitch: 296 }, text: { tw: 288, th: 104, pitch: 296 }, icons: { tw: 176, th: 144, pitch: 184 } };
   var GRID_ROW = 240, GRID_COL = 344, COLS = 5;
   var ED_ROW = 80, ED_SEP = 56, ED_VIEW = 752;
   var PH_TOP = 220, PH_PITCH = 128, PH_FULL = 5, PH_HEIGHT = 944, PH_COMPACT_TOP = 144, PH_COMPACT_PITCH = 88, PH_COMPACT_VISIBLE = 9;
   var WALL_VISIBLE = 6, WALL_ROW = 92, WALL_DELAY = 200;
   var KEYS = { 37: 'left', 38: 'up', 39: 'right', 40: 'down', 13: 'ok', 27: 'back', 8: 'back', 10009: 'back', 461: 'back' };
-  var FULL = 'Home holds nine apps. Remove one first.', LAST = 'Home needs one app';
+  var FULL = 'Home holds up to 64 apps. Remove one first.', LAST = 'Home needs one app';
 
   var PRIMARY_APPS = [
     { id: 'stremio', name: 'Stremio', mark: true, appId: 'IkWsFHtOY9.Stremio' },
@@ -61,6 +61,7 @@
     arrange: '<path d="M4 8.5h14M15 5.5l3 3-3 3M20 15.5H6M9 12.5l-3 3 3 3"/>',
     settings: '<path d="m9 3-.6 2.4-2 1.2L4 6l-2 3.5L3.8 11v2L2 14.5 4 18l2.4-.6 2 1.2L9 21h6l.6-2.4 2-1.2 2.4.6 2-3.5-1.8-1.5v-2L22 9.5 20 6l-2.4.6-2-1.2L15 3Z"/><circle cx="12" cy="12" r="3.2"/>',
     home: '<path d="M4 11 12 4.5l8 6.5v8a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1Z"/>',
+    bed: '<path d="M3 19V10m18 9v-5M3 17h18M3 13h18v4M5 10h5a2 2 0 0 1 2 2v1M15 3h6l-6 5h6"/>',
     undo: '<path d="M9 6 5 10l4 4"/><path d="M5 10h9.5a4.5 4.5 0 0 1 0 9H11"/>',
     check: '<path d="m5.5 12.5 4 4 9-9"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
@@ -550,7 +551,7 @@
     var i = ensureSel();
     clearSession();
     refreshCatalog();
-    push({ id: 'editor', origin: origin, lifted: null, top: 0, otherReturn: { id: otherList()[0] || null, index: 0, top: 0 }, f: { zone: S.c.home.length ? 'home' : 'other', i: Math.max(0, i), part: 'name', h: 1, j: 0 } });
+    push({ id: 'editor', origin: origin, lifted: null, top: 0, homeTop: 0, otherReturn: { id: otherList()[0] || null, index: 0, top: 0 }, f: { zone: S.c.home.length ? 'home' : 'other', i: Math.max(0, i), part: 'name', h: 1, j: 0 } });
   }
   function openWallpaper() {
     var i = wallIndex(S.c.wall);
@@ -568,6 +569,49 @@
   }
 
   var V = {};
+  var sleepMinutes = [0, 30, 60, 120, 180];
+  var sleepState = { index: null, remaining: null, error: '', pending: false };
+  function sleepValue(result) {
+    if (!result || sleepMinutes[result.index] === undefined || result.minutes !== sleepMinutes[result.index]) return false;
+    sleepState.index = result.index;
+    sleepState.remaining = isFinite(result.remaining) && result.remaining >= 0 ? result.remaining : null;
+    sleepState.error = '';
+    return true;
+  }
+  function refreshSleep() {
+    if (document.hidden || sleepState.pending || !window.CleanFrameTimerServiceId) return;
+    sleepState.pending = true;
+    FrameDevice.timerRequest(null, function (error, result) {
+      sleepState.pending = false;
+      if (error || !sleepValue(result)) {
+        sleepState.error = error && error.message || 'Timer status unavailable.';
+        sleepState.remaining = null;
+      }
+      if (top().id === 'sleep') render();
+      else if (top().id === 'home') renderCaption(top(), homeState(top()));
+    });
+  }
+  function openSleep() {
+    push({ id: 'sleep', f: { i: sleepState.index === null ? 0 : sleepState.index }, busy: false });
+    refreshSleep();
+  }
+  V.sleep = {
+    key: function (t, k) {
+      if (k === 'back' || k === 'left' || (k === 'up' && t.f.i === 0)) { pop(); return; }
+      if (t.busy) return;
+      if (k === 'up') t.f.i = Math.max(0, t.f.i - 1);
+      else if (k === 'down') t.f.i = Math.min(sleepMinutes.length - 1, t.f.i + 1);
+      else if (k === 'ok') {
+        t.busy = true; sleepState.error = '';
+        FrameDevice.timerRequest(t.f.i, function (error, result) {
+          t.busy = false;
+          if (error || !sleepValue(result)) sleepState.error = error && error.message || 'Timer change could not be verified.';
+          if (top() === t) render();
+        });
+      }
+    },
+    point: function (t, z, i) { if (z === 'sleep') { t.f.i = i; this.key(t, 'ok'); } else pop(); }
+  };
 
   /* ---------- Home (browse) ---------- */
   V.home = {
@@ -600,21 +644,20 @@
         else if (k === 'back') f.zone = 'apps';
         else if (k === 'down') { f.zone = S.c.layout === 'list' ? 'util' : 'apps'; f.u = 0; }
         else if (k === 'right') { f.zone = 'util'; f.u = 0; }
+        else if (k === 'left') f.zone = 'clock';
         return;
       }
-      if (S.c.bg === 'daily' && S.c.layout === 'list' && f.zone === 'util') {
-        if (k === 'left') f.u = Math.max(0, f.u - 1);
-        else if (k === 'right') f.u = Math.min(U.length - 1, f.u + 1);
-        else if (k === 'up' && window.FrameWeather.view().enabled) f.zone = 'weather';
-        else if (k === 'back' || k === 'down' || k === 'up') f.zone = 'apps';
-        else if (k === 'ok') utilAction(U[f.u]);
-        S.lastUtil = f.u; return;
+      if (f.zone === 'clock') {
+        if (k === 'ok') openSleep();
+        else if (k === 'right') { f.zone = window.FrameWeather.view().enabled ? 'weather' : 'util'; f.u = 0; }
+        else if (k === 'down' || k === 'back') f.zone = 'apps';
+        return;
       }
       if (S.c.layout === 'list') { listHomeKey(t, k, i, U); return; }
       if (f.zone === 'util') {
         f.u = clamp(f.u, 0, U.length - 1);
         if (k === x.prev && f.u > 0) f.u--;
-        else if (k === x.prev && f.u === 0 && window.FrameWeather.view().enabled) f.zone = 'weather';
+        else if (k === x.prev && f.u === 0) f.zone = window.FrameWeather.view().enabled ? 'weather' : 'clock';
         else if (k === x.next && f.u < U.length - 1) f.u++;
         else if (k === x.inn || k === 'back') f.zone = 'apps';
         else if (k === 'ok') { S.lastUtil = f.u; utilAction(U[f.u]); return; }
@@ -632,6 +675,7 @@
     point: function (t, z, i) {
       if (z === 'info-skip' || z === 'info-link') { t.f.info = true; t.f.infoIndex = i; this.key(t, 'ok'); return; }
       if (z === 'util') { t.f.zone = 'util'; t.f.u = i; S.lastUtil = i; }
+      else if (z === 'clock') { t.f.zone = 'clock'; }
       else if (z === 'weather') { t.f.zone = 'weather'; }
       else if (z === 'app') { t.f.zone = 'apps'; setSel(S.c.home[i]); }
       else if (z === 'empty') t.f.zone = 'apps';
@@ -643,10 +687,11 @@
     var f = t.f, h = S.c.home;
     if (f.zone === 'util') {
       f.u = clamp(f.u, 0, U.length - 1);
-      if (k === 'up' && f.u > 0) f.u--;
-      else if (k === 'up' && f.u === 0 && window.FrameWeather.view().enabled) f.zone = 'weather';
-      else if (k === 'down' && f.u < U.length - 1) f.u++;
-      else if (k === 'left' || k === 'back') f.zone = 'apps';
+      if (k === 'left' && f.u > 0) f.u--;
+      else if (k === 'left' && f.u === 0) f.zone = 'apps';
+      else if (k === 'right' && f.u < U.length - 1) f.u++;
+      else if (k === 'up') f.zone = window.FrameWeather.view().enabled ? 'weather' : 'clock';
+      else if (k === 'down' || k === 'back') f.zone = 'apps';
       else if (k === 'ok') { S.lastUtil = f.u; utilAction(U[f.u]); return; }
       S.lastUtil = f.u;
       return;
@@ -794,8 +839,7 @@
     return { recent: rec, rest: ALPHA.filter(function (id) { return !onHome(id) && rec.indexOf(id) < 0; }) };
   }
   function otherList() { var o = otherGroups(); return o.recent.concat(o.rest); }
-  function editorCut() { return 5; }
-  function editorHomeY(i) { return i * ED_ROW + (i >= editorCut() ? 24 : 0); }
+  function editorHomeY(i) { return i * ED_ROW; }
   function editorOtherY(j) {
     var o = otherGroups();
     return j * ED_ROW + (o.recent.length ? ED_SEP : 0) + (o.recent.length && j >= o.recent.length ? ED_SEP : 0);
@@ -813,7 +857,7 @@
   function nearestHome(t, count) {
     var target = editorOtherY(t.f.j) - t.top + 36, best = 0, distance = Infinity, i, d;
     for (i = 0; i < count; i++) {
-      d = Math.abs(editorHomeY(i) + 36 - target);
+      d = Math.abs(editorHomeY(i) - t.homeTop + 36 - target);
       if (d < distance) { best = i; distance = d; }
     }
     return best;
@@ -1368,6 +1412,7 @@
     renderDaily(t);
     window.FrameWeather.setActive(!document.hidden && window.FrameWeather.view().enabled);
     stage.style.setProperty('--panel-opacity', String(S.c.dockOpacity / 100));
+    stage.style.setProperty('--home-focus-alpha', String(Math.round(S.c.dockOpacity * 0.74) / 100));
     var dockOffset = t.id === 'appearance' && t.group === 'dock' && t.f.dockOffset !== undefined ? t.f.dockOffset : S.c.dockOffset;
     stage.style.setProperty('--dock-y', px(676 + dockOffset));
     stage.style.setProperty('--dock-cue-y', px(768 + dockOffset));
@@ -1382,6 +1427,7 @@
     renderSheet(t, sheet);
     renderSources(t);
     renderWeatherMenu(t);
+    renderSleepMenu(t);
     renderAppearance(t);
     renderFocusStatus(t);
   }
@@ -1409,7 +1455,7 @@
       setHTML(body, esc(credit.textContent));
     }
     body.scrollTop = scroll;
-    window.FrameUI.placePopup(details, utilsEl.querySelector('[data-action="daily.info"]'), null, { stage: stage, alignRight: true });
+    window.FrameUI.placePopup(details, utilsEl.querySelector('[data-action="daily.info"]'), null, { stage: stage, alignRight: true, above: S.c.layout === 'list' });
   }
 
   function applyHomeFont() {
@@ -1454,7 +1500,7 @@
     }).join('');
     html += '<button type="button" tabindex="-1" role="menuitem" class="source-button source-configure' + window.FrameUI.focusClass('surface', t.f.i === items.length) + '" data-z="source-menu" data-i="' + items.length + '" data-action="source.configure">' + icon('settings') + '<span>Configure sources</span></button>';
     setHTML($('sourceMenuContent'), html);
-    window.FrameUI.placePopup(menu, anchor, im, { stage: stage, above: S.c.layout === 'list' && S.c.bg !== 'daily', photo: S.c.bg === 'photo', imageSrc: fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material) });
+    window.FrameUI.placePopup(menu, anchor, im, { stage: stage, above: S.c.layout === 'list', photo: S.c.bg === 'photo', imageSrc: fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material) });
   }
 
   function weatherKind(code, day) {
@@ -1495,6 +1541,20 @@
     window.FrameUI.placePopup(menu, anchor, im, { stage: stage, offset: 16, bottom: 64, photo: S.c.bg === 'photo', imageSrc: fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material) });
   }
 
+  function renderSleepMenu(t) {
+    var menu = $('sleepMenu'), anchor = caption.querySelector('.clock-button'), im = $('sleepMenuImage'), html;
+    window.FrameUI.setPopupOpen(menu, t.id === 'sleep', anchor);
+    if (anchor) { anchor.setAttribute('aria-haspopup', 'dialog'); anchor.setAttribute('aria-expanded', String(!menu.hidden)); }
+    if (menu.hidden || !anchor) return;
+    html = '<p class="sleep-menu-title">Sleep timer</p>';
+    html += sleepMinutes.map(function (minutes, i) {
+      return '<button type="button" tabindex="-1" class="sleep-option' + window.FrameUI.focusClass('surface', t.f.i === i) + '" data-z="sleep" data-i="' + i + '" data-action="sleep.choose.' + i + '"><span>' + (minutes ? minutes + ' min' : 'Off') + '</span><span class="sleep-option-mark">' + (sleepState.index === i ? icon('check') : '') + '</span></button>';
+    }).join('');
+    html += '<p class="sleep-menu-status">' + esc(t.busy ? 'Setting timer…' : sleepState.error || (sleepState.index === null ? 'Reading TV timer…' : sleepState.index === 0 ? 'Timer off' : 'About ' + (sleepState.remaining === null ? sleepMinutes[sleepState.index] : Math.ceil(sleepState.remaining)) + ' min left')) + '</p>';
+    setHTML($('sleepMenuContent'), html);
+    window.FrameUI.placePopup(menu, anchor, im, { stage: stage, offset: 16, bottom: 64, photo: S.c.bg === 'photo', imageSrc: fieldSrc(S.shown ? S.shown.wall : S.c.wall, S.c.material) });
+  }
+
   function clockText() {
     var d = new Date(), h = S.c.clockFormat === '24' ? d.getHours() : d.getHours() % 12 || 12, m = d.getMinutes();
     return h + ':' + (m < 10 ? '0' : '') + m;
@@ -1506,7 +1566,12 @@
   }
   function renderCaption(t, hs) {
     var weather = window.FrameWeather.view(), now = weather.data && weather.data.current, kind = now ? weatherKind(now.code, now.day) : null;
-    var html = '<span class="caption-top"><span class="clock">' + clockHtml() + '</span>';
+    var html = '<span class="caption-top"><button type="button" tabindex="-1" class="clock clock-button' + window.FrameUI.focusClass('surface', t.id === 'home' && t.f.zone === 'clock') + '"'
+      + (t.id === 'home' ? ' data-z="clock" data-i="0" data-action="home.sleep"' : '')
+      + ' aria-label="Sleep timer' + (sleepState.index > 0 && sleepState.remaining !== null ? ', about ' + Math.ceil(sleepState.remaining) + ' minutes remaining' : '') + '" aria-haspopup="dialog" aria-expanded="' + (t.id === 'sleep') + '"><span class="clock-time">' + clockHtml() + '</span>';
+    if (sleepState.index > 0 && sleepState.remaining !== null) html += '<span class="sleep-badge" aria-hidden="true">'
+      + icon('bed') + '<span>' + Math.ceil(sleepState.remaining) + ' min</span></span>';
+    html += '</button>';
     if (weather.enabled && weather.location) {
       html += '<button type="button" tabindex="-1" class="weather-chip' + window.FrameUI.focusClass('surface', t.id === 'home' && t.f.zone === 'weather') + (t.id === 'weatherMenu' ? ' is-open' : '') + '"'
         + (t.id === 'home' ? ' data-z="weather" data-i="0" data-action="home.weather"' : '')
@@ -1547,14 +1612,12 @@
     }
     r = button.getBoundingClientRect(); sr = sceneEl.getBoundingClientRect(); scale = sr.width / 1920 || 1;
     width = Math.ceil(textWidth(text, 28, 500, -.2) + 8); x = (r.left + r.width / 2 - sr.left) / scale - width / 2;
-    if (S.c.layout === 'list' && S.c.bg !== 'daily') x = 1730 - width;
     utilFocusLabel.style.width = width + 'px'; utilFocusLabel.style.left = clamp(x, 112, 1808 - width) + 'px';
-    utilFocusLabel.style.top = ((S.c.layout === 'list' && S.c.bg !== 'daily' ? (r.top + r.height / 2 - sr.top) / scale - 19 : 140) + fontShift('ui', 28)) + 'px';
-    if (S.c.bg === 'daily' && S.c.layout === 'list') utilFocusLabel.style.top = px((r.bottom - sr.top) / scale + 10);
+    utilFocusLabel.style.top = ((S.c.layout === 'list' ? (r.top - sr.top) / scale - 48 : 140) + fontShift('ui', 28)) + 'px';
     utilFocusLabel.className = 'util-focus-label is-on';
   }
   function renderUtilityLens(button, iconsOnly) {
-    var r, label, sr, scale, x, y, width, key, el;
+    var r, sr, scale, x, y, width, key, el;
     if (!button || S.c.focus !== 'glass') {
       utPlates.forEach(function (plateEl) { plateEl.className = 'ph-plate ut-lens is-outgoing'; });
       utPlateKey = null;
@@ -1562,14 +1625,8 @@
     }
     r = button.getBoundingClientRect(); sr = sceneEl.getBoundingClientRect(); scale = sr.width / 1920 || 1;
     y = (r.top - sr.top) / scale + 2;
-    if (S.c.layout === 'list' && S.c.bg !== 'daily') {
-      label = iconsOnly ? utilFocusLabel : button.querySelector('.u-label');
-      x = (label.getBoundingClientRect().left - sr.left) / scale - 24;
-      width = 1800 - x;
-    } else {
-      // Dock icons keep a fixed lens; the separate caption cannot overlap its neighbours.
-      x = (r.left - sr.left) / scale; width = r.width / scale;
-    }
+    // Each control uses its own lens; the icons-only caption sits above the row.
+    x = (r.left - sr.left) / scale; width = r.width / scale;
     key = button.getAttribute('data-action') + '|' + x + '|' + y + '|' + width;
     if (key !== utPlateKey) {
       utPlates[utPlateIndex].className = 'ph-plate ut-lens is-outgoing';
@@ -2021,7 +2078,7 @@
     editor: function () {
       return '<h2 class="s-title">Apps in Dock</h2><p class="s-sub" data-slot="sub"></p><div class="s-head" data-slot="head"></div>'
         + '<p class="s-label z-home" data-slot="lh"></p><p class="s-label z-other">Not on Home</p>'
-        + '<div class="ed-home" data-slot="home"></div><div class="ed-order-break" data-slot="break">Then scroll</div><div class="ed-other-view" data-slot="ov"><div class="ed-other" data-slot="other"></div></div><div class="ed-origin" data-slot="origin"></div>'
+        + '<div class="ed-home-view"><div class="ed-home" data-slot="home"></div></div><div class="ed-other-view" data-slot="ov"><div class="ed-other" data-slot="other"></div></div><div class="ed-origin" data-slot="origin"></div>'
         + '<div class="row-cue editor-before" data-slot="otherBefore" aria-hidden="true">' + icon('up') + '</div><div class="row-cue editor-after" data-slot="otherAfter" aria-hidden="true">' + icon('down') + '</div>';
     },
     settings: function () { return '<h2 class="s-title">Settings</h2><div class="settings-overview" data-slot="list"></div><p class="settings-overview-hint"><span class="remote-key">OK</span><span>Open selected group</span></p>'; },
@@ -2095,9 +2152,12 @@
       setHTML(el.sub, editStatus(hint, t.lifted ? 'Moving ' + app(t.lifted.id).name + '. OK places it, Back puts it back.' : ''));
       setHTML(el.head, headButtons([['undo', 'Undo', S.undo.length ? '' : 'is-idle', 'undo'], ['done', 'Done', '', 'check']], f.zone === 'head' ? f.h : -1, 'editor'));
       el.head.className = 's-head' + (f.zone === 'head' ? ' is-awake' : '');
-      setHTML(el.lh, 'On Home <span class="s-count">' + S.c.home.length + ' of ' + CAP + '</span>');
-      el['break'].className = 'ed-order-break' + (H.length > editorCut() ? ' is-on' : '');
-      el['break'].style.top = (264 + editorCut() * ED_ROW) + 'px';
+      setHTML(el.lh, 'On Home <span class="s-count">' + S.c.home.length + ' apps</span>');
+      if (f.zone === 'home' || t.lifted) {
+        if (editorHomeY(f.i) < t.homeTop) t.homeTop = editorHomeY(f.i);
+        if (editorHomeY(f.i) + 72 > t.homeTop + ED_VIEW) t.homeTop = Math.max(0, (f.i - 8) * ED_ROW);
+      }
+      t.homeTop = clamp(t.homeTop, 0, Math.max(0, (H.length - 9) * ED_ROW));
 
       keyed(el.home, H.map(function (id) { return { key: id, id: id }; }), function (row, it, i) {
         var a = app(it.id), here = f.zone === 'home' && i === f.i, lifted = !!t.lifted && i === f.i;
@@ -2112,7 +2172,8 @@
         attrs(row.lastChild, 'remove', i, 'editor.remove.' + it.id);
       });
       el.origin.className = 'ed-origin' + (t.lifted && t.lifted.from !== f.i ? ' is-on' : '');
-      if (t.lifted) el.origin.style.transform = 'translate3d(0,' + (264 + editorHomeY(t.lifted.from) + 16) + 'px,0)';
+      if (t.lifted) el.origin.style.transform = 'translate3d(0,' + (264 + editorHomeY(t.lifted.from) - t.homeTop + 16) + 'px,0)';
+      el.home.style.transform = 'translate3d(0,' + (-t.homeTop) + 'px,0)';
 
       if (O.recent.length) { entries.push({ key: 'sep-recent', sep: 'Recently removed', y: y }); y += ED_SEP; }
       O.recent.forEach(function (id) { entries.push({ key: id, id: id, y: y }); ys.push(y); y += ED_ROW; });
@@ -2317,6 +2378,7 @@
     if (document.hidden) return;
     if (top().id === 'home' || isSettingsDetail(top())) renderCaption(top(), homeState(top()));
     window.CleanFrameDaily.tick();
+    refreshSleep();
     clockTimer = setTimeout(updateClock, 60000 - (Date.now() % 60000) + 30);
   }
   function focusStage() { try { stage.focus({ preventScroll: true }); } catch (e) { stage.focus(); } }

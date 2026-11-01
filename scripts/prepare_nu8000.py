@@ -2,6 +2,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 import tempfile
 import zipfile
 
@@ -24,10 +25,10 @@ def load_config(path):
     if not isinstance(selection, dict) or set(selection) - {'home', 'appRecords'}:
         raise ValueError('Selection may contain only home and appRecords.')
     home = selection.get('home')
-    if (not isinstance(home, list) or not 1 <= len(home) <= 9
+    if (not isinstance(home, list) or not 1 <= len(home) <= 64
             or any(not isinstance(item, str) or not item for item in home)
             or len(set(home)) != len(home)):
-        raise ValueError('Selection must contain one to nine distinct app identifiers.')
+        raise ValueError('Selection must contain one to 64 distinct app identifiers.')
     records = selection.get('appRecords', [])
     if not isinstance(records, list) or any(
             not isinstance(record, dict) or set(record) - {'id', 'appId', 'name'}
@@ -108,7 +109,7 @@ def adapt(files, selection, sources=None):
     return files
 
 
-def build(config_path, root=ROOT, include_online_keys=False):
+def build(config_path, root=ROOT, include_online_keys=False, timer_config_path=None):
     identity, selection, sources = load_config(config_path)
     local = root / '.local'
     local.mkdir(exist_ok=True)
@@ -118,6 +119,13 @@ def build(config_path, root=ROOT, include_online_keys=False):
     write_widget_archive(baseline, root=root, include_private=False, identity=identity)
     with zipfile.ZipFile(baseline) as archive:
         files = adapt({name: archive.read(name) for name in archive.namelist()}, selection, sources)
+    timer_config = local / 'native-timer.json' if timer_config_path is None else Path(timer_config_path) if timer_config_path else None
+    if timer_config and timer_config.is_file():
+        timer = json.loads(timer_config.read_text(encoding='utf-8'))
+        service_id = timer.get('service_app_id', '')
+        if timer.get('target_app_id') != identity['app_id'] or not re.fullmatch(r'[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+', service_id):
+            raise ValueError('Private timer service identity does not match this NU8000 app')
+        files['timer-config.js'] = ('window.CleanFrameTimerServiceId = ' + json.dumps(service_id) + ';\n').encode('utf-8')
     if include_online_keys:
         files.update(online_overlay(root, include_private=True))
     for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):

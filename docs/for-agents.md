@@ -10,6 +10,14 @@ Use the browser-only prompt in the README. Read `AGENTS.md`, then the developmen
 
 The current app uses List and Dock, fifteen wallpapers and separate appearance settings. `app/main.js` handles interaction; `app/device.js` owns device calls. The existing storage migration keeps older installations usable.
 
+The optional NU8000 sleep timer is a separate native service, not part of the
+public widget. Read [`scripts/native-timer/README.md`](../scripts/native-timer/README.md)
+before adapting it. The public build leaves its service ID empty. Never reuse a
+diagnostic helper's package identity for the service; verify package-level
+uniqueness as well as the visible application ID before installation. A TV
+test needs owner authorisation, a preserved Public developer profile, an exact
+app-inventory baseline and a visible check of the remaining-time badge.
+
 ## Install your own copy
 
 Use a local agent with access to your computer. A cloud-only agent can edit the repo but cannot reach your TV through this source alone. Start with this prompt:
