@@ -36,7 +36,7 @@ For manual review, use `npm run dev` and open `/home/`. Use the arrow keys, Ente
 Run these only under a task that includes TV testing. Announce any installation or launch first, then follow `development.md`. SDK success alone is not a visible result. Ask this TV's owner to confirm the normal remote behaviour and record the version, firmware, result and any open checks in `nu8000.md` and the summary in `tv-status.md`.
 
 1. Move in both directions through each layout and Settings; check focus, response and readable labels from the sofa.
-2. Launch Netflix/YouTube, press physical Home and confirm Samsung Home opens on the NU8000. Reopen CleanFrame manually and check the selected app. Treat streaming apps' own Back handling separately.
+2. Launch Netflix/YouTube, press physical Home and confirm CleanFrame opens on this fork's currently configured NU8000. Check the selected app. If the separate Home assignment has been removed, confirm Samsung Home instead. Treat streaming apps' own Back handling separately.
 3. Check Other apps, TV settings and Settings → Samsung → Samsung Home; verify the actual visible destinations. Check Art Mode only on a TV that has the feature.
 4. Check saved appearance/app order/wallpaper after relaunch. Check timed rotation pauses while a panel is open or the app is hidden.
 5. Test normal power-on after a streaming app only when that work is included. This NU8000 has no native Home reassignment or recovery baseline; never use the upstream baseline for it.

@@ -5,8 +5,8 @@ separate Partner-signed normal `.NET` service, version `1.0.4`, installed via
 Samsung's `vd_appinstall`. It starts CleanFrame on a real system boot. While
 resident, it also starts CleanFrame after the observed display transition
 `-1` → `Normal` on a short remote off/on. The TV's "start last app" option is
-off. No always-running computer is needed. The physical Home button still
-opens Samsung Home.
+off. No always-running computer is needed. A separate two-package assignment
+currently makes the physical Home button open CleanFrame; see [TV status](tv-status.md).
 
 The owner confirmed automatic CleanFrame display in three meaningful cases:
 short standby from another app (immediate); full remote restart with Samsung

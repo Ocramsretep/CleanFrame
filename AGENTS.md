@@ -30,10 +30,11 @@ helper. Announce any installation, app launch or restart; confirm visible result
 Home/startup writes as a separate task with explicit authority and an exact-value recovery baseline.
 
 On this fork's UE49NU8079, preserve the owner's existing package/application identity and author certificate; its
-physical Home button currently opens Samsung Home. A temporary, separate `XF86Home` rule plus CleanFrame managed-app
-registration opened CleanFrame, including after a full restart and a short standby cycle, and was removed with exact
-database and visible Home rollback; see `docs/tv-status.md`.
-Do not treat that test as a maintained installation or as a Vconf Home-setting change. The upstream LS03D has a separate native Home assignment documented in
+physical Home button currently opens CleanFrame through a separate `XF86Home` rule plus CleanFrame managed-app
+registration. The same packages survived a full restart and short standby cycle in an earlier temporary test, then
+were removed with exact database and visible Home rollback. They are installed again with a fresh exact baseline;
+see `docs/tv-status.md` and `docs/nu8000.md` for current state and private cleanup. The current installation has not
+yet had its own power-cycle check. This is not a Vconf Home-setting change. The upstream LS03D has a separate native Home assignment documented in
 `docs/upstream-tv-status.md`. For an independent user's signed build, create their own SDK-generated identity and certificates, then
 select them in ignored `.local/signing.json` using `signing.example.json`; read the signing section in
 `docs/development.md`. The generated manifest and install/launch tools use that identity; the runtime reads its own ID.
