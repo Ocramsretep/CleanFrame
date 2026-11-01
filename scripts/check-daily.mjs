@@ -38,6 +38,26 @@ const state = () => page.evaluate(() => {
 async function ready() { await page.waitForFunction(() => window.ShoreQA && ShoreQA.ready()); }
 async function act(action) { assert.ok(await page.evaluate(a => ShoreQA.activate(a), action), action); }
 try {
+  const startup = await preview.browser.newContext({ viewport: { width: 1920, height: 1080 } });
+  try {
+    await startup.addInitScript(() => localStorage.setItem('cleanframe.home.v1', JSON.stringify({ look: { bg: 'daily' } })));
+    await startup.route('**/daily-fetch?*', route => route.abort());
+    const startupPage = await startup.newPage();
+    await startupPage.goto(preview.baseURL + '/home/');
+    await startupPage.waitForFunction(() => window.ShoreQA && document.getElementById('stage').classList.contains('is-daily'));
+    const pending = await startupPage.evaluate(() => ({
+      ready: document.getElementById('stage').classList.contains('daily-ready'),
+      localPhoto: getComputedStyle(document.getElementById('photo')).visibility,
+      localMaterial: getComputedStyle(document.getElementById('matImg')).visibility,
+      background: getComputedStyle(document.getElementById('bg')).backgroundColor,
+      onlinePhotoHidden: document.getElementById('dailyPhoto').hidden
+    }));
+    assert.deepEqual(pending, { ready: false, localPhoto: 'hidden', localMaterial: 'hidden', background: 'rgb(0, 0, 0)', onlinePhotoHidden: true },
+      'Online mode starts dark while its cached image is unavailable');
+    mkdirSync(root + '.local/qa', { recursive: true });
+    await startupPage.screenshot({ path: root + '.local/qa/daily-pending.png' });
+  } finally { await startup.close(); }
+
   await page.goto(preview.baseURL + '/home/'); await ready();
   assert.equal(requests.length, 0, 'Bundled backgrounds make no provider requests');
   assert.equal(await page.locator('#dailySkip').isVisible(), false);

@@ -8,7 +8,8 @@ The first ready picture appears on Home. Thereafter the local calendar date
 selects one new picture per day, including after standby or an offline restart.
 A change waits while a panel or picture info is open. Downloads run only while
 the app is running and visible; they do not wake a powered-off TV. Without a
-replacement the previous picture stays, or the bundled photo on first use.
+replacement the previous online picture stays. Before the first picture is ready,
+Home uses a dark background instead of briefly showing a bundled local photo.
 
 ## Sources
 

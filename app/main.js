@@ -1404,7 +1404,7 @@
       setHTML(head, '<h2>' + esc(c.title) + '</h2><button type="button" tabindex="-1" id="dailySkip" class="daily-info-action' + window.FrameUI.focusClass('surface', expanded && (t.f.infoIndex || 0) === 0) + '" data-z="info-skip" data-i="0" data-action="daily.skip" aria-label="Skip picture">' + icon('skipArrow') + '<span>Skip</span></button>');
       setHTML(body, '<p>' + attribution + '</p><div class="daily-info-links">' + (pageURL ? '<button type="button" tabindex="-1" class="daily-info-link' + window.FrameUI.focusClass('surface', expanded && t.f.infoIndex === 1) + '" data-z="info-link" data-i="1" data-action="daily.link.page" aria-label="Open picture page in browser"><span>Picture Page</span></button>' : '') + (licenseURL ? '<button type="button" tabindex="-1" class="daily-info-link' + window.FrameUI.focusClass('surface', expanded && t.f.infoIndex === 2) + '" data-z="info-link" data-i="2" data-action="daily.link.license" aria-label="Open license in browser"><span>License</span></button>' : '') + '</div>');
     } else {
-      credit.textContent = daily.status || 'Preparing daily pictures… Your saved photo stays visible until a picture is ready.';
+      credit.textContent = daily.status || 'Preparing online pictures… A dark background stays visible until a picture is ready.';
       setHTML(head, '<h2>Picture info</h2><button type="button" tabindex="-1" id="dailySkip" class="daily-info-action' + window.FrameUI.focusClass('surface', expanded) + '" data-z="info-skip" data-i="0" data-action="daily.skip" aria-label="Skip picture">' + icon('skipArrow') + '<span>Skip</span></button>');
       setHTML(body, esc(credit.textContent));
     }
