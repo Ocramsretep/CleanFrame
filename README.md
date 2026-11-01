@@ -10,7 +10,7 @@ The original CleanFrame was built for a Samsung The Frame. This fork records a s
 
 **Use it at your own risk.** The setup scripts still contain upstream computer, TV and firmware assumptions. Adapt and verify them for your own hardware.
 
-Start with the browser preview, then follow the separate NU8000 build instructions if you have that TV. This fork also has a separate startup service for the tested NU8000. It does not reassign the remote's Home button or change Samsung's native Home setting.
+Start with the browser preview, then follow the separate NU8000 build instructions if you have that TV. This fork also has a separate startup service for the tested NU8000. A temporary, package-declared Home rule was physically tested and rolled back on that TV; it is not currently installed and did not change Samsung's native Vconf Home setting.
 
 ## What this fork adds
 
@@ -25,7 +25,7 @@ Compared with [upstream CleanFrame](https://github.com/nthnclrk/CleanFrame), thi
 | Personalisation | Per-app white icon overrides, additional app focus styles, panel opacity and Dock position controls, with previews in Settings. [Interaction guide](docs/interaction-behaviour.md). |
 | Reproducibility | Public-font browser preview, regression checks, public export and agent-oriented setup notes. [Development guide](docs/development.md) · [Agent guide](docs/for-agents.md). |
 
-The startup service was confirmed on this fork's UE49NU8079 for a full restart, a short standby cycle and a standby cycle after several minutes of operation. A full boot took more than ten seconds to show CleanFrame in the observed test. Long-term survival and other firmware versions remain unverified. The physical Home button still opens Samsung Home. The service's certificate, installation and recovery steps are device-specific; it is not an unattended installer for other TVs.
+The startup service was confirmed on this fork's UE49NU8079 for a full restart, a short standby cycle and a standby cycle after several minutes of operation. A full boot took more than ten seconds to show CleanFrame in the observed test. Long-term survival and other firmware versions remain unverified. The physical Home button currently opens Samsung Home; a temporary CleanFrame Home rule succeeded and was removed after its rollback test. The service's certificate, installation and recovery steps are device-specific; it is not an unattended installer for other TVs.
 
 ![Public-font desktop browser preview of the per-app icon picker, with a CleanFrame icon selected for Netflix](docs/screenshots/app-icons-720.png)
 
@@ -83,8 +83,8 @@ Signing supports an ignored `.local/signing.json` based on `signing.example.json
 | This fork's hardware | Samsung UE49NU8079, firmware T-KTM2DEUC-1360.0, Tizen 4.0, ARMv7 |
 | App installation | The separate NU8000 build was signed and installed in place; individual visible checks are recorded in the TV status. |
 | Startup | The separate native service launches CleanFrame on full boot and observed standby wake. The owner confirmed both; see the [current startup record](docs/native-wake.md). Samsung's “start last app” option is off on the tested TV. |
-| Home button | Physical Home still opens Samsung Home. Native Home reassignment was not performed. |
-| Still open | Further changed UI and remote flows need visible checks on this TV. Long-term service survival and a verified Home reassignment and rollback method remain open. |
+| Home button | Physical Home currently opens Samsung Home. A temporary `XF86Home` rule plus CleanFrame managed-app registration opened CleanFrame; removing both packages restored Samsung Home. [TV evidence](docs/tv-status.md#remote-and-native-home). |
+| Still open | Further changed UI and remote flows need visible checks on this TV. Long-term service survival and a maintained Home shortcut across restart and standby remain open. |
 | Other TVs | No compatibility claim. This is Tizen source; Android TV, Google TV, LG webOS and Roku need their own implementations. |
 
 The [TV status](docs/tv-status.md) links to the detailed NU8000 record and separates it from the [upstream LS03D results](docs/upstream-tv-status.md). The upstream native Home helper does not target this TV. CleanFrame can also be opened manually without native reassignment.

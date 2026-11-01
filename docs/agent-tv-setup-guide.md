@@ -1,6 +1,6 @@
 # Samsung The Frame Agent Setup Guide
 
-Prepared 20 October 2026 for the upstream Samsung LS03D. This covers developer access, signing and installing your own launcher, then an optional native Home/startup experiment. This fork's UE49NU8079 results are in [TV status](tv-status.md) and [NU8000 adaptation](nu8000.md); its Home button still opens Samsung Home and no native reassignment was performed.
+Prepared 20 October 2026 for the upstream Samsung LS03D. This covers developer access, signing and installing your own launcher, then an optional native Home/startup experiment. This fork's UE49NU8079 results are in [TV status](tv-status.md) and [NU8000 adaptation](nu8000.md); its Home button currently opens Samsung Home. A separate, temporary app-context Home rule opened CleanFrame and was rolled back on that TV. The upstream Vconf Home method described below was not applied to it.
 
 **This is a record of an experiment on my own TV. It is not a recommendation to modify yours. Proceed at your own risk.** Developer access and, especially, the undocumented Home/startup changes can cause faults, interrupt viewing, or leave normal Home/startup behaviour unusable. Firmware updates can break the method and its recovery tools. Recovery may need further technical work, a reset or support. A saved rollback does not guarantee recovery. I can't promise this will work on your TV, even if it looks identical to mine.
 
