@@ -32,7 +32,8 @@ permission were restored. The owner pressed Home again and confirmed Samsung
 Home, then confirmed CleanFrame launched normally. On 1 November, the same
 packages were installed again after a new exact baseline was captured. The
 owner confirmed Home now opens CleanFrame and leaves it visible. Samsung Home
-seemed to flash briefly before the takeover; its cause is not established.
+seemed to flash briefly in an earlier check. In the latest owner checks, it
+did not visibly flash, including after a full restart; the reason is unknown.
 **Both Home packages are currently installed.** No native Home Vconf value or
 firmware file was changed. The [working record and private recovery procedure](nu8000.md#temporary-physical-home-mapping)
 give the exact scope.

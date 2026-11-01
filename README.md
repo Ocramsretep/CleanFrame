@@ -87,7 +87,7 @@ The [guided NU8000 setup controller](docs/nu8000.md#guided-reference-tv-setup) c
 | App installation | The separate NU8000 build was signed and installed in place; individual visible checks are recorded in the TV status. |
 | Startup | The separate native service launches CleanFrame on full boot and observed standby wake. The owner confirmed both; see the [current startup record](docs/native-wake.md). Samsung's “start last app” option is off on the tested TV. |
 | Home button | Physical Home currently opens CleanFrame through an `XF86Home` rule plus CleanFrame managed-app registration. A prior rollback restored Samsung Home; the current exact baseline is retained. [TV evidence](docs/tv-status.md#home-result-and-current-state). |
-| Still open | The brief Samsung Home flash before CleanFrame, long-term retention and further changed UI and remote flows need checks on this TV. |
+| Still open | Long-term retention and further changed UI and remote flows need checks on this TV. The owner no longer saw a Samsung Home flash in the latest Home and restart checks. |
 | Other TVs | No compatibility claim. This is Tizen source; Android TV, Google TV, LG webOS and Roku need their own implementations. |
 
 The [TV status](docs/tv-status.md) links to the detailed NU8000 record and separates it from the [upstream LS03D results](docs/upstream-tv-status.md). The upstream native Home helper does not target this TV. CleanFrame can also be opened manually without native reassignment.
