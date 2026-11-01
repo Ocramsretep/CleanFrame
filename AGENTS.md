@@ -39,7 +39,10 @@ yet had its own power-cycle check. This is not a Vconf Home-setting change. The 
 select them in ignored `.local/signing.json` using `signing.example.json`; read the signing section in
 `docs/development.md`. The generated manifest and install/launch tools use that identity; the runtime reads its own ID.
 Keep the source identity guards intact. Native Home targets and firmware guards need separate review and authority. The
-TV tools and native helper retain reference-machine assumptions; they are not an unattended installer.
+TV tools and native helper retain reference-machine assumptions; they are not an unattended installer. The guided
+reference-TV controller is `scripts/setup_nu8000.py`; its device actions require `--apply`, current owner authority
+and visible owner confirmation. Assigning Home also requires a fresh exact recovery baseline. Keep its setup and recovery notes current in
+`docs/nu8000.md` when changing the workflow.
 
 Keep proprietary fonts, signing keys, passwords, device identifiers, addresses, SDKs, recovery values and generated
 packages in ignored `.local/` or `dist/`. Never commit paid font binaries or publish a private-font widget. Public-code
