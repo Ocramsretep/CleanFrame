@@ -21,8 +21,9 @@ For a new coding agent on this workstation:
 
 1. Read `AGENTS.md`, this page and
    [`scripts/native-wake/README.md`](../scripts/native-wake/README.md). The
-   full historical analysis and failed paths are in [NU8000 notes](nu8000.md);
-   they need not be repeated to rebuild the existing service.
+   concise device results and the working Home test are in
+   [NU8000 notes](nu8000.md); earlier experiments remain in Git history and
+   need not be repeated to rebuild the existing service.
 2. Inspect ignored `.local/partner-certificate-test/native-wake-launch/state.json`.
    Its `signed_package` is the **currently tested** `1.0.4` TPK. Its
    `recovery_package` and `recovery_sha256` refer to the exact previously

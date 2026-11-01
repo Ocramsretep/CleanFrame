@@ -123,7 +123,7 @@ Launcher wallpaper is separate from native Art Mode. Runtime photos, materials a
 - [Samsung Application API](https://developer.samsung.com/smarttv/develop/api-references/tizen-web-device-api-references/application-api.html): installed-app discovery and application control.
 - [Samsung application termination guide](https://developer.samsung.com/smarttv/develop/guides/fundamentals/terminating-applications.html): exiting is not treated as a deterministic Samsung Home route.
 
-The upstream LS03D native Home operation and startup configuration from 19 October are separate from this app and from the NU8000 adaptation. On this fork's TV, physical Home still opens Samsung Home and native reassignment was not performed. Streaming apps retain their own Back navigation; no global Back interception or key-filter hook was installed. See [TV status](tv-status.md) for this fork's device evidence and the [upstream record](upstream-tv-status.md) for the LS03D results.
+The upstream LS03D native Home operation and startup configuration from 19 October are separate from this app and from the NU8000 adaptation. On this fork's TV, physical Home currently opens Samsung Home. A temporary package-based Home rule opened CleanFrame and was removed after its rollback test. Streaming apps retain their own Back navigation; no global Back interception is installed. See [TV status](tv-status.md) for this fork's device evidence and the [upstream record](upstream-tv-status.md) for the LS03D results.
 
 ## Clock and rendering
 

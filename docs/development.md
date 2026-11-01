@@ -89,7 +89,7 @@ The UE49NU8079's confirmed boot/standby service is documented separately in
 is in `scripts/native-wake/`; this section below describes the upstream LS03D
 native Home helper and must not be applied to the NU8000.
 
-On the upstream LS03D, native Home/startup was configured separately from the app installer and physical Home from Netflix was confirmed. The one-shot helper runs as the SDK user there; see scripts/native-home/README.md and [the upstream TV record](upstream-tv-status.md). On this fork's NU8000, Home still opens Samsung Home and no native reassignment was performed; see [TV status](tv-status.md).
+On the upstream LS03D, native Home/startup was configured separately from the app installer and physical Home from Netflix was confirmed. The one-shot helper runs as the SDK user there; see scripts/native-home/README.md and [the upstream TV record](upstream-tv-status.md). On this fork's NU8000, Home currently opens Samsung Home. A separate temporary package rule opened CleanFrame and was rolled back after restart and standby checks; see [TV status](tv-status.md).
 
 Query with `python3 scripts/native-home/run.py query`. Restore the saved pre-integration Home/startup values with `python3 scripts/native-home/run.py restore`. The private baseline is `.local/native-home/original.json`; preserve it and do not replace it with the applied state. The legacy `.local/native-home/run.py` command is also retained. Restore before uninstalling CleanFrame or changing its stable app identity.
 

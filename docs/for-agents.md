@@ -43,7 +43,7 @@ upstream LS03D native Home assignment below. Source is tracked; private
 identities, certificates, Tizen 4 references, signed TPKs and exact recovery
 artifacts remain ignored. Do not infer Home remapping from successful startup.
 The UE49NU8079 also has a separate, owner-approved **temporary** app-context
-Home test in [`nu8000.md`](nu8000.md#temporary-physical-home-success-with-full-app-id-1-november-2026): a managed-app registration and a full-ID `XF86Home` rule opened CleanFrame, including after one full restart and one short standby cycle. Uninstalling both restored Samsung Home. The packages are not currently installed. Do not substitute this result for the upstream Vconf-based LS03D procedure or assume long-term persistence.
+Home test in [`nu8000.md`](nu8000.md#temporary-physical-home-mapping): a managed-app registration and a full-ID `XF86Home` rule opened CleanFrame, including after one full restart and one short standby cycle. Uninstalling both restored Samsung Home. The packages are not currently installed. Do not substitute this result for the upstream Vconf-based LS03D procedure or assume long-term persistence.
 
 This is an optional, undocumented firmware-specific experiment. Read the native section of the setup guide and `scripts/native-home/README.md`. Check the actual model, firmware, API capability, user permissions and original values. Query/inspect also stages temporary files, so it is a device operation. The helper has hard-coded guards for the reference TV and requires private compiled output and a recovery baseline.
 

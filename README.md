@@ -83,7 +83,7 @@ Signing supports an ignored `.local/signing.json` based on `signing.example.json
 | This fork's hardware | Samsung UE49NU8079, firmware T-KTM2DEUC-1360.0, Tizen 4.0, ARMv7 |
 | App installation | The separate NU8000 build was signed and installed in place; individual visible checks are recorded in the TV status. |
 | Startup | The separate native service launches CleanFrame on full boot and observed standby wake. The owner confirmed both; see the [current startup record](docs/native-wake.md). Samsung's “start last app” option is off on the tested TV. |
-| Home button | Physical Home currently opens Samsung Home. A temporary `XF86Home` rule plus CleanFrame managed-app registration opened CleanFrame after a full restart and short standby cycle; removing both packages restored Samsung Home. [TV evidence](docs/tv-status.md#remote-and-native-home). |
+| Home button | Physical Home currently opens Samsung Home. A temporary `XF86Home` rule plus CleanFrame managed-app registration opened CleanFrame after a full restart and short standby cycle; removing both packages restored Samsung Home. [TV evidence](docs/tv-status.md#home-result-and-current-state). |
 | Still open | Further changed UI and remote flows need visible checks on this TV. Long-term service survival and a maintained Home shortcut remain open. |
 | Other TVs | No compatibility claim. This is Tizen source; Android TV, Google TV, LG webOS and Roku need their own implementations. |
 
